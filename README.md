@@ -27,7 +27,14 @@ with an escrow exchange contract.
 ### Usage: Contract Host Demo
 
 ```
-$ npx vat run demo/contractHost
+$ npx vat run demo/contractHost -- covered-call-sale
+...
+++ bob.offerAliceOption starting
+++ alice.acceptOptionForFred starting
+++ alice.completeOptionsSale starting
+++ fred.acceptOptionOffer starting
+...
+
 ```
 
 [watch]: https://www.youtube.com/watch?v=YXUqfgdDbr8
