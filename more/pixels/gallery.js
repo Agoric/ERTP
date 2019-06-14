@@ -205,6 +205,7 @@ export function makeGallery(
       for (let i = 0; i < pixelList.length; i += 1) {
         const pixel = pixelList[i];
         setPixelState(pixel, newColor);
+        lruQueue.requeue(pixel);
       }
       return pixelAmount;
     });
