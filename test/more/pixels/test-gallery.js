@@ -267,3 +267,36 @@ test('pricePixel Internal', t => {
   );
   t.end();
 });
+
+test.only('Requeue if pixel colored', async t => {
+  // setup
+  const { userFacet, adminFacet } = makeGallery();
+  const { pixelIssuer, useRightIssuer } = userFacet.getIssuers();
+
+  // user actions
+  const pixelPayment = userFacet.tapFaucet();
+
+  const exclusivePixelPayment = await pixelIssuer.getExclusiveAll(pixelPayment);
+  const { useRightPayment } = await userFacet.transformToTransferAndUse(
+    exclusivePixelPayment,
+  );
+  const exclusiveUseRightPayment = await useRightIssuer.getExclusiveAll(
+    useRightPayment,
+  );
+  const useRightAssay = exclusiveUseRightPayment.getIssuer().getAssay();
+
+  const rawPixel = useRightAssay.quantity(
+    exclusiveUseRightPayment.getBalance(),
+  )[0];
+
+  // tap the faucet again so that the rawPixel isn't already at the end
+  userFacet.tapFaucet();
+
+  const lruQueueTime0 = adminFacet.getLRUQueue();
+  await userFacet.changeColor(exclusiveUseRightPayment, '#000000');
+  const lruQueueTime1 = adminFacet.getLRUQueue();
+  t.notDeepEqual(lruQueueTime0, lruQueueTime1);
+  t.equal(lruQueueTime1[lruQueueTime1.length - 1], rawPixel);
+  t.equal(userFacet.getColor(rawPixel.x, rawPixel.y), '#000000');
+  t.end();
+});

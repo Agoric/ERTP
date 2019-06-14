@@ -329,6 +329,9 @@ export function makeGallery(
     getDistance,
     getDistanceFromCenter,
     pricePixelAmount,
+    getLRUQueue() {
+      return lruQueue.getState();
+    },
   };
 
   const readFacet = {

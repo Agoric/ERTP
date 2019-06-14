@@ -103,7 +103,18 @@ export function makeLruQueue() {
     }
   }
 
-  const lruQueue = harden({ popToTail, requeue });
+  function getState() {
+    const result = [];
+    let start = head;
+    result.push(start.contents);
+    while (start.next) {
+      result.push(start.next.contents);
+      start = start.next;
+    }
+    return result;
+  }
+
+  const lruQueue = harden({ popToTail, requeue, getState });
   const lruQueueBuilder = harden({ push, resortArbitrarily, isEmpty });
 
   return harden({ lruQueue, lruQueueBuilder });

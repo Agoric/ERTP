@@ -94,3 +94,21 @@ test('LRU reorder', t => {
 
   t.end();
 });
+
+test('LRU getState', t => {
+  const { lruQueue, lruQueueBuilder } = makeLruQueue();
+  for (let i = 0; i < 2; i += 1) {
+    for (let j = 0; j < 2; j += 1) {
+      lruQueueBuilder.push({ x: i, y: j });
+    }
+  }
+  const currentState = lruQueue.getState();
+  t.deepEqual(currentState, [
+    { x: 0, y: 0 },
+    { x: 0, y: 1 },
+    { x: 1, y: 0 },
+    { x: 1, y: 1 },
+  ]);
+
+  t.end();
+});
