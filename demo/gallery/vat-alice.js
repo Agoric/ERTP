@@ -203,8 +203,8 @@ function makeAliceMaker(E, log) {
             }`,
           );
         },
-        async doTapFaucetAndSell() {
-          log('++ alice.doTapFaucetAndSell starting');
+        async doSellAndBuy() {
+          log('++ alice.doSellAndBuy starting');
           const pixelPaymentP = E(gallery).tapFaucet();
           const { pixelIssuer, dustIssuer } = await E(gallery).getIssuers();
           const exclusivePixelPaymentP = await E(pixelIssuer).getExclusiveAll(
@@ -216,15 +216,33 @@ function makeAliceMaker(E, log) {
           // willing to offer for it
           // sellToGallery returns an invite to the smart contract
           const { inviteP, host } = await E(gallery).sellToGallery(amount);
-          const seatP = E(host).redeem(inviteP);
-          E(seatP).offer(exclusivePixelPaymentP);
-          const dustPurseP = E(dustIssuer).makeEmptyPurse();
-          const pixelPurseP = E(pixelIssuer).makeEmptyPurse();
-          return E(gallery).collectFromGallery(
+          const seatP = await E(host).redeem(inviteP);
+          await E(seatP).offer(exclusivePixelPaymentP);
+          const dustPurseP = await E(dustIssuer).makeEmptyPurse();
+          const pixelPurseP = await E(pixelIssuer).makeEmptyPurse();
+          await E(gallery).collectFromGallery(
             seatP,
             dustPurseP,
             pixelPurseP,
             'alice escrow',
+          );
+          // now buy it back
+          const {
+            inviteP: buyBackInviteP,
+            host: buyBackHost,
+            dustNeeded,
+          } = await E(gallery).buyFromGallery(amount);
+          const buyBackSeatP = await E(buyBackHost).redeem(buyBackInviteP);
+          const dustPaymentP = await E(dustPurseP).withdraw(dustNeeded);
+
+          await E(buyBackSeatP).offer(dustPaymentP);
+          // alice is buying a pixel, so her win purse is a pixel
+          // purse and her refund purse is a dust purse
+          await E(gallery).collectFromGallery(
+            buyBackSeatP,
+            pixelPurseP,
+            dustPurseP,
+            'alice escrow 2',
           );
         },
       });

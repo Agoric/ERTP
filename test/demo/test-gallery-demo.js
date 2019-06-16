@@ -105,23 +105,25 @@ test('run gallery demo galleryRevokes without SES', async t => {
   t.end();
 });
 
-const expectedAliceSellsBackLog = [
+const expectedAliceSellsAndBuysLog = [
   '=> setup called',
-  'starting aliceSellsBack',
-  'starting testAliceSellsBack',
-  '++ alice.doTapFaucetAndSell starting',
+  'starting aliceSellsAndBuys',
+  'starting testAliceSellsAndBuys',
+  '++ alice.doSellAndBuy starting',
   'gallery escrow wins: {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]} refs: null',
   'alice escrow wins: {"label":{"issuer":{},"description":"dust"},"quantity":6} refs: null',
+  'gallery escrow wins: {"label":{"issuer":{},"description":"dust"},"quantity":6} refs: null',
+  'alice escrow 2 wins: {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]} refs: null',
 ];
 
-test('run gallery demo aliceSellsBack with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceSellsBack']);
-  t.deepEquals(dump.log, expectedAliceSellsBackLog);
+test('run gallery demo aliceSellsAndBuys with SES', async t => {
+  const dump = await main(true, 'demo/gallery', ['aliceSellsAndBuys']);
+  t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();
 });
 
-test('run gallery demo aliceSellsBack without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceSellsBack']);
-  t.deepEquals(dump.log, expectedAliceSellsBackLog);
+test.only('run gallery demo aliceSellsAndBuys without SES', async t => {
+  const dump = await main(false, 'demo/gallery', ['aliceSellsAndBuys']);
+  t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();
 });
