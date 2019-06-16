@@ -114,6 +114,8 @@ const expectedAliceSellsAndBuysLog = [
   'alice escrow wins: {"label":{"issuer":{},"description":"dust"},"quantity":6} refs: null',
   'gallery escrow wins: {"label":{"issuer":{},"description":"dust"},"quantity":6} refs: null',
   'alice escrow 2 wins: {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]} refs: null',
+  'alice pixel purse balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'alice dust purse balance {"label":{"issuer":{},"description":"dust"},"quantity":0}',
 ];
 
 test('run gallery demo aliceSellsAndBuys with SES', async t => {
@@ -122,7 +124,7 @@ test('run gallery demo aliceSellsAndBuys with SES', async t => {
   t.end();
 });
 
-test.only('run gallery demo aliceSellsAndBuys without SES', async t => {
+test('run gallery demo aliceSellsAndBuys without SES', async t => {
   const dump = await main(false, 'demo/gallery', ['aliceSellsAndBuys']);
   t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();

@@ -299,8 +299,8 @@ export function makeGallery(
       pixelAmount = pixelAssay.coerce(pixelAmount);
       const dustAmount = pricePixelAmount(pixelAmount);
       // just mint the dust that we need
-      const tempDustPurseP = await dustMint.mint(dustAmount);
-      const dustPaymentP = await tempDustPurseP.withdraw(
+      const tempDustPurseP = dustMint.mint(dustAmount);
+      const dustPaymentP = tempDustPurseP.withdraw(
         dustAmount,
         'dust for pixel',
       );
@@ -346,7 +346,7 @@ export function makeGallery(
       // provide pixels. Left is the user, right is the gallery
       const terms = harden({ left: dustAmount, right: pixelAmount });
       const contractHost = makeContractHost(E, evaluate);
-      const escrowExchangeInstallationP = await E(contractHost).install(
+      const escrowExchangeInstallationP = E(contractHost).install(
         escrowExchangeSrc,
       );
       // order switch compared to as in sellToGallery

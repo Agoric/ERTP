@@ -216,10 +216,10 @@ function makeAliceMaker(E, log) {
           // willing to offer for it
           // sellToGallery returns an invite to the smart contract
           const { inviteP, host } = await E(gallery).sellToGallery(amount);
-          const seatP = await E(host).redeem(inviteP);
+          const seatP = E(host).redeem(inviteP);
           await E(seatP).offer(exclusivePixelPaymentP);
-          const dustPurseP = await E(dustIssuer).makeEmptyPurse();
-          const pixelPurseP = await E(pixelIssuer).makeEmptyPurse();
+          const dustPurseP = E(dustIssuer).makeEmptyPurse();
+          const pixelPurseP = E(pixelIssuer).makeEmptyPurse();
           await E(gallery).collectFromGallery(
             seatP,
             dustPurseP,
@@ -235,7 +235,7 @@ function makeAliceMaker(E, log) {
           const buyBackSeatP = await E(buyBackHost).redeem(buyBackInviteP);
           const dustPaymentP = await E(dustPurseP).withdraw(dustNeeded);
 
-          await E(buyBackSeatP).offer(dustPaymentP);
+          E(buyBackSeatP).offer(dustPaymentP);
           // alice is buying a pixel, so her win purse is a pixel
           // purse and her refund purse is a dust purse
           await E(gallery).collectFromGallery(
@@ -244,6 +244,8 @@ function makeAliceMaker(E, log) {
             dustPurseP,
             'alice escrow 2',
           );
+          showPaymentBalance('alice pixel purse', pixelPurseP);
+          showPaymentBalance('alice dust purse', dustPurseP);
         },
       });
       return alice;
