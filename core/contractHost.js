@@ -6,7 +6,7 @@ import harden from '@agoric/harden';
 import { makePrivateName } from '../util/PrivateName';
 import { allSettled } from '../util/allSettled';
 import { insist } from '../util/insist';
-import { mustBeSameStructure, allComparable } from '../util/sameStructure';
+import { allComparable, mustBeSameStructure } from '../util/sameStructure';
 import { makeUniAssayMaker } from './assays';
 import { makeMint } from './issuers';
 import { makeBasicMintController } from './mintController';
@@ -51,6 +51,12 @@ No invites left`;
   const contractHost = harden({
     getInviteIssuer() {
       return inviteIssuer;
+    },
+    getInviteIssuerLabel() {
+      return harden({
+        issuer: inviteIssuer,
+        description: 'contract host',
+      });
     },
 
     // The `contractSrc` is code for a contract function parameterized

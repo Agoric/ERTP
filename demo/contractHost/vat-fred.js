@@ -19,37 +19,21 @@ function makeFredMaker(E, host, log) {
       myFinPurseP,
     ) {
       const inviteIssuerP = E(host).getInviteIssuer();
-      const inviteIssuerLabel = harden({
-        issuer: inviteIssuerP,
-        description: 'contract host',
-      });
-      const moneyIssuerP = E(myMoneyPurseP).getIssuer();
-      const stockIssuerP = E(myStockPurseP).getIssuer();
-      const finIssuerP = E(myFinPurseP).getIssuer();
-
+      const inviteIssuerLabel = E(host).getInviteIssuerLabel();
       const fred = harden({
         acceptOptionOffer(allegedSaleInvitePaymentP) {
           log('++ fred.acceptOptionOffer starting');
 
           const dough10 = harden({
-            label: {
-              issuer: moneyIssuerP,
-              description: 'dough',
-            },
+            label: E(myMoneyPurseP).getIssuerLabel(),
             quantity: 10,
           });
           const wonka7 = harden({
-            label: {
-              issuer: stockIssuerP,
-              description: 'wonka',
-            },
+            label: E(myStockPurseP).getIssuerLabel(),
             quantity: 7,
           });
           const fin55 = harden({
-            label: {
-              issuer: finIssuerP,
-              description: 'fins',
-            },
+            label: E(myFinPurseP).getIssuerLabel(),
             quantity: 55,
           });
 
