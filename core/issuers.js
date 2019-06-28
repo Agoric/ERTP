@@ -32,6 +32,9 @@ Description must be truthy: ${description}`;
       getIssuer() {
         return issuer;
       },
+      getIssuerLabel() {
+        return issuer.getLabel();
+      },
       getBalance() {
         return mintController.getAmount(payment);
       },
@@ -115,6 +118,9 @@ Description must be truthy: ${description}`;
     getIssuer() {
       return issuer;
     },
+    getIssuerLabel() {
+      return issuer.getLabel();
+    },
     destroyAll() {
       mintController.destroyAll();
     },
@@ -135,6 +141,9 @@ Description must be truthy: ${description}`;
       const purse = harden({
         getIssuer() {
           return issuer;
+        },
+        getIssuerLabel() {
+          return issuer.getLabel();
         },
         getBalance() {
           return mintController.getAmount(purse);

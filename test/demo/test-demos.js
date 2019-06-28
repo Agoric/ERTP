@@ -1,5 +1,5 @@
 import { test } from 'tape-promise/tape';
-import { loadBasedir, buildVatController } from '@agoric/swingset-vat';
+import { buildVatController, loadBasedir } from '@agoric/swingset-vat';
 
 async function main(withSES, basedir, argv) {
   const config = await loadBasedir(basedir);
@@ -166,7 +166,7 @@ test('run contractHost Demo --covered-call-sale with SES', async t => {
   t.end();
 });
 
-test('run contractHost Demo --covered-call-sale without SES', async t => {
+test.only('run contractHost Demo --covered-call-sale without SES', async t => {
   const dump = await main(false, 'demo/contractHost', ['covered-call-sale']);
   t.deepEquals(dump.log, contractCoveredCallSaleGolden);
   t.end();
