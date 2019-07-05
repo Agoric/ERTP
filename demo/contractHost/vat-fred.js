@@ -19,69 +19,36 @@ function makeFredMaker(E, host, log) {
       myFinPurseP,
     ) {
       const inviteIssuerP = E(host).getInviteIssuer();
-      const inviteIssuerLabel = E(host).getInviteIssuerLabel();
+      const dough10 = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
+      const wonka7 = E(E(myStockPurseP).getIssuer()).makeAmount(7);
+      const fin55 = E(E(myFinPurseP).getIssuer()).makeAmount(55);
+
       const fred = harden({
         acceptOptionOffer(allegedSaleInvitePaymentP) {
           log('++ fred.acceptOptionOffer starting');
 
-          const dough10 = harden({
-            label: E(myMoneyPurseP).getIssuerLabel(),
-            quantity: 10,
-          });
-          const wonka7 = harden({
-            label: E(myStockPurseP).getIssuerLabel(),
-            quantity: 7,
-          });
-          const fin55 = harden({
-            label: E(myFinPurseP).getIssuerLabel(),
-            quantity: 55,
-          });
-
-          const allegedSaleAmountP = E(allegedSaleInvitePaymentP).getBalance();
-
-          const verifiedSaleInvitePaymentP = E.resolve(allegedSaleAmountP).then(
-            allegedSaleInviteAmount => {
-              const allegedOptionsInviteAmount =
-                allegedSaleInviteAmount.quantity.terms.right;
-
-              const optionsInviteAmount = harden({
-                label: inviteIssuerLabel,
-                quantity: {
-                  installation: coveredCallInstallationP,
-                  terms: [
-                    escrowExchangeInstallationP,
-                    dough10,
-                    wonka7,
-                    timerP,
-                    'singularity',
-                  ],
-                  seatIdentity:
-                    allegedOptionsInviteAmount.quantity.seatIdentity,
-                  seatDesc: 'holder',
-                },
-              });
-
-              const saleInviteAmountP = allComparable(
-                harden({
-                  label: inviteIssuerLabel,
-                  quantity: {
-                    installation: escrowExchangeInstallationP,
-                    terms: { left: fin55, right: optionsInviteAmount },
-                    seatIdentity: allegedSaleInviteAmount.quantity.seatIdentity,
-                    seatDesc: 'left',
-                  },
-                }),
+          const coveredCallTermsP = [dough10, wonka7, timerP, 'singularity'];
+          const verifiedSaleInvitePaymentP = E(allegedSaleInvitePaymentP)
+            .getBalance()
+            .then(balance => {
+              return E.resolve(fin55).then(f55 =>
+                E(escrowExchangeInstallationP)
+                  .checkPartialAmount(balance, f55)
+                  .then(coveredCallAmount =>
+                    E.resolve(Promise.all(coveredCallTermsP)).then(terms => {
+                      return E(coveredCallInstallationP)
+                        .checkAmount(coveredCallAmount, terms)
+                        .then(() => {
+                          return E(inviteIssuerP).getExclusive(
+                            balance,
+                            allegedSaleInvitePaymentP,
+                            'verified sale invite',
+                          );
+                        });
+                    }),
+                  ),
               );
-
-              return E.resolve(saleInviteAmountP).then(saleInviteAmount => {
-                return E(inviteIssuerP).getExclusive(
-                  saleInviteAmount,
-                  allegedSaleInvitePaymentP,
-                  'verified sale invite',
-                );
-              });
-            },
-          );
+            });
 
           const saleSeatP = E(host).redeem(verifiedSaleInvitePaymentP);
           const finPaymentP = E(myFinPurseP).withdraw(55);

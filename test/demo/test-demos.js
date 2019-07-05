@@ -1,5 +1,5 @@
 import { test } from 'tape-promise/tape';
-import { buildVatController, loadBasedir } from '@agoric/swingset-vat';
+import { loadBasedir, buildVatController } from '@agoric/swingset-vat';
 
 async function main(withSES, basedir, argv) {
   const config = await loadBasedir(basedir);
@@ -38,7 +38,7 @@ test('run contractHost Demo --mint without SES', async t => {
 const contractTrivialGolden = [
   '=> setup called',
   'starting trivialContractTest',
-  "Does source function trivContract(terms, inviteMaker) {\n      return inviteMaker.make('foo', 8);\n    } match? true",
+  "Does source ((() =>\n      harden({\n        start(terms, inviteMaker) {\n          return inviteMaker.make('foo', 8);\n        },\n      }))()) match? true",
   'foo balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":"foo terms","seatIdentity":{},"seatDesc":"foo"}}',
   '++ eightP resolved to 8 (should be 8)',
   '++ DONE',
@@ -166,7 +166,7 @@ test('run contractHost Demo --covered-call-sale with SES', async t => {
   t.end();
 });
 
-test.only('run contractHost Demo --covered-call-sale without SES', async t => {
+test('run contractHost Demo --covered-call-sale without SES', async t => {
   const dump = await main(false, 'demo/contractHost', ['covered-call-sale']);
   t.deepEquals(dump.log, contractCoveredCallSaleGolden);
   t.end();
