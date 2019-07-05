@@ -6,7 +6,11 @@ import harden from '@agoric/harden';
 import { makePrivateName } from '../util/PrivateName';
 import { allSettled } from '../util/allSettled';
 import { insist } from '../util/insist';
-import { allComparable, mustBeSameStructure } from '../util/sameStructure';
+import {
+  allComparable,
+  mustBeSameStructure,
+  sameStructure,
+} from '../util/sameStructure';
 import { makeUniAssayMaker } from './assays';
 import { makeMint } from './issuers';
 import { makeBasicMintController } from './mintController';
@@ -52,13 +56,6 @@ No invites left`;
     getInviteIssuer() {
       return inviteIssuer;
     },
-    getInviteIssuerLabel() {
-      return harden({
-        issuer: inviteIssuer,
-        description: 'contract host',
-      });
-    },
-
     // The `contractSrc` is code for a contract function parameterized
     // by `terms` and `inviteMaker`. `spawn` evaluates this code,
     // calls that function to start the contract, and returns whatever
@@ -74,17 +71,18 @@ No invites left`;
     // the installation in descriptions rather than the source code
     // itself.
     install(contractSrc) {
+      contractSrc = `${contractSrc}`;
+      const contract = evaluate(contractSrc, {
+        Nat,
+        harden,
+        console,
+        E,
+        makePromise,
+        sameStructure,
+      });
+
       const installation = harden({
         spawn(termsP) {
-          contractSrc = `${contractSrc}`;
-          const contract = evaluate(contractSrc, {
-            Nat,
-            harden,
-            console,
-            E,
-            makePromise,
-          });
-
           return E.resolve(allComparable(termsP)).then(terms => {
             const inviteMaker = harden({
               // Used by the contract to make invites for credibly
@@ -120,8 +118,18 @@ No invites left`;
               },
               redeem,
             });
-            return contract(terms, inviteMaker);
+            return contract.start(terms, inviteMaker);
           });
+        },
+        // Make it simple for the holder of an amount to verify the terms. This
+        // function will return true on success and will throw on mismatches.
+        checkAmount(allegedAmount, terms) {
+          return contract.checkAmount(allegedAmount, terms);
+        },
+        // Make it simple to verify an amount. This function will verify some of
+        // the terms, and return the unverified portion.
+        checkPartialAmount(allegedAmount, terms) {
+          return contract.checkPartialAmount(allegedAmount, terms);
         },
       });
       installationSources.init(installation, contractSrc);
