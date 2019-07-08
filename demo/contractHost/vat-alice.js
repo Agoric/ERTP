@@ -82,7 +82,9 @@ function makeAliceMaker(E, host, log) {
 
           const verifiedInvitePaymentP = E.resolve(allegedInviteAmountP).then(
             allegedInviteAmount => {
-              const smackers10P = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
+              const smackers10P = E(E(myMoneyPurseP).getIssuer()).makeAmount(
+                10,
+              );
               const yoyodyne7P = E(E(myStockPurseP).getIssuer()).makeAmount(7);
               const coveredCallTermsP = [
                 smackers10P,
