@@ -19,19 +19,19 @@ function makeFredMaker(E, host, log) {
       myFinPurseP,
     ) {
       const inviteIssuerP = E(host).getInviteIssuer();
-      const dough10 = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
-      const wonka7 = E(E(myStockPurseP).getIssuer()).makeAmount(7);
-      const fin55 = E(E(myFinPurseP).getIssuer()).makeAmount(55);
+      const dough10P = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
+      const wonka7P = E(E(myStockPurseP).getIssuer()).makeAmount(7);
+      const fin55P = E(E(myFinPurseP).getIssuer()).makeAmount(55);
 
       const fred = harden({
         acceptOptionOffer(allegedSaleInvitePaymentP) {
           log('++ fred.acceptOptionOffer starting');
 
-          const coveredCallTermsP = [dough10, wonka7, timerP, 'singularity'];
+          const coveredCallTermsP = [dough10P, wonka7P, timerP, 'singularity'];
           const verifiedSaleInvitePaymentP = E(allegedSaleInvitePaymentP)
             .getBalance()
             .then(balance => {
-              return E.resolve(fin55).then(f55 =>
+              return E.resolve(fin55P).then(f55 =>
                 E(escrowExchangeInstallationP)
                   .checkPartialAmount(balance, f55)
                   .then(coveredCallAmount =>
@@ -64,7 +64,7 @@ function makeFredMaker(E, host, log) {
             // Fred bought the option. Now fred tries to exercise the option.
             const optionInvitePaymentP = E(optionInvitePurseP).withdrawAll();
             const optionSeatP = E(host).redeem(optionInvitePaymentP);
-            return E.resolve(allComparable(dough10)).then(d10 => {
+            return E.resolve(allComparable(dough10P)).then(d10 => {
               const doughPaymentP = E(myMoneyPurseP).withdraw(d10);
               E(optionSeatP).offer(doughPaymentP);
               return collect(
