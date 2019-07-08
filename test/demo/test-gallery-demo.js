@@ -64,7 +64,7 @@ const expectedAliceSendsOnlyUseRightLog = [
   'starting testAliceSendsOnlyUseRight',
   '++ alice.doOnlySendUseRight starting',
   'tapped Faucet',
-  'pixel x:1, y:4 has original color #a90490',
+  'pixel x:1, y:4 has original color #a903be',
   '++ bob.receiveUseRight starting',
   "pixel x:1, y:4 changed to bob's color #B695C0",
   "pixel x:1, y:4 changed to alice's color #9FBF95",
@@ -127,5 +127,29 @@ test('run gallery demo aliceSellsAndBuys with SES', async t => {
 test('run gallery demo aliceSellsAndBuys without SES', async t => {
   const dump = await main(false, 'demo/gallery', ['aliceSellsAndBuys']);
   t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
+  t.end();
+});
+
+const expectedAliceSellsToBobLog = [
+  '=> setup called',
+  'starting aliceSellsToBob',
+  'starting testAliceSellsToBob',
+  '++ alice.doTapFaucetAndOfferViaCorkboard starting',
+  'Alice collected 37 dust',
+  'alice escrow wins: {"label":{"issuer":{},"description":"dust"},"quantity":37} refs: null',
+  'bob option wins: {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]} refs: null',
+  '++ aliceSellsToBob done',
+  'bob tried to color, and produced #B695C0',
+];
+
+test('run gallery demo aliceSellsToBob with SES', async t => {
+  const dump = await main(true, 'demo/gallery', ['aliceSellsToBob']);
+  t.deepEquals(dump.log, expectedAliceSellsToBobLog);
+  t.end();
+});
+
+test('run gallery demo aliceSellsToBob without SES', async t => {
+  const dump = await main(false, 'demo/gallery', ['aliceSellsToBob']);
+  t.deepEquals(dump.log, expectedAliceSellsToBobLog);
   t.end();
 });
