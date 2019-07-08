@@ -38,12 +38,12 @@ function makeAliceMaker(E, host, log) {
         acceptInvite(allegedInvitePaymentP) {
           log('++ alice.acceptInvite starting');
           showPaymentBalance('alice invite', allegedInvitePaymentP);
-          const clams10 = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
-          const fudco7 = E(E(myStockPurseP).getIssuer()).makeAmount(7);
+          const clams10P = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
+          const fudco7P = E(E(myStockPurseP).getIssuer()).makeAmount(7);
           const verifiedInviteP = E(allegedInvitePaymentP)
             .getBalance()
             .then(allegedInviteAmount => {
-              return E.resolve(Promise.all([clams10, fudco7])).then(terms => {
+              return E.resolve(Promise.all([clams10P, fudco7P])).then(terms => {
                 const [left, right] = terms;
                 return E(escrowExchangeInstallationP)
                   .checkAmount(allegedInviteAmount, { left, right })
@@ -82,15 +82,15 @@ function makeAliceMaker(E, host, log) {
 
           const verifiedInvitePaymentP = E.resolve(allegedInviteAmountP).then(
             allegedInviteAmount => {
-              const smackers10 = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
-              const yoyodyne7 = E(E(myStockPurseP).getIssuer()).makeAmount(7);
-              const coveredCallTerms = [
-                smackers10,
-                yoyodyne7,
+              const smackers10P = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
+              const yoyodyne7P = E(E(myStockPurseP).getIssuer()).makeAmount(7);
+              const coveredCallTermsP = [
+                smackers10P,
+                yoyodyne7P,
                 timerP,
                 'singularity',
               ];
-              return E.resolve(Promise.all(coveredCallTerms)).then(terms => {
+              return E.resolve(Promise.all(coveredCallTermsP)).then(terms => {
                 return E(coveredCallInstallationP)
                   .checkAmount(allegedInviteAmount, terms)
                   .then(_ => {
