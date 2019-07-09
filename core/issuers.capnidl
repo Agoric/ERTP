@@ -1,0 +1,99 @@
+/**
+ * Creator and validator of resource Amounts.
+ *
+ * This module treats labels as black boxes. It is not aware of issuers, and so
+ * can handle labels whose issuers are merely presences of remote issuers.
+ * 
+ * Assays distinguish between Quantities and Amounts.  An Amount is a
+ * pass-by-copy description of some set of erights. An amount has a label and a
+ * Quantity. All Amounts made by the same Assay have the same label but differ
+ * in Quantity.
+ * 
+ * Quantities are descriptions of specific rights, while Amounts are wrappers
+ * on those Quantities that have been validated by the Assay, and can be
+ * verified as having been issued by the Assay. Quantities include natural
+ * numbers representing how much of a fungible good is owned, names for
+ * non-fungible goods, and bound and reach descriptions for real estate.
+ * 
+ * An assay is pass-by-presence, but is not designed to be usefully passed.
+ * Rather, we expect each vat that needs to operate on amounts will have its own
+ * local assay to do so.
+ */
+interface Assay {
+
+  /** Human readable name for the resource. */
+  getLabel() -> (Label);
+
+  /** Make a new verified Amount containing the allegedQuantity. */
+  make(allegedQuantity:Quantity) -> (Amount);
+
+  /** Verify that an Amount was issued by this Assay. */
+  vouch(amount:Amount) -> (Amount);
+
+  /**
+  * Is this like an Amount object made by this Assay, such as one
+  * received by pass-by-copy from an otherwise-identical remote
+  * Amount? On success, return an Amount object made by this
+  * Assay. Otherwise error.
+  * 
+  * Until we have good support for pass-by-construction, the full
+  * assay style is too awkward to use remotely. See
+  * mintTestAssay. So coerce also accepts a bare number which it
+  * will coerce to a labeled number via assay.make.
+  */
+  coerce(allegedAmount:Amount) -> (Amount);
+
+  /** Return the Quanitity contained in the Amount parameter. */
+  quantity(amount:Amount) -> (Quantity);
+
+  /** Return an empty amount. */
+  empty() -> (Amount);
+
+  /** Return true if the Amount is empty. Otherwise false. */
+  isEmpty(amount:Amount) -> (boolean);
+
+  /** Returns true if the leftAmount contains the rightAmount. */
+  includes(leftAmount:Amount, rightAmount:Amount) -> (boolean);
+
+  /** Returns a new amount that includes both leftAmount and rightAmount. */
+  with(leftAmount:Amount, rightAmount:Amount) -> (Amount);
+
+  /**
+   * Returns a new amount that includes the portion of leftAmount not included
+   * in rightAmount.
+   */
+  without(leftAmount:Amount, rightAmount:Amount) -> (Amount);
+};
+
+interface Issuer {
+  getLabel() -> (Object);
+  getAssay() -> (Assay);
+  makeEmptyPurse(name:String) -> (Purse);
+  getExclusive(amount:Amount, src:Purse, name:String) -> (Payment);
+  getExclusiveAll(src:Purse, name:String) -> (Payment);
+  burn(amount:Amount, src:Payment);
+  burnAll(src:Payment);
+}
+
+interface Mint {
+  getIssuer() -> (Issuer);
+  mint(initialBalance:Amount, name:String) -> (Purse);
+  destroyAll();
+  destroy(amount:Amount);
+  revoke(amount:Amount) -> Purse;
+}
+
+interface Payment {
+  getIssuer() ::Issuer;
+  getXferBalance() ::Amount;
+}
+
+interface Purse extends (Payment) {
+  getIssuer() ::Issuer;
+  getXferBalance() ::Amount;
+  getUseBalance() ::Amount;
+  deposit(amount ?Amount, srcPaymentP ?reveal[Promise]) ::Amount;
+  withdraw(amount ?Amount, name ?String) ::Purse;
+}
+
+

@@ -1,0 +1,68 @@
+/**
+ * ContractHost provides a way to install and run verifiable contracts.
+ *
+ * Install(source) creates Installations. Installations represent particular
+ * contract forms, which can be spawn()'d to create Contract instances
+ * initialized with specific terms. These Contracts manage invitations for
+ * multiple seats, each of which repesents a role in an transaction. After a
+ * role has carried out its responsibilities, it may collect (q.v.) winnings and
+ * refunds into appropriate purses.
+ */
+interface ContractHost {
+  /**
+   * ContractSrc is the source code for a Contract. See Contract for details.
+   */
+  install(contractSrc:Text) -> (Installation);
+
+  /** Returns the actual source of the Installation. */
+  getInstallationSourceCode(installation:Installation) -> (Text);
+
+  /**
+   * Seat invitations are packaged as payments from the Invite Issuer. Redeeming
+   * an invite returns a role object with an arbitrary interface at the
+   * discretion of the contract which supports interaction according to the terms.
+   */
+  redeem(invite:Payment) -> (Object); // can we say more about the returned value?
+
+  /** The issuer allows holders of seat invites to get exclusive access to a Seat. */
+  getInviteIssuer() -> (Issuer);
+};
+
+/**
+  * An installation of a Contract can spawn multiple copies each with the same
+  * or different terms. Each spawned instance has distinct invites and distinct
+  * seats representing a specific group of players interacting according to the
+  * same prescribed roles.
+  *
+  * spawn() creates a new InviteMaker, and calls the Contract's start() method
+  * returning its results (expected to be a collection of seat invites for the
+  * roles in the contract).
+  *
+  * The Installation can also have functions with names starting `check`, as
+  * defined by the contract. These functions are intended to assist the various
+  * roles in the contract in validating that the terms they're expecting are
+  * actually the same as the terms of this spawned contract.
+  */
+interface Installation {
+  spawn(terms:Terms) -> (invites:Object); // usually a collection of seat Invites
+};
+
+/**
+
+  * Contracts are pass-by-text.
+  * 
+  * The ContractHost wants to be called on an object with a start() method. In
+  * order to be able to verify to those relying on the contract that it implements the source code that they expect, it needs to have the source code. Javascript gives access to the source when you have a pointer to  function, but not when you only
+  The most straightforward 
+
+expects install() to be called on an object holding names associated with function source
+ */
+interface Contract {
+  start(terms, inviteMaker:InviteMaker) -> (Object);
+  
+  checkAmount(inviteAmount, terms);
+}
+
+interface InviteMaker {
+  make(seat:Object, seat:Object, name:String) -> (Purse);
+}
