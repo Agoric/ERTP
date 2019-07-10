@@ -94,17 +94,17 @@ const escrowExchange = {
 
   checkAmount: (amount, payment) => {
     const termsFromAmount = amount.quantity.terms;
-    if (!sameStructure(termsFromAmount, payment)) {
+    if (!sameStructure(payment, termsFromAmount)) {
       throw new Error(`Wrong amount: ${payment}, expected ${termsFromAmount}`);
     }
-    if (termsFromAmount.left.quantity !== payment.left.quantity) {
+    if (payment.left.quantity !== termsFromAmount.left.quantity) {
       throw new Error(
         `Wrong left quantity: ${payment.left.quantity}, expected ${
           termsFromAmount.left.quantity
         }`,
       );
     }
-    if (termsFromAmount.right.quantity !== payment.right.quantity) {
+    if (payment.right.quantity !== termsFromAmount.right.quantity) {
       throw new Error(
         `Wrong right quantity: ${payment.right.quantity}, expected ${
           termsFromAmount.right.quantity
@@ -114,12 +114,12 @@ const escrowExchange = {
     return true;
   },
 
-  // Check the left or right side, and return the other. Useful when it's a
+  // Check the left or right side, and return the other. Useful when this is a
   // trade of goods for an invite, for example.
   checkPartialAmount: (amount, payment) => {
     const seat = amount.quantity.seatDesc;
     const terms = amount.quantity.terms[seat];
-    if (terms.quantity !== payment.quantity) {
+    if (payment.quantity !== terms.quantity) {
       throw new Error(
         `Wrong ${seat} quantity: ${payment.quantity}, expected ${
           terms.quantity
@@ -127,7 +127,7 @@ const escrowExchange = {
       );
     }
     if (!sameStructure(terms, payment)) {
-      throw new Error(`Wrong ${seat} amount: ${payment}, expected ${terms}`);
+      throw new Error(`Wrong ${seat} amount: ${terms}, expected ${payment}`);
     }
     if (seat === 'left') {
       return amount.quantity.terms.right;
