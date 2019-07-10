@@ -58,7 +58,7 @@ const coveredCall = {
       throw new Error(
         `Wrong money quantity: ${termsLeft.quantity}, expected ${
           leftAmountTerms.quantity
-          }`,
+        }`,
       );
     }
     if (!sameStructure(termsLeft, leftAmountTerms)) {
@@ -82,14 +82,14 @@ const coveredCall = {
       throw new Error(
         `Wrong right quantity: ${termsRight.quantity}, expected ${
           rightAmountTerms.quantity
-          }`,
+        }`,
       );
     }
     if (termsDeadline !== amount.quantity.terms[4]) {
       throw new Error(
         `Wrong deadline: ${termsDeadline}, expected ${
           amount.quantity.terms[4]
-          }`,
+        }`,
       );
     }
     if (termsTimer !== amount.quantity.terms[3]) {
