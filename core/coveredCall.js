@@ -52,37 +52,49 @@ const coveredCall = {
     return inviteMaker.make('writer', bobSeat);
   },
   checkAmount: (amount, terms) => {
-    const [m, s, t, d] = terms;
-    const leftTerms = amount.quantity.terms[1];
-    if (m.quantity !== leftTerms.quantity) {
+    const [termsLeft, termsRight, termsTimer, termsDeadline] = terms;
+    const leftAmountTerms = amount.quantity.terms[1];
+    if (termsLeft.quantity !== leftAmountTerms.quantity) {
       throw new Error(
-        `Wrong money quantity: ${m.quantity}, expected ${leftTerms.quantity}`,
+        `Wrong money quantity: ${termsLeft.quantity}, expected ${
+          leftAmountTerms.quantity
+          }`,
       );
     }
-    if (!sameStructure(leftTerms, m)) {
-      throw new Error(`left terms incorrect: ${leftTerms}, expected ${m}`);
-    }
-    if (leftTerms.label.issuer !== m.label.issuer) {
-      const iss = leftTerms.label.issuer;
+    if (!sameStructure(termsLeft, leftAmountTerms)) {
       throw new Error(
-        `Wrong money issuer: ${m.label.description}, expected ${iss}`,
+        `left terms incorrect: ${termsLeft}, expected ${leftAmountTerms}`,
       );
     }
-    const rightTerms = amount.quantity.terms[2];
-    if (!sameStructure(rightTerms, s)) {
-      throw new Error(`right terms incorrect: ${rightTerms}, expected ${s}`);
-    }
-    if (rightTerms.quantity !== s.quantity) {
-      throw new Error(`Wrong right amount: ${s}, expected ${leftTerms}`);
-    }
-    if (amount.quantity.terms[4] !== d) {
+    const iss = leftAmountTerms.label.issuer;
+    if (termsLeft.label.issuer !== iss) {
       throw new Error(
-        `Wrong deadline: ${amount.quantity.terms[4]}, expected ${d}`,
+        `Wrong money issuer: ${termsLeft.label.issuer}, expected ${iss}`,
       );
     }
-    if (amount.quantity.terms[3] !== t) {
+    const rightAmountTerms = amount.quantity.terms[2];
+    if (!sameStructure(termsRight, rightAmountTerms)) {
       throw new Error(
-        `Wrong timer: ${amount.quantity.terms[3]}, expected ${t}`,
+        `right terms incorrect: ${termsRight}, expected ${rightAmountTerms}`,
+      );
+    }
+    if (termsRight.quantity !== rightAmountTerms.quantity) {
+      throw new Error(
+        `Wrong right quantity: ${termsRight.quantity}, expected ${
+          rightAmountTerms.quantity
+          }`,
+      );
+    }
+    if (termsDeadline !== amount.quantity.terms[4]) {
+      throw new Error(
+        `Wrong deadline: ${termsDeadline}, expected ${
+          amount.quantity.terms[4]
+          }`,
+      );
+    }
+    if (termsTimer !== amount.quantity.terms[3]) {
+      throw new Error(
+        `Wrong timer: ${termsTimer}, expected ${amount.quantity.terms[3]}`,
       );
     }
     return true;
