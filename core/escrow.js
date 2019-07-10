@@ -101,14 +101,14 @@ const escrowExchange = {
       throw new Error(
         `Wrong left quantity: ${payment.left.quantity}, expected ${
           termsFromAmount.left.quantity
-          }`,
+        }`,
       );
     }
     if (termsFromAmount.right.quantity !== payment.right.quantity) {
       throw new Error(
         `Wrong right quantity: ${payment.right.quantity}, expected ${
           termsFromAmount.right.quantity
-          }`,
+        }`,
       );
     }
     return true;
@@ -123,7 +123,7 @@ const escrowExchange = {
       throw new Error(
         `Wrong ${seat} quantity: ${payment.quantity}, expected ${
           terms.quantity
-          }`,
+        }`,
       );
     }
     if (!sameStructure(terms, payment)) {
