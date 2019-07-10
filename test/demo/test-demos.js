@@ -1,5 +1,5 @@
 import { test } from 'tape-promise/tape';
-import { loadBasedir, buildVatController } from '@agoric/swingset-vat';
+import { buildVatController, loadBasedir } from '@agoric/swingset-vat';
 
 async function main(withSES, basedir, argv) {
   const config = await loadBasedir(basedir);
@@ -38,14 +38,14 @@ test('run contractHost Demo --mint without SES', async t => {
 const contractTrivialGolden = [
   '=> setup called',
   'starting trivialContractTest',
-  'Does contract source match? true',
+  'Does source {"start":"(terms, inviteM...\', 8);\\n      } "} match? true',
   'foo balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":"foo terms","seatIdentity":{},"seatDesc":"foo"}}',
   '++ eightP resolved to 8 (should be 8)',
   '++ DONE',
   'foo balance {"label":{"issuer":{},"description":"contract host"},"quantity":null}',
 ];
 
-test('run contractHost Demo --trivial with SES', async t => {
+test.only('run contractHost Demo --trivial with SES', async t => {
   const dump = await main(true, 'demo/contractHost', ['trivial']);
   t.deepEquals(dump.log, contractTrivialGolden);
   t.end();

@@ -85,20 +85,19 @@ function build(E, log) {
   function trivialContractTest(host) {
     log('starting trivialContractTest');
 
-    const trivContractThunk = () =>
-      harden({
-        start(terms, inviteMaker) {
-          return inviteMaker.make('foo', 8);
-        },
-      });
-    const contractSrc = `((${trivContractThunk})())`;
+    const trivContract = {
+      start: (terms, inviteMaker) => {
+        return inviteMaker.make('foo', 8);
+      },
+    };
+    const contractSrc = { start: `${trivContract.start} ` };
 
     const installationP = E(host).install(contractSrc);
 
     return E(host)
       .getInstallationSourceCode(installationP)
       .then(src => {
-        log('Does contract source match? ', src === contractSrc);
+        log('Does source ', src, ' match? ', src.start === contractSrc.start);
 
         const fooInviteP = E(installationP).spawn('foo terms');
 
