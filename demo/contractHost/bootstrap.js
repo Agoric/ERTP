@@ -2,8 +2,8 @@
 
 import harden from '@agoric/harden';
 
-import { escrowExchangeSrc } from '../../core/escrow';
-import { coveredCallSrc } from '../../core/coveredCall';
+import { escrowExchangeSrcs } from '../../core/escrow';
+import { coveredCallSrcs } from '../../core/coveredCall';
 
 function build(E, log) {
   // TODO BUG: All callers should wait until settled before doing
@@ -90,14 +90,14 @@ function build(E, log) {
         return inviteMaker.make('foo', 8);
       },
     };
-    const contractSrc = { start: `${trivContract.start} ` };
+    const contractSrcs = { start: `${trivContract.start} ` };
 
-    const installationP = E(host).install(contractSrc);
+    const installationP = E(host).install(contractSrcs);
 
     return E(host)
       .getInstallationSourceCode(installationP)
       .then(src => {
-        log('Does source ', src, ' match? ', src.start === contractSrc.start);
+        log('Does source ', src, ' match? ', src.start === contractSrcs.start);
 
         const fooInviteP = E(installationP).spawn('foo terms');
 
@@ -118,8 +118,8 @@ function build(E, log) {
   }
 
   function betterContractTestAliceFirst(host, mint, aliceMaker, bobMaker) {
-    const escrowExchangeInstallationP = E(host).install(escrowExchangeSrc);
-    const coveredCallInstallationP = E(host).install(coveredCallSrc);
+    const escrowExchangeInstallationP = E(host).install(escrowExchangeSrcs);
+    const coveredCallInstallationP = E(host).install(coveredCallSrcs);
 
     const moneyMintP = E(mint).makeMint('moola');
     const aliceMoneyPurseP = E(moneyMintP).mint(1000);
@@ -157,8 +157,8 @@ function build(E, log) {
   }
 
   function betterContractTestBobFirst(host, mint, aliceMaker, bobMaker) {
-    const escrowExchangeInstallationP = E(host).install(escrowExchangeSrc);
-    const coveredCallInstallationP = E(host).install(coveredCallSrc);
+    const escrowExchangeInstallationP = E(host).install(escrowExchangeSrcs);
+    const coveredCallInstallationP = E(host).install(coveredCallSrcs);
 
     const moneyMintP = E(mint).makeMint('clams');
     const aliceMoneyPurseP = E(moneyMintP).mint(1000, 'aliceMainMoney');
@@ -202,8 +202,8 @@ function build(E, log) {
   }
 
   function coveredCallTest(host, mint, aliceMaker, bobMaker) {
-    const escrowExchangeInstallationP = E(host).install(escrowExchangeSrc);
-    const coveredCallInstallationP = E(host).install(coveredCallSrc);
+    const escrowExchangeInstallationP = E(host).install(escrowExchangeSrcs);
+    const coveredCallInstallationP = E(host).install(coveredCallSrcs);
 
     const moneyMintP = E(mint).makeMint('smackers');
     const aliceMoneyPurseP = E(moneyMintP).mint(1000, 'aliceMainMoney');
@@ -247,8 +247,8 @@ function build(E, log) {
   }
 
   function coveredCallSaleTest(host, mint, aliceMaker, bobMaker, fredMaker) {
-    const escrowExchangeInstallationP = E(host).install(escrowExchangeSrc);
-    const coveredCallInstallationP = E(host).install(coveredCallSrc);
+    const escrowExchangeInstallationP = E(host).install(escrowExchangeSrcs);
+    const coveredCallInstallationP = E(host).install(coveredCallSrcs);
 
     const doughMintP = E(mint).makeMint('dough');
     const aliceDoughPurseP = E(doughMintP).mint(1000, 'aliceDough');

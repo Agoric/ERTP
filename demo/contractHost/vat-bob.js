@@ -76,13 +76,13 @@ function makeBobMaker(E, host, log) {
 
         offerAliceOption(alice) {
           log('++ bob.offerAliceOption starting');
-          const terms = harden([
-            escrowExchangeInstallationP,
-            moneyNeededP,
-            stockNeededP,
-            timerP,
-            'singularity',
-          ]);
+          const terms = harden({
+            escrowExchangeInstallation: escrowExchangeInstallationP,
+            money: moneyNeededP,
+            stock: stockNeededP,
+            timer: timerP,
+            deadline: 'singularity',
+          });
           const bobInviteP = E(coveredCallInstallationP).spawn(terms);
           const bobSeatP = E(host).redeem(bobInviteP);
           const stockPaymentP = E(myStockPurseP).withdraw(7);

@@ -3,6 +3,7 @@
 
 import harden from '@agoric/harden';
 import { makeCollect } from '../../core/contractHost';
+import { allComparable } from '../../util/sameStructure';
 
 function makeAliceMaker(E, host, log) {
   const collect = makeCollect(E, log);
@@ -46,13 +47,17 @@ function makeAliceMaker(E, host, log) {
               return E.resolve(Promise.all([clams10P, fudco7P])).then(terms => {
                 const [left, right] = terms;
                 return E(escrowExchangeInstallationP)
-                  .checkAmount(allegedInviteAmount, { left, right })
-                  .then(() => {
-                    return E(inviteIssuerP).getExclusive(
-                      allegedInviteAmount,
-                      allegedInvitePaymentP,
-                      'verified invite',
-                    );
+                  .checkInstallation(allegedInviteAmount.quantity.installation)
+                  .then(validEscrowInstallationP => {
+                    return E(validEscrowInstallationP)
+                      .checkAmount(allegedInviteAmount, { left, right })
+                      .then(() => {
+                        return E(inviteIssuerP).getExclusive(
+                          allegedInviteAmount,
+                          allegedInvitePaymentP,
+                          'verified invite',
+                        );
+                      });
                   });
               });
             });
@@ -86,13 +91,13 @@ function makeAliceMaker(E, host, log) {
                 10,
               );
               const yoyodyne7P = E(E(myStockPurseP).getIssuer()).makeAmount(7);
-              const coveredCallTermsP = [
+              const coveredCallTermsP = harden([
                 smackers10P,
                 yoyodyne7P,
                 timerP,
                 'singularity',
-              ];
-              return E.resolve(Promise.all(coveredCallTermsP)).then(terms => {
+              ]);
+              return E.resolve(allComparable(coveredCallTermsP)).then(terms => {
                 return E(coveredCallInstallationP)
                   .checkAmount(allegedInviteAmount, terms)
                   .then(_ => {

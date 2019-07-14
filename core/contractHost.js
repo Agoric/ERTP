@@ -52,10 +52,10 @@ No invites left`;
     ).then(_ => seats.get(seatIdentity));
   }
 
-  function evaluateStringToFn(contractSrcString) {
-    insist(typeof contractSrcString === 'string')`\n
-"${contractSrcString}" must be a string, but was ${typeof contractSrcString}`;
-    const fn = evaluate(contractSrcString, {
+  function evaluateStringToFn(functionSrcString) {
+    insist(typeof functionSrcString === 'string')`\n
+"${functionSrcString}" must be a string, but was ${typeof functionSrcString}`;
+    const fn = evaluate(functionSrcString, {
       Nat,
       harden,
       console,
@@ -64,9 +64,10 @@ No invites left`;
       // TODO: sameStructure is used in one check...() function. Figure out a
       // more general approach to providing useful helpers.
       sameStructure,
+      mustBeSameStructure,
     });
     insist(typeof fn === 'function')`\n
-"${contractSrcString}" must be a string for a function, but produced ${typeof contractSrcString}`;
+"${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;
     return fn;
   }
 
@@ -84,28 +85,40 @@ No invites left`;
     return installation;
   }
 
+  function makeCheckInstallation(installation) {
+    return alleged => {
+      if (sameStructure(alleged, installation)) {
+        return installation;
+      }
+      return false;
+    };
+  }
+
   /** The contract host is designed to have a long-lived credible identity. */
   const contractHost = harden({
     getInviteIssuer() {
       return inviteIssuer;
     },
     // contractSrcs is a record containing source code for the functions
-    // comprising a contract parameterized by `terms` and `inviteMaker`. `spawn`
-    // evaluates the `start` function to start the contract, and returns
-    // whatever the contract returns. The contract can also have any number of
-    // functions with names beginning 'check', each of which can be used by
-    // clients to help validate that they have terms that match the contract.
+    // comprising a contract. `spawn` evaluates the `start` function
+    // (parameterized by `terms` and `inviteMaker`) to start the contract, and
+    // returns whatever the contract returns. The contract can also have any
+    // number of functions with names beginning 'check', each of which can be
+    // used by clients to help validate that they have terms that match the
+    // contract.
     install(contractSrcs) {
       const installation = extractCheckFunctions(contractSrcs);
       const startFn = evaluateStringToFn(contractSrcs.start);
 
       // TODO: The `spawn` method should spin off a new vat for each new
       // contract instance.  In the current single-vat implementation we
-      // evaluate the contract's functions during install rather than spawn.
-      // Once we spin off a new vat per spawn, we'll need to evaluate per-spawn.
-      // Even though we do not save on evaluations, this currying enables us to
-      // avoid (for now) re-sending the contract source code, and it enables us
-      // to use the installation in descriptions rather than the source code itself.
+      // evaluate the contract's start function during install rather than
+      // spawn. Once we spin off a new vat per spawn, we'll need to evaluate it
+      // per-spawn. Even though we do not save on evaluations, this currying
+      // enables us to avoid (for now) re-sending the contract source code, and
+      // it enables us to use the installation in descriptions rather than the
+      // source code itself. The check... methods must be evaluated on install,
+      // since they become properties of the installation.
       function spawn(termsP) {
         return E.resolve(allComparable(termsP)).then(terms => {
           const inviteMaker = harden({
@@ -132,11 +145,7 @@ No invites left`;
               // make an invite purse whose quantity describes this
               // seat. This invite purse makes the invite payment,
               // and then the invite purse is dropped, in the sense
-              // that it becomes inaccessible. But it is not yet
-              // collectable. Until the returned invite payment is
-              // deposited, it will retain the invite purse, as the
-              // invite purse contains the (uselss in this case)
-              // usage rights.
+              // that it becomes inaccessible.
               const invitePurse = inviteMint.mint(inviteAmount, name);
               return invitePurse.withdrawAll(name);
             },
@@ -147,6 +156,7 @@ No invites left`;
       }
 
       installation.spawn = spawn;
+      installation.checkInstallation = makeCheckInstallation(installation);
       harden(installation);
       installationSources.init(installation, contractSrcs);
       return installation;

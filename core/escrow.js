@@ -2,14 +2,14 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { sameStructure } from '../util/sameStructure';
+import { mustBeSameStructure, sameStructure } from '../util/sameStructure';
 
 // For clarity, the code below internally speaks of a scenario is which Alice is
 // trading some of her money for some of Bob's stock. However, for generality,
 // the API does not expose names like "alice", "bob", "money", or "stock".
-// Rather, Alice and Bob are left and right respectively. Money are the rights
-// transferred from left to right, and Stock is the rights transferred from
-// right to left.
+// Rather, Alice and Bob are left and right respectively. Money represents the
+// rights transferred from left to right, and Stock represents the rights
+// transferred from right to left.
 const escrowExchange = {
   start: (terms, inviteMaker) => {
     const { left: moneyNeeded, right: stockNeeded } = terms;
@@ -92,54 +92,33 @@ const escrowExchange = {
     });
   },
 
-  checkAmount: (amount, payment) => {
-    const termsFromAmount = amount.quantity.terms;
-    if (!sameStructure(payment, termsFromAmount)) {
-      throw new Error(`Wrong amount: ${payment}, expected ${termsFromAmount}`);
-    }
-    if (payment.left.quantity !== termsFromAmount.left.quantity) {
-      throw new Error(
-        `Wrong left quantity: ${payment.left.quantity}, expected ${
-          termsFromAmount.left.quantity
-        }`,
-      );
-    }
-    if (payment.right.quantity !== termsFromAmount.right.quantity) {
-      throw new Error(
-        `Wrong right quantity: ${payment.right.quantity}, expected ${
-          termsFromAmount.right.quantity
-        }`,
-      );
-    }
+  checkAmount: (allegedInviteAmount, expectedTerms) => {
+    const allegedTerms = allegedInviteAmount.quantity.terms;
+    mustBeSameStructure(allegedTerms, expectedTerms, 'Escrow checkAmount');
     return true;
   },
 
   // Check the left or right side, and return the other. Useful when this is a
   // trade of goods for an invite, for example.
-  checkPartialAmount: (amount, payment) => {
-    const seat = amount.quantity.seatDesc;
-    const terms = amount.quantity.terms[seat];
-    if (payment.quantity !== terms.quantity) {
-      throw new Error(
-        `Wrong ${seat} quantity: ${payment.quantity}, expected ${
-          terms.quantity
-        }`,
-      );
-    }
-    if (!sameStructure(terms, payment)) {
-      throw new Error(`Wrong ${seat} amount: ${terms}, expected ${payment}`);
-    }
+  checkPartialAmount: (allegedInvite, expectedTerms, seat) => {
+    const allegedSeat = allegedInvite.quantity.terms;
+    mustBeSameStructure(
+      allegedSeat,
+      expectedTerms,
+      'Escrow checkPartialAmount',
+    );
+    mustBeSameStructure(allegedInvite.quantity.seatDesc, seat);
     if (seat === 'left') {
-      return amount.quantity.terms.right;
+      return allegedInvite.quantity.terms.right;
     }
-    return amount.quantity.terms.left;
+    return allegedInvite.quantity.terms.left;
   },
 };
 
-const escrowExchangeSrc = {
+const escrowExchangeSrcs = {
   start: `${escrowExchange.start}`,
   checkAmount: `${escrowExchange.checkAmount}`,
   checkPartialAmount: `${escrowExchange.checkPartialAmount}`,
 };
 
-export { escrowExchangeSrc };
+export { escrowExchangeSrcs };
