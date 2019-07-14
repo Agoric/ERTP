@@ -30,24 +30,29 @@ function makeFredMaker(E, host, log) {
           const coveredCallTermsP = [dough10P, wonka7P, timerP, 'singularity'];
           const verifiedSaleInvitePaymentP = E(allegedSaleInvitePaymentP)
             .getBalance()
-            .then(balance => {
-              return E.resolve(fin55P).then(f55 =>
+            .then(allegedInviteAmount => {
+              return E.resolve(Promise.all(coveredCallTermsP)).then(
+                terms => {
                 E(escrowExchangeInstallationP)
-                  .checkPartialAmount(balance, f55)
-                  .then(coveredCallAmount =>
-                    E.resolve(Promise.all(coveredCallTermsP)).then(terms => {
-                      return E(coveredCallInstallationP)
-                        .checkAmount(coveredCallAmount, terms)
-                        .then(() => {
-                          return E(inviteIssuerP).getExclusive(
-                            balance,
-                            allegedSaleInvitePaymentP,
-                            'verified sale invite',
-                          );
-                        });
-                    }),
-                  ),
-              );
+                  .checkInstallation(allegedInviteAmount.quantity.installation)
+                  .then(validEscrowInstallationP => {
+                    return E(validEscrowInstallationP)
+                      .checkPartialAmount(allegedInviteAmount, terms, 'left')
+                      .then(coveredCallAmount => {
+                        return (
+                          E(coveredCallInstallationP)
+                            // TODO The  covered calls terms are different.
+                          .checkAmount(coveredCallAmount, terms)
+                          .then(() => {
+                            return E(inviteIssuerP).getExclusive(
+                              allegedInviteAmount,
+                              allegedSaleInvitePaymentP,
+                              'verified sale invite',
+                            );
+                          });
+                      });
+                  });
+              });
             });
 
           const saleSeatP = E(host).redeem(verifiedSaleInvitePaymentP);

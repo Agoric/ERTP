@@ -4,15 +4,25 @@
 import harden from '@agoric/harden';
 import { sameStructure } from '../util/sameStructure';
 
+/**
+ * The coveredCall is an asymmetric contract. One party will put some goods in
+ * escrow, and is transferring the right to buy them for a specified amount of
+ * some currency. start() specifies the terms, and returns the seat that has the
+ * ability to offer() the goods. The counterparty seat is returned from offer(),
+ * so the originator can offer it to a someone of their choice. To simplify
+ * terminology, the terms refer to 'stock' and 'money', though neither is
+ * limited, and the offerer and potential acceptor are 'bob' and 'alice'
+ * respectively.
+ */
 const coveredCall = {
   start: (terms, inviteMaker) => {
-    const [
-      escrowExchangeInstallationP,
-      moneyNeeded,
-      stockNeeded,
-      timerP,
+    const {
+      escrowExchangeInstallation: escrowExchangeInstallationP,
+      money: moneyNeeded,
+      stock: stockNeeded,
+      timer: timerP,
       deadline,
-    ] = terms;
+    } = terms;
 
     const pairP = E(escrowExchangeInstallationP).spawn(
       harden({ left: moneyNeeded, right: stockNeeded }),
@@ -51,59 +61,63 @@ const coveredCall = {
 
     return inviteMaker.make('writer', bobSeat);
   },
-  checkAmount: (amount, terms) => {
-    const [termsLeft, termsRight, termsTimer, termsDeadline] = terms;
-    const leftAmountTerms = amount.quantity.terms[1];
-    if (termsLeft.quantity !== leftAmountTerms.quantity) {
+  checkAmount: (allegedInviteAmount, expectedTerms) => {
+    const [termsMoney, termsStock, termsTimer, termsDeadline] = expectedTerms;
+    const allegedInviteMoney = allegedInviteAmount.quantity.terms.money;
+    if (allegedInviteMoney.quantity !== termsMoney.quantity) {
       throw new Error(
-        `Wrong money quantity: ${termsLeft.quantity}, expected ${
-          leftAmountTerms.quantity
+        `Wrong money quantity: ${allegedInviteMoney.quantity}, expected ${
+          termsMoney.quantity
         }`,
       );
     }
-    if (!sameStructure(termsLeft, leftAmountTerms)) {
+    if (!sameStructure(allegedInviteMoney, termsMoney)) {
       throw new Error(
-        `left terms incorrect: ${termsLeft}, expected ${leftAmountTerms}`,
+        `money terms incorrect: ${allegedInviteMoney}, expected ${termsMoney}`,
       );
     }
-    const iss = leftAmountTerms.label.issuer;
-    if (termsLeft.label.issuer !== iss) {
+    const allegedIssuer = allegedInviteMoney.label.issuer;
+    if (allegedIssuer !== termsMoney.label.issuer) {
       throw new Error(
-        `Wrong money issuer: ${termsLeft.label.issuer}, expected ${iss}`,
-      );
-    }
-    const rightAmountTerms = amount.quantity.terms[2];
-    if (!sameStructure(termsRight, rightAmountTerms)) {
-      throw new Error(
-        `right terms incorrect: ${termsRight}, expected ${rightAmountTerms}`,
-      );
-    }
-    if (termsRight.quantity !== rightAmountTerms.quantity) {
-      throw new Error(
-        `Wrong right quantity: ${termsRight.quantity}, expected ${
-          rightAmountTerms.quantity
+        `Wrong money issuer: ${allegedIssuer}, expected ${
+          termsMoney.label.issuer
         }`,
       );
     }
-    if (termsDeadline !== amount.quantity.terms[4]) {
+    const allegedInviteStock = allegedInviteAmount.quantity.terms.stock;
+    if (!sameStructure(allegedInviteStock, termsStock)) {
       throw new Error(
-        `Wrong deadline: ${termsDeadline}, expected ${
-          amount.quantity.terms[4]
+        `right terms incorrect: ${allegedInviteStock}, expected ${termsStock}`,
+      );
+    }
+    if (allegedInviteStock.quantity !== termsStock.quantity) {
+      throw new Error(
+        `Wrong stock quantity: ${allegedInviteStock.quantity}, expected ${
+          termsStock.quantity
         }`,
       );
     }
-    if (termsTimer !== amount.quantity.terms[3]) {
+    if (allegedInviteAmount.quantity.terms.deadline !== termsDeadline) {
       throw new Error(
-        `Wrong timer: ${termsTimer}, expected ${amount.quantity.terms[3]}`,
+        `Wrong deadline: ${
+          allegedInviteAmount.quantity.terms.deadline
+        }, expected ${termsDeadline}`,
+      );
+    }
+    if (termsTimer !== allegedInviteAmount.quantity.terms.timer) {
+      throw new Error(
+        `Wrong timer: ${
+          allegedInviteAmount.quantity.terms.timer
+        }, expected ${termsTimer}`,
       );
     }
     return true;
   },
 };
 
-const coveredCallSrc = {
+const coveredCallSrcs = {
   start: `${coveredCall.start}`,
   checkAmount: `${coveredCall.checkAmount}`,
 };
 
-export { coveredCallSrc };
+export { coveredCallSrcs };
