@@ -48,7 +48,7 @@ test('escrow check misMatches', async t => {
 const escrowCheckPartialWrongPriceGolden = [
   '=> setup called',
   'starting testEscrowServiceCheckPartial wrong price',
-  'expected wrong price Error: Escrow checkPartialAmount: different at top.left.quantity: ((a number)) vs ((a number))\nSee console for error data.',
+  'expected wrong price Error: Escrow checkPartialAmount seat: different at top.quantity: ((a number)) vs ((a number))\nSee console for error data.',
 ];
 
 test('escrow check partial misMatches w/SES', async t => {
@@ -63,10 +63,28 @@ test('escrow check partial misMatches', async t => {
   t.end();
 });
 
+const escrowCheckPartialWrongStockGolden = [
+  '=> setup called',
+  'starting testEscrowServiceCheckPartial wrong stock',
+  'expected wrong stock Error: Escrow checkPartialAmount seat: different at top.quantity: ((a string)) vs ((a string))\nSee console for error data.',
+];
+
+test('escrow check partial misMatches w/SES', async t => {
+  const dump = await main(true, 'test/core', ['escrow partial stock']);
+  t.deepEquals(dump.log, escrowCheckPartialWrongStockGolden);
+  t.end();
+});
+
+test('escrow check partial misMatches', async t => {
+  const dump = await main(false, 'test/core', ['escrow partial stock']);
+  t.deepEquals(dump.log, escrowCheckPartialWrongStockGolden);
+  t.end();
+});
+
 const escrowCheckPartialWrongSeatGolden = [
   '=> setup called',
   'starting testEscrowServiceCheckPartial wrong seat',
-  'expected wrong side Error: undefined: different at top: ((a string)) vs ((a string))\nSee console for error data.',
+  'expected wrong side Error: Escrow checkPartialAmount seat: label not found on right at top: ((a object)) vs ((a object))\nSee console for error data.',
 ];
 
 test('escrow check partial wrong seat w/SES', async t => {
