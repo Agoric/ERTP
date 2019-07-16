@@ -6,7 +6,11 @@ import harden from '@agoric/harden';
 import { makePrivateName } from '../util/PrivateName';
 import { allSettled } from '../util/allSettled';
 import { insist } from '../util/insist';
-import { allComparable, mustBeSameStructure, sameStructure } from '../util/sameStructure';
+import {
+  allComparable,
+  mustBeSameStructure,
+  sameStructure,
+} from '../util/sameStructure';
 import { makeUniAssayMaker } from './assays';
 import { makeMint } from './issuers';
 import { makeBasicMintController } from './mintController';
