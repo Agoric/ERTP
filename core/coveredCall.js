@@ -2,7 +2,7 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { sameStructure } from '../util/sameStructure';
+import { mustBeSameStructure, sameStructure } from '../util/sameStructure';
 
 /**
  * The coveredCall is an asymmetric contract. One party will put some goods in
@@ -61,9 +61,15 @@ const coveredCall = {
 
     return inviteMaker.make('writer', bobSeat);
   },
-  checkAmount: (allegedInviteAmount, expectedTerms) => {
+  checkAmount: (installation, allegedInviteAmount, expectedTerms) => {
+    mustBeSameStructure(
+      allegedInviteAmount.quantity.installation,
+      installation,
+      'coveredCall checkAmount installation',
+    );
     const [termsMoney, termsStock, termsTimer, termsDeadline] = expectedTerms;
-    const allegedInviteMoney = allegedInviteAmount.quantity.terms.money;
+    const allegedInviteTerms = allegedInviteAmount.quantity.terms;
+    const allegedInviteMoney = allegedInviteTerms.money;
     if (allegedInviteMoney.quantity !== termsMoney.quantity) {
       throw new Error(
         `Wrong money quantity: ${allegedInviteMoney.quantity}, expected ${
@@ -76,39 +82,22 @@ const coveredCall = {
         `money terms incorrect: ${allegedInviteMoney}, expected ${termsMoney}`,
       );
     }
-    const allegedIssuer = allegedInviteMoney.label.issuer;
-    if (allegedIssuer !== termsMoney.label.issuer) {
-      throw new Error(
-        `Wrong money issuer: ${allegedIssuer}, expected ${
-          termsMoney.label.issuer
-        }`,
-      );
-    }
-    const allegedInviteStock = allegedInviteAmount.quantity.terms.stock;
+    const allegedInviteStock = allegedInviteTerms.stock;
     if (!sameStructure(allegedInviteStock, termsStock)) {
       throw new Error(
         `right terms incorrect: ${allegedInviteStock}, expected ${termsStock}`,
       );
     }
-    if (allegedInviteStock.quantity !== termsStock.quantity) {
-      throw new Error(
-        `Wrong stock quantity: ${allegedInviteStock.quantity}, expected ${
-          termsStock.quantity
-        }`,
-      );
-    }
-    if (allegedInviteAmount.quantity.terms.deadline !== termsDeadline) {
+    if (allegedInviteTerms.deadline !== termsDeadline) {
       throw new Error(
         `Wrong deadline: ${
-          allegedInviteAmount.quantity.terms.deadline
+          allegedInviteTerms.deadline
         }, expected ${termsDeadline}`,
       );
     }
-    if (termsTimer !== allegedInviteAmount.quantity.terms.timer) {
+    if (termsTimer !== allegedInviteTerms.timer) {
       throw new Error(
-        `Wrong timer: ${
-          allegedInviteAmount.quantity.terms.timer
-        }, expected ${termsTimer}`,
+        `Wrong timer: ${allegedInviteTerms.timer}, expected ${termsTimer}`,
       );
     }
     return true;

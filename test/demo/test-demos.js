@@ -166,7 +166,7 @@ test('run contractHost Demo --covered-call-sale with SES', async t => {
   t.end();
 });
 
-test.only('run contractHost Demo --covered-call-sale without SES', async t => {
+test('run contractHost Demo --covered-call-sale without SES', async t => {
   const dump = await main(false, 'demo/contractHost', ['covered-call-sale']);
   t.deepEquals(dump.log, contractCoveredCallSaleGolden);
   t.end();

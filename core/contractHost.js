@@ -6,11 +6,7 @@ import harden from '@agoric/harden';
 import { makePrivateName } from '../util/PrivateName';
 import { allSettled } from '../util/allSettled';
 import { insist } from '../util/insist';
-import {
-  allComparable,
-  mustBeSameStructure,
-  sameStructure,
-} from '../util/sameStructure';
+import { allComparable, mustBeSameStructure, sameStructure } from '../util/sameStructure';
 import { makeUniAssayMaker } from './assays';
 import { makeMint } from './issuers';
 import { makeBasicMintController } from './mintController';
@@ -79,19 +75,11 @@ No invites left`;
     const installation = {};
     for (const fname of Object.getOwnPropertyNames(contractSrcs)) {
       if (typeof fname === 'string' && fname.startsWith('check')) {
-        installation[fname] = evaluateStringToFn(contractSrcs[fname]);
+        const fn = evaluateStringToFn(contractSrcs[fname]);
+        installation[fname] = (...args) => fn(installation, ...args);
       }
     }
     return installation;
-  }
-
-  function makeCheckInstallation(installation) {
-    return alleged => {
-      if (sameStructure(alleged, installation)) {
-        return installation;
-      }
-      return false;
-    };
   }
 
   /** The contract host is designed to have a long-lived credible identity. */
@@ -156,7 +144,6 @@ No invites left`;
       }
 
       installation.spawn = spawn;
-      installation.checkInstallation = makeCheckInstallation(installation);
       harden(installation);
       installationSources.init(installation, contractSrcs);
       return installation;

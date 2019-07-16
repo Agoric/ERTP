@@ -2,7 +2,7 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { mustBeSameStructure, sameStructure } from '../util/sameStructure';
+import { mustBeSameStructure } from '../util/sameStructure';
 
 // For clarity, the code below internally speaks of a scenario is which Alice is
 // trading some of her money for some of Bob's stock. However, for generality,
@@ -92,26 +92,35 @@ const escrowExchange = {
     });
   },
 
-  checkAmount: (allegedInviteAmount, expectedTerms) => {
+  checkAmount: (installation, allegedInviteAmount, expectedTerms, seat) => {
+    mustBeSameStructure(allegedInviteAmount.quantity.seatDesc, seat);
     const allegedTerms = allegedInviteAmount.quantity.terms;
     mustBeSameStructure(allegedTerms, expectedTerms, 'Escrow checkAmount');
+    mustBeSameStructure(
+      allegedInviteAmount.quantity.installation,
+      installation,
+      'escrow checkAmount installation',
+    );
     return true;
   },
 
   // Check the left or right side, and return the other. Useful when this is a
   // trade of goods for an invite, for example.
-  checkPartialAmount: (allegedInvite, expectedTerms, seat) => {
+  checkPartialAmount: (installation, allegedInvite, expectedTerms, seat) => {
     const allegedSeat = allegedInvite.quantity.terms;
     mustBeSameStructure(
-      allegedSeat,
+      allegedSeat[seat],
       expectedTerms,
-      'Escrow checkPartialAmount',
+      'Escrow checkPartialAmount seat',
     );
-    mustBeSameStructure(allegedInvite.quantity.seatDesc, seat);
-    if (seat === 'left') {
-      return allegedInvite.quantity.terms.right;
-    }
-    return allegedInvite.quantity.terms.left;
+
+    mustBeSameStructure(
+      allegedInvite.quantity.installation,
+      installation,
+      'escrow checkPartialAmount installation',
+    );
+
+    return seat === 'left' ? allegedSeat.right : allegedSeat.left;
   },
 };
 

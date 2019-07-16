@@ -31,27 +31,22 @@ function makeFredMaker(E, host, log) {
           const verifiedSaleInvitePaymentP = E(allegedSaleInvitePaymentP)
             .getBalance()
             .then(allegedInviteAmount => {
-              return E.resolve(Promise.all(coveredCallTermsP)).then(
-                terms => {
-                E(escrowExchangeInstallationP)
-                  .checkInstallation(allegedInviteAmount.quantity.installation)
-                  .then(validEscrowInstallationP => {
-                    return E(validEscrowInstallationP)
-                      .checkPartialAmount(allegedInviteAmount, terms, 'left')
-                      .then(coveredCallAmount => {
-                        return (
-                          E(coveredCallInstallationP)
-                            // TODO The  covered calls terms are different.
-                          .checkAmount(coveredCallAmount, terms)
-                          .then(() => {
-                            return E(inviteIssuerP).getExclusive(
-                              allegedInviteAmount,
-                              allegedSaleInvitePaymentP,
-                              'verified sale invite',
-                            );
-                          });
-                      });
-                  });
+              return E.resolve(allComparable(fin55P)).then(f55 => {
+                return E(escrowExchangeInstallationP)
+                  .checkPartialAmount(allegedInviteAmount, f55, 'left')
+                  .then(coveredCallAmount =>
+                    E.resolve(Promise.all(coveredCallTermsP)).then(terms => {
+                      return E(coveredCallInstallationP)
+                        .checkAmount(coveredCallAmount, terms)
+                        .then(() => {
+                          return E(inviteIssuerP).getExclusive(
+                            allegedInviteAmount,
+                            allegedSaleInvitePaymentP,
+                            'verified sale invite',
+                          );
+                        });
+                    }),
+                  );
               });
             });
 
