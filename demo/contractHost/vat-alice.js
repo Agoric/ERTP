@@ -47,17 +47,13 @@ function makeAliceMaker(E, host, log) {
               return E.resolve(Promise.all([clams10P, fudco7P])).then(terms => {
                 const [left, right] = terms;
                 return E(escrowExchangeInstallationP)
-                  .checkInstallation(allegedInviteAmount.quantity.installation)
-                  .then(validEscrowInstallationP => {
-                    return E(validEscrowInstallationP)
-                      .checkAmount(allegedInviteAmount, { left, right })
-                      .then(() => {
-                        return E(inviteIssuerP).getExclusive(
-                          allegedInviteAmount,
-                          allegedInvitePaymentP,
-                          'verified invite',
-                        );
-                      });
+                  .checkAmount(allegedInviteAmount, { left, right }, 'left')
+                  .then(() => {
+                    return E(inviteIssuerP).getExclusive(
+                      allegedInviteAmount,
+                      allegedInvitePaymentP,
+                      'verified invite',
+                    );
                   });
               });
             });

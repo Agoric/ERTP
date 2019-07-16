@@ -24,7 +24,11 @@ function build(E, log) {
         .getBalance()
         .then(allegedLeftInviteAmount => {
           return allComparable(allegedTermsP).then(terms => {
-            return E(installationP).checkAmount(allegedLeftInviteAmount, terms);
+            return E(installationP).checkAmount(
+              allegedLeftInviteAmount,
+              terms,
+              'left',
+            );
           });
         });
     });
@@ -67,19 +71,15 @@ expected successful check ${result}`;
     const otherRandAmountP = E(E(randMintP).getIssuer()).makeAmount(5);
     const blueBoyAmount = E(E(artMintP).getIssuer()).makeAmount('Blue Boy');
     const actualTermsP = harden({ left: randAmountP, right: blueBoyAmount });
-    const allegedTermsP = harden({
-      left: otherRandAmountP,
-      right: blueBoyAmount,
-    });
     const invitesP = E(installationP).spawn(actualTermsP);
     const result = invitesP.then(invites => {
       return E(invites.left)
         .getBalance()
         .then(allegedLeftInviteAmount => {
-          return allComparable(allegedTermsP).then(terms => {
+          return allComparable(otherRandAmountP).then(otherLeftTerms => {
             return E(installationP).checkPartialAmount(
               allegedLeftInviteAmount,
-              terms,
+              otherLeftTerms,
               'left',
             );
           });
@@ -95,6 +95,39 @@ expected successful check ${result}`;
       },
     );
   }
+
+  function testEscrowCheckPartialWrongStock(host, randMintP, artMintP) {
+    log('starting testEscrowServiceCheckPartial wrong stock');
+    const installationP = E(host).install(escrowExchangeSrcs);
+    const randAmountP = E(E(randMintP).getIssuer()).makeAmount(3);
+    const blueBoyAmount = E(E(artMintP).getIssuer()).makeAmount('Blue Boy');
+    const blueGirlAmount = E(E(artMintP).getIssuer()).makeAmount('Blue Girl');
+    const actualTermsP = harden({ left: randAmountP, right: blueBoyAmount });
+    const invitesP = E(installationP).spawn(actualTermsP);
+    const result = invitesP.then(invites => {
+      return E(invites.left)
+        .getBalance()
+        .then(allegedLeftInviteAmount => {
+          return allComparable(blueGirlAmount).then(otherRightTerms => {
+            return E(installationP).checkPartialAmount(
+              allegedLeftInviteAmount,
+              otherRightTerms,
+              'right',
+            );
+          });
+        });
+    });
+
+    result.then(
+      r => {
+        log(`didn't expect successful check ${r}`);
+      },
+      r => {
+        log(`expected wrong stock ${r}`);
+      },
+    );
+  }
+
   function testEscrowCheckPartialWrongSeat(host, randMintP, artMintP) {
     log('starting testEscrowServiceCheckPartial wrong seat');
     const installationP = E(host).install(escrowExchangeSrcs);
@@ -147,6 +180,9 @@ expected successful check ${result}`;
         }
         case 'escrow partial price': {
           return testEscrowCheckPartialWrongPrice(host, randMintP, artMintP);
+        }
+        case 'escrow partial stock': {
+          return testEscrowCheckPartialWrongStock(host, randMintP, artMintP);
         }
         default: {
           throw new Error(`unrecognized argument value ${argv[0]}`);
