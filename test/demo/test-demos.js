@@ -106,7 +106,7 @@ test('run contractHost Demo --bob-first without SES', async t => {
 });
 
 const contractBobFirstAliceTipsGolden = [
-   '=> setup called',
+  '=> setup called',
   '++ bob.tradeWell starting',
   '++ alice.acceptInvite starting',
   'alice invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
@@ -119,7 +119,7 @@ const contractBobFirstAliceTipsGolden = [
   'alice money balance {"label":{"issuer":{},"description":"clams"},"quantity":988}',
   'alice stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":2009}',
   'bob money balance {"label":{"issuer":{},"description":"clams"},"quantity":1013}',
-  'bob stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":1996}'
+  'bob stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":1996}',
 ];
 
 test('run contractHost Demo --bob-first-alice-tips with SES', async t => {
@@ -135,7 +135,7 @@ test('run contractHost Demo --bob-first-alice-tips without SES', async t => {
 });
 
 const contractBobFirstBobTipsGolden = [
- '=> setup called',
+  '=> setup called',
   '++ bob.tradeWell starting',
   '++ alice.acceptInvite starting',
   'alice invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
@@ -148,7 +148,7 @@ const contractBobFirstBobTipsGolden = [
   'alice money balance {"label":{"issuer":{},"description":"clams"},"quantity":990}',
   'alice stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":2012}',
   'bob money balance {"label":{"issuer":{},"description":"clams"},"quantity":1011}',
-  'bob stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":1993}'
+  'bob stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":1993}',
 ];
 
 test('run contractHost Demo --bob-first-bob-tips with SES', async t => {

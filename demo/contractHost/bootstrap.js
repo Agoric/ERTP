@@ -156,8 +156,14 @@ function build(E, log) {
     });
   }
 
-  function betterContractTestBobFirst(host, mint, aliceMaker, bobMaker,
-                                      aliceTip = 0, bobTip = 0) {
+  function betterContractTestBobFirst(
+    host,
+    mint,
+    aliceMaker,
+    bobMaker,
+    aliceTip = 0,
+    bobTip = 0,
+  ) {
     const escrowExchangeInstallationP = E(host).install(escrowExchangeSrcs);
     const coveredCallInstallationP = E(host).install(coveredCallSrcs);
 
@@ -357,7 +363,7 @@ function build(E, log) {
             vats.mint,
             aliceMaker,
             bobMaker,
-            2
+            2,
           );
         }
         case 'bob-first-bob-tips': {
@@ -370,7 +376,7 @@ function build(E, log) {
             aliceMaker,
             bobMaker,
             0,
-            3
+            3,
           );
         }
         case 'covered-call': {
