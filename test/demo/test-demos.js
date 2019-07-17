@@ -106,19 +106,19 @@ test('run contractHost Demo --bob-first without SES', async t => {
 });
 
 const contractBobFirstAliceTipsGolden = [
-  '=> setup called',
+   '=> setup called',
   '++ bob.tradeWell starting',
   '++ alice.acceptInvite starting',
   'alice invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
   'verified invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
-  'bob escrow wins: {"label":{"issuer":{},"description":"clams"},"quantity":10} refs: null',
+  'bob escrow wins: {"label":{"issuer":{},"description":"clams"},"quantity":12} refs: null',
   'alice escrow wins: {"label":{"issuer":{},"description":"fudco"},"quantity":7} refs: null',
   '++ bob.tradeWell done',
-  '++ bobP.tradeWell done:[[{"label":{"issuer":{},"description":"fudco"},"quantity":7},null],[{"label":{"issuer":{},"description":"clams"},"quantity":10},null]]',
+  '++ bobP.tradeWell done:[[{"label":{"issuer":{},"description":"fudco"},"quantity":7},null],[{"label":{"issuer":{},"description":"clams"},"quantity":12},null]]',
   '++ DONE',
   'alice money balance {"label":{"issuer":{},"description":"clams"},"quantity":988}',
   'alice stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":2009}',
-  'bob money balance {"label":{"issuer":{},"description":"clams"},"quantity":1011}',
+  'bob money balance {"label":{"issuer":{},"description":"clams"},"quantity":1013}',
   'bob stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":1996}'
 ];
 
@@ -135,17 +135,18 @@ test('run contractHost Demo --bob-first-alice-tips without SES', async t => {
 });
 
 const contractBobFirstBobTipsGolden = [
-  '=> setup called', '++ bob.tradeWell starting',
+ '=> setup called',
+  '++ bob.tradeWell starting',
   '++ alice.acceptInvite starting',
   'alice invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
   'verified invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
   'bob escrow wins: {"label":{"issuer":{},"description":"clams"},"quantity":10} refs: null',
-  'alice escrow wins: {"label":{"issuer":{},"description":"fudco"},"quantity":7} refs: null',
+  'alice escrow wins: {"label":{"issuer":{},"description":"fudco"},"quantity":10} refs: null',
   '++ bob.tradeWell done',
-  '++ bobP.tradeWell done:[[{"label":{"issuer":{},"description":"fudco"},"quantity":7},null],[{"label":{"issuer":{},"description":"clams"},"quantity":10},null]]',
+  '++ bobP.tradeWell done:[[{"label":{"issuer":{},"description":"fudco"},"quantity":10},null],[{"label":{"issuer":{},"description":"clams"},"quantity":10},null]]',
   '++ DONE',
   'alice money balance {"label":{"issuer":{},"description":"clams"},"quantity":990}',
-  'alice stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":2009}',
+  'alice stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":2012}',
   'bob money balance {"label":{"issuer":{},"description":"clams"},"quantity":1011}',
   'bob stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":1993}'
 ];

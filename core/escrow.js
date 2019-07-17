@@ -16,12 +16,21 @@ const escrowExchange = {
 
     function makeTransfer(amount, srcPaymentP) {
       const { issuer } = amount.label;
-      const escrowP = E(issuer).getExclusive(amount, srcPaymentP, 'escrow');
+      const escrowP = E(issuer).getExclusiveAll(srcPaymentP, 'escrow');
       const winnings = makePromise();
       const refund = makePromise();
       return harden({
         phase1() {
-          return escrowP;
+          return E(escrowP).getBalance().then(escrowBalance => {
+            E(E(issuer).getAssay()).includes(amount, escrowBalance).then(
+              enough => {
+                if (!enough) {
+                  return Promise.reject('Not enough');
+                }
+                // Any fulfilled value is fine.
+                return 'enough';
+              });
+          });
         },
         phase2() {
           winnings.res(escrowP);
