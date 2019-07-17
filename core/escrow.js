@@ -26,13 +26,8 @@ const escrowExchange = {
             .then(escrowBalance => {
               E(E(issuer).getAssay())
                 .includes(amount, escrowBalance)
-                .then(enough => {
-                  if (!enough) {
-                    return Promise.reject(new Error('Not enough'));
-                  }
-                  // Any fulfilled value is fine.
-                  return 'enough';
-                });
+                .then(enough =>
+                      enough || Promise.reject(new Error('Not enough')));
             });
         },
         phase2() {
