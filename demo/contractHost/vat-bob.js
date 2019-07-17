@@ -50,15 +50,15 @@ function makeBobMaker(E, host, log) {
             .then(_ => good);
         },
 
-        tradeWell(alice) {
+        tradeWell(alice, aliceTip = 0, bobTip = 0) {
           log('++ bob.tradeWell starting');
           const terms = harden({ left: moneyNeededP, right: stockNeededP });
           const invitesP = E(escrowExchangeInstallationP).spawn(terms);
           const aliceInviteP = invitesP.then(invites => invites.left);
           const bobInviteP = invitesP.then(invites => invites.right);
           const doneP = Promise.all([
-            E(alice).acceptInvite(aliceInviteP),
-            E(bob).acceptInvite(bobInviteP),
+            E(alice).acceptInvite(aliceInviteP, aliceTip),
+            E(bob).acceptInvite(bobInviteP, bobTip),
           ]);
           doneP.then(
             _res => log('++ bob.tradeWell done'),
@@ -67,9 +67,9 @@ function makeBobMaker(E, host, log) {
           return doneP;
         },
 
-        acceptInvite(inviteP) {
+        acceptInvite(inviteP, tip = 0) {
           const seatP = E(host).redeem(inviteP);
-          const stockPaymentP = E(myStockPurseP).withdraw(7);
+          const stockPaymentP = E(myStockPurseP).withdraw(7 + tip);
           E(seatP).offer(stockPaymentP);
           return collect(seatP, myMoneyPurseP, myStockPurseP, 'bob escrow');
         },

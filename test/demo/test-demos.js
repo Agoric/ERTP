@@ -105,6 +105,63 @@ test('run contractHost Demo --bob-first without SES', async t => {
   t.end();
 });
 
+const contractBobFirstAliceTipsGolden = [
+  '=> setup called',
+  '++ bob.tradeWell starting',
+  '++ alice.acceptInvite starting',
+  'alice invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
+  'verified invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
+  'bob escrow wins: {"label":{"issuer":{},"description":"clams"},"quantity":10} refs: null',
+  'alice escrow wins: {"label":{"issuer":{},"description":"fudco"},"quantity":7} refs: null',
+  '++ bob.tradeWell done',
+  '++ bobP.tradeWell done:[[{"label":{"issuer":{},"description":"fudco"},"quantity":7},null],[{"label":{"issuer":{},"description":"clams"},"quantity":10},null]]',
+  '++ DONE',
+  'alice money balance {"label":{"issuer":{},"description":"clams"},"quantity":988}',
+  'alice stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":2009}',
+  'bob money balance {"label":{"issuer":{},"description":"clams"},"quantity":1011}',
+  'bob stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":1996}'
+];
+
+test('run contractHost Demo --bob-first-alice-tips with SES', async t => {
+  const dump = await main(true, 'demo/contractHost', ['bob-first-alice-tips']);
+  t.deepEquals(dump.log, contractBobFirstAliceTipsGolden);
+  t.end();
+});
+
+test('run contractHost Demo --bob-first-alice-tips without SES', async t => {
+  const dump = await main(false, 'demo/contractHost', ['bob-first-alice-tips']);
+  t.deepEquals(dump.log, contractBobFirstAliceTipsGolden);
+  t.end();
+});
+
+const contractBobFirstBobTipsGolden = [
+  '=> setup called', '++ bob.tradeWell starting',
+  '++ alice.acceptInvite starting',
+  'alice invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
+  'verified invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"left":{"label":{"issuer":{},"description":"clams"},"quantity":10},"right":{"label":{"issuer":{},"description":"fudco"},"quantity":7}},"seatIdentity":{},"seatDesc":"left"}}',
+  'bob escrow wins: {"label":{"issuer":{},"description":"clams"},"quantity":10} refs: null',
+  'alice escrow wins: {"label":{"issuer":{},"description":"fudco"},"quantity":7} refs: null',
+  '++ bob.tradeWell done',
+  '++ bobP.tradeWell done:[[{"label":{"issuer":{},"description":"fudco"},"quantity":7},null],[{"label":{"issuer":{},"description":"clams"},"quantity":10},null]]',
+  '++ DONE',
+  'alice money balance {"label":{"issuer":{},"description":"clams"},"quantity":990}',
+  'alice stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":2009}',
+  'bob money balance {"label":{"issuer":{},"description":"clams"},"quantity":1011}',
+  'bob stock balance {"label":{"issuer":{},"description":"fudco"},"quantity":1993}'
+];
+
+test('run contractHost Demo --bob-first-bob-tips with SES', async t => {
+  const dump = await main(true, 'demo/contractHost', ['bob-first-bob-tips']);
+  t.deepEquals(dump.log, contractBobFirstBobTipsGolden);
+  t.end();
+});
+
+test('run contractHost Demo --bob-first-bob-tips without SES', async t => {
+  const dump = await main(false, 'demo/contractHost', ['bob-first-bob-tips']);
+  t.deepEquals(dump.log, contractBobFirstBobTipsGolden);
+  t.end();
+});
+
 const contractCoveredCallGolden = [
   '=> setup called',
   '++ bob.offerAliceOption starting',

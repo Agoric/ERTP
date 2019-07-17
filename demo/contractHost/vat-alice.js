@@ -36,7 +36,9 @@ function makeAliceMaker(E, host, log) {
           return E(bob).buy('shoe', paymentP);
         },
 
-        acceptInvite(allegedInvitePaymentP) {
+        // Note that it would be crazy for alice to let bob tell her
+        // how much she should tip him. But ok for testing only.
+        acceptInvite(allegedInvitePaymentP, tip = 0) {
           log('++ alice.acceptInvite starting');
           showPaymentBalance('alice invite', allegedInvitePaymentP);
           const clams10P = E(E(myMoneyPurseP).getIssuer()).makeAmount(10);
@@ -62,7 +64,7 @@ function makeAliceMaker(E, host, log) {
             showPaymentBalance('verified invite', verifiedInviteP),
           ).then(_ => {
             const seatP = E(host).redeem(verifiedInviteP);
-            const moneyPaymentP = E(myMoneyPurseP).withdraw(10);
+            const moneyPaymentP = E(myMoneyPurseP).withdraw(10 + tip);
             E(seatP).offer(moneyPaymentP);
             return collect(seatP, myStockPurseP, myMoneyPurseP, 'alice escrow');
           });
