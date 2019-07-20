@@ -1,34 +1,36 @@
-// Copyright (C) 2013 Google Inc, under Apache License 2.0
-// Copyright (C) 2018 Agoric, under Apache License 2.0
+// Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
 import { makeCollect } from '../../core/contractHost';
+import { allComparable } from '../../util/sameStructure';
 
 function makeBidderMaker(E, host, log) {
   const collect = makeCollect(E, log);
 
   return harden({
-    make(
-      escrowExchangeInstallationP,
+    makeBidder(
+      agencyEscrowInstallationP,
       auctionInstallationP,
       timerP,
       myMoneyPurseP,
+      myArtPurseP,
     ) {
-      const inviteIssuerP = E(host).getInviteIssuer();
-      const inviteIssuerLabel = harden({
-        issuer: inviteIssuerP,
-        description: 'contract host',
-      });
-      const moneyIssuerP = E(myMoneyPurseP).getIssuer();
-
       const bidder = harden({
         offerSeat(bidderSeat, terms) {
           log('++ bidder.offerSeat starting');
+          E(timerP).tick();
+          //TODO  What gets passed in for bidder seat?
+          E(bidderSeat).offer(myMoneyPurseP);
 
-          const myWinningsP = E(bidderSeat).getWinnings();
-          const myRefundP = E(bidderSeat).getRefund();
-          collect(bidderSeat, myMoneyPurseP, myArtPurseP, 'auction earnings');
+          // TODO: validate terms.
 
+          E(timerP).tick();
+          return collect(
+            bidderSeat,
+            myMoneyPurseP,
+            myArtPurseP,
+            'auction earnings',
+          );
         },
       });
       return bidder;
