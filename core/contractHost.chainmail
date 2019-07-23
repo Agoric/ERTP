@@ -102,11 +102,12 @@ interface InviteMaker {
   * 'collect()' is a free function that can be imported from
   * 'contractHost.js'. It calls getWinnings() and 'getRefund()' on seatP and
   * deposits the proceeds respectively into winPurseP and refundPurseP. 'name'
-  * (which defaults to 'collecting') is cnverted to a String, and used for
+  * (which defaults to 'collecting') is converted to a String, and used for
   * logging the results. This establishes that the normal outcome of a contract
   * is made available by providing getWinnings() and getRefunds() methods on
   * the seats defined by the contract.
   */
 interface Collector {
-  collect(seatP, winPurseP, refundPurseP, name) -> ([wins, refs]);
+  collect(seatP:Object, winPurseP:Purse, refundPurseP:Purse, name:String)
+    -> ([wins, refs]);
 }

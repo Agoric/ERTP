@@ -33,7 +33,12 @@ interface Assay {
   /** Make a new verified Amount containing the allegedQuantity. */
   make(allegedQuantity:Quantity) -> (Amount);
 
-  /** Verify that an Amount was issued by this Assay. */
+  /**
+   * Verify that an Amount was issued by this Assay. Notice that this
+   * is different from coerce(), which will accept manually
+   * constructed amounts and amounts from other assays with the same
+   * label.
+   */
   vouch(amount:Amount) -> (Amount);
 
   /**
@@ -49,7 +54,7 @@ interface Assay {
   */
   coerce(allegedAmount:Amount) -> (Amount);
 
-  /** Return the Quanitity contained in the Amount parameter. */
+  /** Return the Quantity contained in the Amount parameter. */
   quantity(amount:Amount) -> (Quantity);
 
   /** Return an empty amount. Conveys no authority. */
