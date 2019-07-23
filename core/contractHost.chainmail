@@ -111,4 +111,3 @@ interface Collector {
   collect(seatP:Object, winPurseP:Purse, refundPurseP:Purse, name:String)
     -> ([wins, refs]);
 }
-o
