@@ -7,11 +7,6 @@ export function makeBasicMintController() {
   // purse/payment to amount
   let rights = makePrivateName();
 
-  function recordPayment(src, payment, amount, srcNewRightsAmount) {
-    rights.set(src, srcNewRightsAmount);
-    rights.init(payment, amount);
-  }
-
   function destroy(_amount) {
     throw new Error('destroy is not implemented');
   }
@@ -20,30 +15,44 @@ export function makeBasicMintController() {
     rights = makePrivateName(); // reset rights
   }
 
-  function recordDeposit(
-    srcPayment,
-    srcNewRightsAmount,
-    purse,
-    purseNewRightsAmount,
-  ) {
-    rights.set(srcPayment, srcNewRightsAmount);
-    rights.set(purse, purseNewRightsAmount);
-  }
-
-  function recordMint(purse, initialAmount) {
+  // creating a purse creates a new mapping from the purse to the
+  // amount within the purse
+  function recordNewPurse(purse, initialAmount) {
     rights.init(purse, initialAmount);
   }
 
-  function getAmount(pursePayment) {
-    return rights.get(pursePayment);
+  // creating a payment creates a new mapping from the payment to the
+  // amount within the payment
+  // It also takes that amount from the source purseOrPayment, so the
+  // source must be updated with the new (lesser) newSrcAmount
+  function recordNewPayment(
+    srcPurseOrPayment,
+    payment,
+    paymentAmount,
+    newSrcAmount,
+  ) {
+    rights.init(payment, paymentAmount);
+    rights.set(srcPurseOrPayment, newSrcAmount);
+  }
+
+  // a deposit (putting a payment or part of a payment into a purse)
+  // changes the amounts of both the purse and the payment
+  function recordDeposit(payment, newPaymentAmount, purse, newPurseAmount) {
+    rights.set(payment, newPaymentAmount);
+    rights.set(purse, newPurseAmount);
+  }
+
+  // getAmount just returns the amount associated with the purse or payment
+  function getAmount(purseOrPayment) {
+    return rights.get(purseOrPayment);
   }
 
   const mintController = {
     destroy,
     destroyAll,
-    recordPayment,
+    recordNewPurse,
+    recordNewPayment,
     recordDeposit,
-    recordMint,
     getAmount,
   };
   return mintController;

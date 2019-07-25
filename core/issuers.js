@@ -17,16 +17,11 @@ Description must be truthy: ${description}`;
 
   // src is a purse or payment. Return a fresh payment.  One internal
   // function used for both cases, since they are so similar.
-  function takePayment(amount, isPurse, src, _name) {
-    amount = assay.coerce(amount);
-    _name = `${_name}`;
-    const srcOldRightsAmount = mintController.getAmount(src);
-    const srcNewRightsAmount = assay.without(srcOldRightsAmount, amount);
-
-    // ///////////////// commit point //////////////////
-    // All queries above passed with no side effects.
-    // During side effects below, any early exits should be made into
-    // fatal turn aborts.
+  function takePayment(paymentAmount, purseOrPaymentSrc, unsafePaymentName) {
+    const paymentName = `${unsafePaymentName}`;
+    paymentAmount = assay.coerce(paymentAmount);
+    const oldSrcAmount = mintController.getAmount(purseOrPaymentSrc);
+    const newSrcAmount = assay.without(oldSrcAmount, paymentAmount);
 
     const payment = harden({
       getIssuer() {
@@ -35,8 +30,22 @@ Description must be truthy: ${description}`;
       getBalance() {
         return mintController.getAmount(payment);
       },
+      getName() {
+        return paymentName;
+      },
     });
-    mintController.recordPayment(src, payment, amount, srcNewRightsAmount);
+
+    // ///////////////// commit point //////////////////
+    // All queries above passed with no side effects.
+    // During side effects below, any early exits should be made into
+    // fatal turn aborts.
+
+    mintController.recordNewPayment(
+      purseOrPaymentSrc,
+      payment,
+      paymentAmount,
+      newSrcAmount,
+    );
     return payment;
   }
 
@@ -57,21 +66,22 @@ Description must be truthy: ${description}`;
       return mint.mint(assay.empty(), name); // mint and issuer call each other
     },
 
-    getExclusive(amount, srcPaymentP, name = 'a payment') {
-      return Promise.resolve(srcPaymentP).then(srcPayment =>
-        takePayment(amount, false, srcPayment, name),
-      );
+    getExclusive(amount, srcPaymentP, name) {
+      return Promise.resolve(srcPaymentP).then(srcPayment => {
+        name = name !== undefined ? name : srcPayment.getName(); // use old name
+        return takePayment(amount, srcPayment, name);
+      });
     },
 
-    getExclusiveAll(srcPaymentP, name = 'a payment') {
-      return Promise.resolve(srcPaymentP).then(srcPayment =>
-        takePayment(
+    getExclusiveAll(srcPaymentP, name) {
+      return Promise.resolve(srcPaymentP).then(srcPayment => {
+        name = name !== undefined ? name : srcPayment.getName(); // use old name
+        return takePayment(
           mintController.getAmount(srcPayment),
-          false,
           srcPayment,
           name,
-        ),
-      );
+        );
+      });
     },
 
     burn(amount, srcPaymentP) {
@@ -132,11 +142,14 @@ Description must be truthy: ${description}`;
       this.destroy(amount);
       return mint(amount);
     },
-    mint(initialBalance, _name = 'a purse') {
+    mint(initialBalance, unsafeName = 'a purse') {
       initialBalance = assay.coerce(initialBalance);
-      _name = `${_name}`;
+      const name = `${unsafeName}`;
 
       const purse = harden({
+        getName() {
+          return name;
+        },
         getIssuer() {
           return issuer;
         },
@@ -157,19 +170,18 @@ Description must be truthy: ${description}`;
             );
           });
         },
-        withdraw(amount, name = 'a withdrawal payment') {
-          return takePayment(amount, true, purse, name);
+        withdraw(amount, paymentName = 'a withdrawal payment') {
+          return takePayment(amount, purse, paymentName);
         },
-        withdrawAll(name = 'a withdrawal payment') {
+        withdrawAll(paymentName = 'a withdrawal payment') {
           return takePayment(
             mintController.getAmount(purse),
-            true,
             purse,
-            name,
+            paymentName,
           );
         },
       });
-      mintController.recordMint(purse, initialBalance);
+      mintController.recordNewPurse(purse, initialBalance);
       return purse;
     },
   });
