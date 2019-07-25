@@ -1,5 +1,5 @@
 import { test } from 'tape-promise/tape';
-import { makeHandoffService } from '../../more/handoff/handoff';
+import { makeHandoffService } from '../../../../more/handoff/handoff';
 
 test('Handoff creation', t => {
   const handoffService = makeHandoffService();

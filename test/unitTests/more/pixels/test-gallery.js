@@ -1,8 +1,8 @@
 import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
-import { makeGallery } from '../../../more/pixels/gallery';
-import { insistPixelList } from '../../../more/pixels/types/pixelList';
+import { makeGallery } from '../../../../more/pixels/gallery';
+import { insistPixelList } from '../../../../more/pixels/types/pixelList';
 
 test('tapFaucet', t => {
   const { userFacet } = makeGallery();
