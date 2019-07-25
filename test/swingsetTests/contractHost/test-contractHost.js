@@ -163,17 +163,13 @@ const contractCoveredCallSaleGolden = [
 ];
 
 test('run contractHost --covered-call-sale with SES', async t => {
-  const dump = await main(true, 'contractHost', [
-    'covered-call-sale',
-  ]);
+  const dump = await main(true, 'contractHost', ['covered-call-sale']);
   t.deepEquals(dump.log, contractCoveredCallSaleGolden);
   t.end();
 });
 
 test('run contractHost --covered-call-sale without SES', async t => {
-  const dump = await main(false, 'contractHost', [
-    'covered-call-sale',
-  ]);
+  const dump = await main(false, 'contractHost', ['covered-call-sale']);
   t.deepEquals(dump.log, contractCoveredCallSaleGolden);
   t.end();
 });

@@ -74,17 +74,13 @@ const expectedAliceSendsOnlyUseRightLog = [
 ];
 
 test('run gallery aliceSendsOnlyUseRight with SES', async t => {
-  const dump = await main(true, 'gallery', [
-    'aliceSendsOnlyUseRight',
-  ]);
+  const dump = await main(true, 'gallery', ['aliceSendsOnlyUseRight']);
   t.deepEquals(dump.log, expectedAliceSendsOnlyUseRightLog);
   t.end();
 });
 
 test('run gallery aliceSendsOnlyUseRight without SES', async t => {
-  const dump = await main(false, 'gallery', [
-    'aliceSendsOnlyUseRight',
-  ]);
+  const dump = await main(false, 'gallery', ['aliceSendsOnlyUseRight']);
   t.deepEquals(dump.log, expectedAliceSendsOnlyUseRightLog);
   t.end();
 });
