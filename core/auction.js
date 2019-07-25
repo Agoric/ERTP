@@ -1,4 +1,4 @@
-/* global E */
+/* global E makePromise */
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
@@ -21,36 +21,22 @@ const auction = {
 
     E(timerP).tick();
     const escrowTerms = harden({ left: currencyAmount, right: productAmount });
-    // Create an escrow for the final exchange. The winning bidder's bid will
-    // be submitted to the buyer's side, while the auctioneer will fulfill the
-    // seller's role.
-    const escrowSeatsP = E(agencyEscrowInstallationP).spawn(escrowTerms);
-    // The goods the seller offers will be submitted to the escrow. The proceeds
-    // will be directly wired to the seller's role.
-    const offerSeatP = E.resolve(escrowSeatsP).then(seats => {
-      const { buyer: buyerSeat } = seats;
-      return inviteMaker.redeem(buyerSeat);
-    });
+    const escrowedGoods = makePromise();
+    const sellerWinnings = makePromise();
+    const sellerRefund = makePromise();
 
     // map from bidderSeats to corresponding agencySeats we can close with.
-    const bidderSeats = new Map();
+    const agencySeatsP = new Map();
     let bidderSeatCount = 0;
     let secondPrice = 0;
     let bestPrice = 0;
     let bestBidder;
     const currencyIssuer = currencyAmount.label.issuer;
 
-    function cancelAll() {
-      E(offerSeatP).cancel();
-      for (const seat of bidderSeats.keys()) {
-        seat.cancel(bidderSeats.get(seat));
-      }
-    }
-
     function cancelLosers() {
-      for (const seat of bidderSeats.keys()) {
-        if (seat !== bestBidder) {
-          seat.cancel(bidderSeats.get(seat));
+      for (const bidderSeat of agencySeatsP.keys()) {
+        if (bidderSeat !== bestBidder) {
+          agencySeatsP[bidderSeat].cancel();
         }
       }
     }
@@ -60,26 +46,37 @@ const auction = {
       .then(() => {
         // hold auction:
         if (bidderSeatCount < minBidCount || secondPrice < minPrice) {
-          cancelAll();
+          for (const bidderSeat of agencySeatsP.keys()) {
+            agencySeatsP[bidderSeat].cancel();
+          }
+          sellerRefund.res(escrowedGoods.p);
         } else {
           cancelLosers();
+          const bestBidAgencySeatP = agencySeatsP.get(bestBidder);
+          E(bestBidAgencySeatP).consummateDeal(
+            bestPrice,
+            secondPrice,
+            escrowedGoods.p,
+          );
+          sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
+          sellerRefund.res(E(bestBidAgencySeatP).getRefund());
         }
-        bidderSeats.get(bestBidder).consummateDeal(secondPrice, offerSeatP);
       });
 
-    function addNewBid(payment, bidderSeatP, agencySeatP) {
+    function addNewBid(payment, buyerSeatP, agencySeatP) {
       E(timerP).tick();
       return E(currencyIssuer)
         .getExclusiveAll(payment, 'bid')
         .then(currency => {
           const amount = currency.getAmount();
+          E(buyerSeatP).offer(currency);
           if (amount > bestPrice) {
-            bestBidder = bidderSeatP;
+            bestBidder = buyerSeatP;
             [bestPrice, secondPrice] = [amount, bestPrice];
           } else if (amount > secondPrice) {
             secondPrice = amount;
           }
-          bidderSeats.put(bidderSeatP, agencySeatP);
+          agencySeatsP.put(buyerSeatP, agencySeatP);
           E(timerP).tick();
         });
     }
@@ -94,25 +91,25 @@ const auction = {
         const agencySeatP = E.resolve(seatsP).then(pair =>
           inviteMaker.redeem(pair.agency),
         );
-        const bidderSeatP = E.resolve(seatsP).then(pair =>
+        const buyerSeatP = E.resolve(seatsP).then(pair =>
           inviteMaker.redeem(pair.buyer),
         );
 
         bidderSeatCount += 1;
         const bidderSeat = harden({
           offer(payment) {
-            E(timerP).tick();
-            return addNewBid(payment, bidderSeatP, agencySeatP);
+            return addNewBid(payment, buyerSeatP, agencySeatP);
           },
           getWinnings() {
-            return E(bidderSeatP).getWinnings();
+            return E(buyerSeatP).getWinnings();
           },
           getRefund() {
-            return E(bidderSeatP).getRefund();
+            return E(buyerSeatP).getRefund();
           },
         });
         E(timerP).tick();
-        return inviteMaker.make(`bidder${bidderSeatCount}`, bidderSeat);
+        const bidderId = `bidder${bidderSeatCount}`;
+        return inviteMaker.make(bidderId, bidderSeat, `invite for ${bidderId}`);
       },
     });
 
@@ -120,29 +117,33 @@ const auction = {
     // the minimum number of bidders was met, then the highest bidder will get the
     // goods, and the seller will be paid the second price. The seller gets the
     // ability to hand out auction seats in response to the offer().
-    const peterSeat = harden({
+    const sellerSeat = harden({
       offer(productPayment) {
+        E(timerP).tick();
         const pIssuer = productAmount.label.issuer;
         return E(pIssuer)
           .getExclusive(productAmount, productPayment, 'consignment')
           .then(prePayment => {
-            E(offerSeatP).offer(prePayment);
+            escrowedGoods.res(prePayment);
             E(timerP).tick();
             return bidderMaker;
           });
       },
       getWinnings() {
-        return E(offerSeatP).getWinnings();
+        return sellerWinnings.p;
       },
       getRefund() {
-        return E(offerSeatP).getRefund();
+        return sellerRefund.p;
       },
+      // Can the seller cancel? Not currently.
     });
 
-    return inviteMaker.make('writer', peterSeat);
+    return inviteMaker.make('writer', sellerSeat, 'writer');
   },
 
+  // Only the bidders need to validate.
   checkAmount: (installation, allegedInviteAmount, expectedTerms, seat) => {
+    // TODO assert seat is known.
     mustBeSameStructure(allegedInviteAmount.quantity.seatDesc, seat);
     const allegedTerms = allegedInviteAmount.quantity.terms;
     mustBeSameStructure(allegedTerms, expectedTerms, 'Escrow checkAmount');

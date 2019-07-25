@@ -2,7 +2,6 @@
 
 import harden from '@agoric/harden';
 import { makeCollect } from '../../core/contractHost';
-import { allComparable } from '../../util/sameStructure';
 
 function makeBidderMaker(E, host, log) {
   const collect = makeCollect(E, log);

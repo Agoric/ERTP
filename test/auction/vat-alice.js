@@ -27,7 +27,12 @@ function makeAliceMaker(E, host, log) {
             deadline: 10,
           };
           const offerInvitePaymentP = E(auctionInstallationP).spawn(termsP);
-          const offerSeatP = E(host).redeem(offerInvitePaymentP);
+          const inviteIssuerP = E(host).getInviteIssuer();
+          const offerSeatPaymentP = E(inviteIssuerP).getExclusiveAll(
+            offerInvitePaymentP,
+            'offer',
+          );
+          const offerSeatP = E(host).redeem(offerSeatPaymentP);
           const bidderMakerP = E(offerSeatP).offer(myArtPurseP);
           E(timerP).tick();
           const doneP = collect(

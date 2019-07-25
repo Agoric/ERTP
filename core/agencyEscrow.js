@@ -2,7 +2,6 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { makeCollect } from './contractHost';
 import { mustBeSameStructure } from '../util/sameStructure';
 
 // There are two parties to this transaction. The buyer is offering some amount
@@ -13,7 +12,6 @@ import { mustBeSameStructure } from '../util/sameStructure';
 // transaction.
 const agencyEscrow = {
   start: (terms, inviteMaker) => {
-    const collect = makeCollect();
     const { left: currencyAmount, right: goodsAmount } = terms;
 
     // We want to give the buyer a promise for the good, and for a refund. The
@@ -32,32 +30,45 @@ const agencyEscrow = {
 
     // Seats
 
+    // These promises are ignored except when this is the winner's agency
+    const earnings = makePromise();
+    const returnedGoods = makePromise();
     const agencySeat = harden({
-      // Tell the agency the amount of the bid.
-      offerAmount() {
-        return E.resolve(deposit).then(funds => {
-          return funds.amount.getQuantity();
-        });
-      },
-      // The agency can cancel offers and return the funds
+      // The agency cancels losing offers and returns the funds
       cancel() {
         winnings.reject('no deal');
-        refund.res(deposit);
+        refund.res(deposit.p);
       },
-      // The agency can accept one offer and collect the bidder's price or less.
-      // The bidder will receive their winnings through a trusted escrow.
-      consummateDeal(price, escrowInvitation) {
-        const escrowSeat = inviteMaker.redeem(escrowInvitation);
-        const currencyPurse = currencyAmount.label.issuer.makeEmptyPurse();
-        const goodsPurse = goodsAmount.label.issuer.makeEmptyPurse();
-        E(deposit)
-          .withdraw(price)
-          .then(moneyPaymentP => {
-            escrowSeat.offer(moneyPaymentP);
-            collect(escrowSeat, goodsPurse, currencyPurse, 'winning bidder');
-            refund.res(currencyPurse);
-            winnings.res(goodsPurse);
-          });
+      // The agency can accept one offer and collect the buyer's price or less.
+      // The buyer will receive their winnings through a trusted escrow.
+      consummateDeal(bestPrice, secondPrice, goods) {
+        const { issuer } = goodsAmount.label;
+        E(issuer)
+          .getExclusiveAll(goods, 'winnings')
+          .then(
+            winningsP => {
+              E(deposit.p)
+                .withdraw(bestPrice - secondPrice)
+                .then(
+                  winnerOverbid => {
+                    refund.res(winnerOverbid);
+                    winnings.res(winningsP);
+                  },
+                  () => {
+                    returnedGoods.res(goods);
+                    refund.res(deposit.p);
+                  },
+                );
+            },
+            () => refund.res(deposit.p),
+          );
+        return E(deposit.p).withdraw(secondPrice, 'seller gains');
+      },
+      getWinnings() {
+        return earnings.p;
+      },
+      getRefund() {
+        return returnedGoods.p;
       },
     });
 
@@ -65,12 +76,9 @@ const agencyEscrow = {
       // The buyer provides an offer that will be escrowed, then either returned
       // or traded for the desired goods.
       offer(currencyOffer) {
-        const currencyIssuer = currencyAmount.label.issuer;
-        return E(currencyIssuer)
-          .getExclusiveAll(currencyOffer, 'deposit')
-          .then(prePayment => {
-            deposit.res(prePayment);
-          });
+        const { issuer } = currencyAmount.label;
+        const escrowedBidP = E(issuer).getExclusiveAll(currencyOffer, 'escrow');
+        deposit.res(escrowedBidP);
       },
       // a promise for a purse for the goods.
       getWinnings() {
