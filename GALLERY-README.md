@@ -45,7 +45,4 @@ Now that the user has some Dust, how can they buy their pixels? The pixel canvas
 
 The user should be able to put their color rights into our ERTP covered call and other contract components and create things like options. 
 
-For examples of how the ERTP assets work, see:
-  test/demo/test-gallery-demo.js 
-and:
-  test/more/pixels/test-gallery.js
+For examples of how the ERTP assets work, see the gallery tests.
