@@ -4,9 +4,9 @@
 import harden from '@agoric/harden';
 
 import evaluate from '@agoric/evaluate';
-import { insist } from '../../../../util/insist';
-import { makeCollect, makeContractHost } from '../../../../core/contractHost';
-import { escrowExchangeSrc } from '../../../../core/escrow';
+import { insist } from '../../../util/insist';
+import { makeCollect, makeContractHost } from '../../../core/contractHost';
+import { escrowExchangeSrc } from '../../../core/escrow';
 
 let storedUseRight;
 let storedTransferRight;

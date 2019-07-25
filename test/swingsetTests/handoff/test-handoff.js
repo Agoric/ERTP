@@ -21,13 +21,13 @@ const corkboardContentsGolden = [
 ];
 
 test('run handoff --corkboard contents', async t => {
-  const dump = await main(false, 'scaffolding/handoff', ['corkboard']);
+  const dump = await main(false, 'handoff', ['corkboard']);
   t.deepEquals(dump.log, corkboardContentsGolden);
   t.end();
 });
 
 test('run handoff --corkboard contents', async t => {
-  const dump = await main(true, 'scaffolding/handoff', ['corkboard']);
+  const dump = await main(true, 'handoff', ['corkboard']);
   t.deepEquals(dump.log, corkboardContentsGolden);
   t.end();
 });
@@ -39,13 +39,13 @@ const handoffTestGolden = [
 ];
 
 test('run handoff --handoff service', async t => {
-  const dump = await main(false, 'scaffolding/handoff', ['handoff']);
+  const dump = await main(false, 'handoff', ['handoff']);
   t.deepEquals(dump.log, handoffTestGolden);
   t.end();
 });
 
 test('run handoff --handoff service', async t => {
-  const dump = await main(true, 'scaffolding/handoff', ['handoff']);
+  const dump = await main(true, 'handoff', ['handoff']);
   t.deepEquals(dump.log, handoffTestGolden);
   t.end();
 });
@@ -57,13 +57,13 @@ const twoPartyHandoffGolden = [
 ];
 
 test('run handoff --Two Party handoff', async t => {
-  const dump = await main(false, 'scaffolding/handoff', ['twoVatHandoff']);
+  const dump = await main(false, 'handoff', ['twoVatHandoff']);
   t.deepEquals(dump.log, twoPartyHandoffGolden);
   t.end();
 });
 
 test('run handoff --Two Party handoff', async t => {
-  const dump = await main(true, 'scaffolding/handoff', ['twoVatHandoff']);
+  const dump = await main(true, 'handoff', ['twoVatHandoff']);
   t.deepEquals(dump.log, twoPartyHandoffGolden);
   t.end();
 });

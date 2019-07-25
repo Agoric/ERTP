@@ -2,7 +2,7 @@
 
 import harden from '@agoric/harden';
 
-import { makeMint } from '../../../../core/issuers';
+import { makeMint } from '../../../core/issuers';
 
 function build(_E, _log) {
   return harden({ makeMint });

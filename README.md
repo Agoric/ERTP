@@ -26,7 +26,7 @@ with an escrow exchange contract.
 npx tape -r esm test/swingsetTests/test-contractHost.js
 ```
 
-For more examples, please see the code for Alice and Bob in `test/swingsetTests/scaffolding/contractHost/`. 
+For more examples, please see the code for Alice and Bob in `test/swingsetTests/contractHost/`. 
 
 ![higher-order-smart-contract-covered-call-escrow](https://user-images.githubusercontent.com/150986/59150181-f3f55080-89e4-11e9-8046-fcb9c10831b1.png)
 

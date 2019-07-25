@@ -2,10 +2,10 @@
 
 import harden from '@agoric/harden';
 
-import { makeHandoffService } from '../../../../more/handoff/handoff';
+import { makeMint } from '../../../core/issuers';
 
 function build(_E, _log) {
-  return harden({ makeHandoffService });
+  return harden({ makeMint });
 }
 harden(build);
 

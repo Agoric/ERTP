@@ -25,13 +25,13 @@ const expectedTapFaucetLog = [
 ];
 
 test('run gallery tapFaucet with SES', async t => {
-  const dump = await main(true, 'scaffolding/gallery', ['tapFaucet']);
+  const dump = await main(true, 'gallery', ['tapFaucet']);
   t.deepEquals(dump.log, expectedTapFaucetLog);
   t.end();
 });
 
 test('run gallery tapFaucet without SES', async t => {
-  const dump = await main(false, 'scaffolding/gallery', ['tapFaucet']);
+  const dump = await main(false, 'gallery', ['tapFaucet']);
   t.deepEquals(dump.log, expectedTapFaucetLog);
   t.end();
 });
@@ -48,13 +48,13 @@ const expectedAliceChangesColorLog = [
 ];
 
 test('run gallery aliceChangesColor with SES', async t => {
-  const dump = await main(true, 'scaffolding/gallery', ['aliceChangesColor']);
+  const dump = await main(true, 'gallery', ['aliceChangesColor']);
   t.deepEquals(dump.log, expectedAliceChangesColorLog);
   t.end();
 });
 
 test('run gallery aliceChangesColor without SES', async t => {
-  const dump = await main(false, 'scaffolding/gallery', ['aliceChangesColor']);
+  const dump = await main(false, 'gallery', ['aliceChangesColor']);
   t.deepEquals(dump.log, expectedAliceChangesColorLog);
   t.end();
 });
@@ -74,7 +74,7 @@ const expectedAliceSendsOnlyUseRightLog = [
 ];
 
 test('run gallery aliceSendsOnlyUseRight with SES', async t => {
-  const dump = await main(true, 'scaffolding/gallery', [
+  const dump = await main(true, 'gallery', [
     'aliceSendsOnlyUseRight',
   ]);
   t.deepEquals(dump.log, expectedAliceSendsOnlyUseRightLog);
@@ -82,7 +82,7 @@ test('run gallery aliceSendsOnlyUseRight with SES', async t => {
 });
 
 test('run gallery aliceSendsOnlyUseRight without SES', async t => {
-  const dump = await main(false, 'scaffolding/gallery', [
+  const dump = await main(false, 'gallery', [
     'aliceSendsOnlyUseRight',
   ]);
   t.deepEquals(dump.log, expectedAliceSendsOnlyUseRightLog);
@@ -100,13 +100,13 @@ const expectedGalleryRevokesLog = [
 ];
 
 test('run gallery galleryRevokes with SES', async t => {
-  const dump = await main(true, 'scaffolding/gallery', ['galleryRevokes']);
+  const dump = await main(true, 'gallery', ['galleryRevokes']);
   t.deepEquals(dump.log, expectedGalleryRevokesLog);
   t.end();
 });
 
 test('run gallery galleryRevokes without SES', async t => {
-  const dump = await main(false, 'scaffolding/gallery', ['galleryRevokes']);
+  const dump = await main(false, 'gallery', ['galleryRevokes']);
   t.deepEquals(dump.log, expectedGalleryRevokesLog);
   t.end();
 });
@@ -125,13 +125,13 @@ const expectedAliceSellsAndBuysLog = [
 ];
 
 test('run gallery aliceSellsAndBuys with SES', async t => {
-  const dump = await main(true, 'scaffolding/gallery', ['aliceSellsAndBuys']);
+  const dump = await main(true, 'gallery', ['aliceSellsAndBuys']);
   t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();
 });
 
 test('run gallery aliceSellsAndBuys without SES', async t => {
-  const dump = await main(false, 'scaffolding/gallery', ['aliceSellsAndBuys']);
+  const dump = await main(false, 'gallery', ['aliceSellsAndBuys']);
   t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();
 });
@@ -149,13 +149,13 @@ const expectedAliceSellsToBobLog = [
 ];
 
 test('run gallery aliceSellsToBob with SES', async t => {
-  const dump = await main(true, 'scaffolding/gallery', ['aliceSellsToBob']);
+  const dump = await main(true, 'gallery', ['aliceSellsToBob']);
   t.deepEquals(dump.log, expectedAliceSellsToBobLog);
   t.end();
 });
 
 test('run gallery aliceSellsToBob without SES', async t => {
-  const dump = await main(false, 'scaffolding/gallery', ['aliceSellsToBob']);
+  const dump = await main(false, 'gallery', ['aliceSellsToBob']);
   t.deepEquals(dump.log, expectedAliceSellsToBobLog);
   t.end();
 });

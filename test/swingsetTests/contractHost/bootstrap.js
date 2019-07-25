@@ -2,8 +2,8 @@
 
 import harden from '@agoric/harden';
 
-import { escrowExchangeSrc } from '../../../../core/escrow';
-import { coveredCallSrc } from '../../../../core/coveredCall';
+import { escrowExchangeSrc } from '../../../core/escrow';
+import { coveredCallSrc } from '../../../core/coveredCall';
 
 function build(E, log) {
   // TODO BUG: All callers should wait until settled before doing
