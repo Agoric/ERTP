@@ -1,9 +1,9 @@
-// Copyright (C) 2019 Agoric, under Apache License 2.0
+// Copyright (C) 2018 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
 import evaluate from '@agoric/evaluate';
 
-import { makeHandoffService } from '../../more/handoff/handoff';
+import { makeContractHost } from '../../../../core/contractHost';
 
 function setup(syscall, state, helpers) {
   return helpers.makeLiveSlots(
@@ -11,8 +11,8 @@ function setup(syscall, state, helpers) {
     state,
     E =>
       harden({
-        makeHandoffService() {
-          return harden(makeHandoffService(E, evaluate));
+        makeHost() {
+          return harden(makeContractHost(E, evaluate));
         },
       }),
     helpers.vatID,
