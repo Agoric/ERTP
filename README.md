@@ -19,22 +19,15 @@ $ npm test
 
 ## Higher Order Smart Contracts
 
-The `contractHost` demo details the composition of a covered call option
+The `contractHost` test details the composition of a covered call option
 with an escrow exchange contract.
 
+```
+npx tape -r esm test/swingsetTests/test-contractHost.js
+```
+
+For more examples, please see the code for Alice and Bob in `test/swingsetTests/scaffolding/contractHost/`. 
+
 ![higher-order-smart-contract-covered-call-escrow](https://user-images.githubusercontent.com/150986/59150181-f3f55080-89e4-11e9-8046-fcb9c10831b1.png)
-
-### Usage: Contract Host Demo
-
-```
-$ npx vat run demo/contractHost -- covered-call-sale
-...
-++ bob.offerAliceOption starting
-++ alice.acceptOptionForFred starting
-++ alice.completeOptionsSale starting
-++ fred.acceptOptionOffer starting
-...
-
-```
 
 [watch]: https://www.youtube.com/watch?v=YXUqfgdDbr8
