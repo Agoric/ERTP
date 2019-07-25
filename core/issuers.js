@@ -39,13 +39,8 @@ Description must be truthy: ${description}`;
     // All queries above passed with no side effects.
     // During side effects below, any early exits should be made into
     // fatal turn aborts.
-
-    mintController.recordNewPayment(
-      purseOrPaymentSrc,
-      newSrcAmount,
-      payment,
-      paymentAmount,
-    );
+    mintController.recordNewAsset(payment, paymentAmount);
+    mintController.updateAmount(purseOrPaymentSrc, newSrcAmount);
     return payment;
   }
 
@@ -102,25 +97,20 @@ Description must be truthy: ${description}`;
   const assay = makeAssay(label);
   const mintController = makeMintController(assay);
 
-  function depositInto(purse, amount, srcPayment) {
+  function depositInto(purse, amount, payment) {
     amount = assay.coerce(amount);
-    const purseOldRightsAmount = mintController.getAmount(purse);
-    const srcOldRightsAmount = mintController.getAmount(srcPayment);
+    const oldPurseAmount = mintController.getAmount(purse);
+    const oldPaymentAmount = mintController.getAmount(payment);
     // Also checks that the union is representable
-    const purseNewRightsAmount = assay.with(purseOldRightsAmount, amount);
-    const srcNewRightsAmount = assay.without(srcOldRightsAmount, amount);
+    const newPurseAmount = assay.with(oldPurseAmount, amount);
+    const newPaymentAmount = assay.without(oldPaymentAmount, amount);
 
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
     // During side effects below, any early exits should be made into
     // fatal turn aborts.
-
-    mintController.recordDeposit(
-      srcPayment,
-      assay.coerce(srcNewRightsAmount),
-      purse,
-      assay.coerce(purseNewRightsAmount),
-    );
+    mintController.updateAmount(payment, newPaymentAmount);
+    mintController.updateAmount(purse, newPurseAmount);
 
     return amount;
   }
@@ -181,7 +171,7 @@ Description must be truthy: ${description}`;
           );
         },
       });
-      mintController.recordNewPurse(purse, initialBalance);
+      mintController.recordNewAsset(purse, initialBalance);
       return purse;
     },
   });

@@ -58,38 +58,14 @@ export function makeMintController(assay) {
     rights = makePrivateName(); // reset rights
   }
 
-  // creating a purse creates a new mapping from the purse to the
-  // amount within the purse
-  function recordNewPurse(purse, initialAmount) {
-    rights.init(purse, initialAmount);
-    recordPixelsAsAsset(initialAmount, purse);
+  function updateAmount(purseOrPayment, newAmount) {
+    rights.set(purseOrPayment, newAmount);
+    recordPixelsAsAsset(newAmount, purseOrPayment);
   }
 
-  // Creating a payment creates a new mapping from the payment to the
-  // amount within the payment. It also takes that amount from the
-  // source purseOrPayment, so the source must be updated with the new
-  // (lesser) newSrcAmount.
-  function recordNewPayment(
-    srcPurseOrPayment,
-    newSrcAmount,
-    payment,
-    paymentAmount,
-  ) {
-    rights.init(payment, paymentAmount);
-    rights.set(srcPurseOrPayment, newSrcAmount);
-
-    recordPixelsAsAsset(paymentAmount, payment);
-    recordPixelsAsAsset(newSrcAmount, srcPurseOrPayment);
-  }
-
-  // a deposit (putting a payment or part of a payment into a purse)
-  // changes the amounts of both the purse and the payment
-  function recordDeposit(payment, newPaymentAmount, purse, newPurseAmount) {
-    rights.set(payment, newPaymentAmount);
-    rights.set(purse, newPurseAmount);
-
-    recordPixelsAsAsset(newPaymentAmount, payment);
-    recordPixelsAsAsset(newPurseAmount, purse);
+  function recordNewAsset(purseOrPayment, initialAmount) {
+    rights.init(purseOrPayment, initialAmount);
+    recordPixelsAsAsset(initialAmount, purseOrPayment);
   }
 
   function getAmount(pursePayment) {
@@ -99,9 +75,8 @@ export function makeMintController(assay) {
   const mintController = {
     destroy,
     destroyAll,
-    recordNewPurse,
-    recordNewPayment,
-    recordDeposit,
+    updateAmount,
+    recordNewAsset,
     getAmount,
   };
   return mintController;
