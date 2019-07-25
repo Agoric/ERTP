@@ -1,8 +1,10 @@
 import { test } from 'tape-promise/tape';
 import { loadBasedir, buildVatController } from '@agoric/swingset-vat';
+import path from 'path';
 
 async function main(withSES, basedir, argv) {
-  const config = await loadBasedir(basedir);
+  const dir = path.resolve('test/swingsetTests', basedir);
+  const config = await loadBasedir(dir);
   const ldSrcPath = require.resolve(
     '@agoric/swingset-vat/src/devices/loopbox-src',
   );
@@ -22,14 +24,14 @@ const expectedTapFaucetLog = [
   'pixel from faucet balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
 ];
 
-test('run gallery demo tapFaucet with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['tapFaucet']);
+test('run gallery tapFaucet with SES', async t => {
+  const dump = await main(true, 'scaffolding/gallery', ['tapFaucet']);
   t.deepEquals(dump.log, expectedTapFaucetLog);
   t.end();
 });
 
-test('run gallery demo tapFaucet without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['tapFaucet']);
+test('run gallery tapFaucet without SES', async t => {
+  const dump = await main(false, 'scaffolding/gallery', ['tapFaucet']);
   t.deepEquals(dump.log, expectedTapFaucetLog);
   t.end();
 });
@@ -45,14 +47,14 @@ const expectedAliceChangesColorLog = [
   'pixel index is 100 of 100',
 ];
 
-test('run gallery demo aliceChangesColor with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceChangesColor']);
+test('run gallery aliceChangesColor with SES', async t => {
+  const dump = await main(true, 'scaffolding/gallery', ['aliceChangesColor']);
   t.deepEquals(dump.log, expectedAliceChangesColorLog);
   t.end();
 });
 
-test('run gallery demo aliceChangesColor without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceChangesColor']);
+test('run gallery aliceChangesColor without SES', async t => {
+  const dump = await main(false, 'scaffolding/gallery', ['aliceChangesColor']);
   t.deepEquals(dump.log, expectedAliceChangesColorLog);
   t.end();
 });
@@ -71,14 +73,18 @@ const expectedAliceSendsOnlyUseRightLog = [
   'bob was unable to color: Error: no use rights present',
 ];
 
-test('run gallery demo aliceSendsOnlyUseRight with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceSendsOnlyUseRight']);
+test('run gallery aliceSendsOnlyUseRight with SES', async t => {
+  const dump = await main(true, 'scaffolding/gallery', [
+    'aliceSendsOnlyUseRight',
+  ]);
   t.deepEquals(dump.log, expectedAliceSendsOnlyUseRightLog);
   t.end();
 });
 
-test('run gallery demo aliceSendsOnlyUseRight without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceSendsOnlyUseRight']);
+test('run gallery aliceSendsOnlyUseRight without SES', async t => {
+  const dump = await main(false, 'scaffolding/gallery', [
+    'aliceSendsOnlyUseRight',
+  ]);
   t.deepEquals(dump.log, expectedAliceSendsOnlyUseRightLog);
   t.end();
 });
@@ -93,14 +99,14 @@ const expectedGalleryRevokesLog = [
   'successfully threw Error: no use rights present',
 ];
 
-test('run gallery demo galleryRevokes with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['galleryRevokes']);
+test('run gallery galleryRevokes with SES', async t => {
+  const dump = await main(true, 'scaffolding/gallery', ['galleryRevokes']);
   t.deepEquals(dump.log, expectedGalleryRevokesLog);
   t.end();
 });
 
-test('run gallery demo galleryRevokes without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['galleryRevokes']);
+test('run gallery galleryRevokes without SES', async t => {
+  const dump = await main(false, 'scaffolding/gallery', ['galleryRevokes']);
   t.deepEquals(dump.log, expectedGalleryRevokesLog);
   t.end();
 });
@@ -118,14 +124,14 @@ const expectedAliceSellsAndBuysLog = [
   'alice dust purse balance {"label":{"issuer":{},"description":"dust"},"quantity":0}',
 ];
 
-test('run gallery demo aliceSellsAndBuys with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceSellsAndBuys']);
+test('run gallery aliceSellsAndBuys with SES', async t => {
+  const dump = await main(true, 'scaffolding/gallery', ['aliceSellsAndBuys']);
   t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();
 });
 
-test('run gallery demo aliceSellsAndBuys without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceSellsAndBuys']);
+test('run gallery aliceSellsAndBuys without SES', async t => {
+  const dump = await main(false, 'scaffolding/gallery', ['aliceSellsAndBuys']);
   t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();
 });
@@ -142,14 +148,14 @@ const expectedAliceSellsToBobLog = [
   'bob tried to color, and produced #B695C0',
 ];
 
-test('run gallery demo aliceSellsToBob with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceSellsToBob']);
+test('run gallery aliceSellsToBob with SES', async t => {
+  const dump = await main(true, 'scaffolding/gallery', ['aliceSellsToBob']);
   t.deepEquals(dump.log, expectedAliceSellsToBobLog);
   t.end();
 });
 
-test('run gallery demo aliceSellsToBob without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceSellsToBob']);
+test('run gallery aliceSellsToBob without SES', async t => {
+  const dump = await main(false, 'scaffolding/gallery', ['aliceSellsToBob']);
   t.deepEquals(dump.log, expectedAliceSellsToBobLog);
   t.end();
 });
