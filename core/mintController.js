@@ -15,34 +15,34 @@ export function makeBasicMintController() {
     rights = makePrivateName(); // reset rights
   }
 
-  // creating a purse creates a new mapping from the purse to the
-  // amount within the purse
+  // Creating a purse creates a new mapping from the purse to the
+  // amount within the purse.
   function recordNewPurse(purse, initialAmount) {
     rights.init(purse, initialAmount);
   }
 
-  // creating a payment creates a new mapping from the payment to the
-  // amount within the payment
-  // It also takes that amount from the source purseOrPayment, so the
-  // source must be updated with the new (lesser) newSrcAmount
+  // Creating a payment creates a new mapping from the payment to the
+  // amount within the payment. It also takes that amount from the
+  // source purseOrPayment, so the source must be updated with the new
+  // (lesser) newSrcAmount.
   function recordNewPayment(
     srcPurseOrPayment,
+    newSrcAmount,
     payment,
     paymentAmount,
-    newSrcAmount,
   ) {
     rights.init(payment, paymentAmount);
     rights.set(srcPurseOrPayment, newSrcAmount);
   }
 
-  // a deposit (putting a payment or part of a payment into a purse)
-  // changes the amounts of both the purse and the payment
+  // A deposit (putting a payment or part of a payment into a purse)
+  // changes the amounts of both the purse and the payment.
   function recordDeposit(payment, newPaymentAmount, purse, newPurseAmount) {
     rights.set(payment, newPaymentAmount);
     rights.set(purse, newPurseAmount);
   }
 
-  // getAmount just returns the amount associated with the purse or payment
+  // getAmount just returns the amount associated with the purse or payment.
   function getAmount(purseOrPayment) {
     return rights.get(purseOrPayment);
   }

@@ -42,9 +42,9 @@ Description must be truthy: ${description}`;
 
     mintController.recordNewPayment(
       purseOrPaymentSrc,
+      newSrcAmount,
       payment,
       paymentAmount,
-      newSrcAmount,
     );
     return payment;
   }

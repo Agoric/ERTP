@@ -11,14 +11,14 @@ export function makeMintController(assay) {
   let rights = makePrivateName();
 
   // pixel to purse/payment
-  const pixelToPursePayment = new Map();
+  const pixelToAsset = new Map();
 
-  function setPixelsToAsset(amount, purseOrPayment) {
+  function recordPixelsAsAsset(amount, purseOrPayment) {
     // purse or payment is the key of rights
     amount = assay.coerce(amount);
     const pixelList = assay.quantity(amount);
     for (const pixel of pixelList) {
-      pixelToPursePayment.set(getString(pixel), purseOrPayment);
+      pixelToAsset.set(getString(pixel), purseOrPayment);
     }
   }
 
@@ -27,19 +27,16 @@ export function makeMintController(assay) {
   function destroy(amount) {
     // amount must only contain one pixel
     const pixelList = assay.quantity(amount);
-    insist(pixelList.length === 1)`amount must only contain one pixel`;
+    insist(pixelList.length === 1)`amount must contain exactly one pixel`;
 
     const pixel = pixelList[0];
     const strPixel = getString(pixel);
-    insist(pixelToPursePayment.has(strPixel))`\
+    insist(pixelToAsset.has(strPixel))`\
       pixel ${strPixel} could not be found to be destroyed`;
-    const purseOrPayment = pixelToPursePayment.get(strPixel);
+    const purseOrPayment = pixelToAsset.get(strPixel);
     // amount is guaranteed to be there
-    // eslint-disable-next-line no-use-before-define
     amount = assay.coerce(amount);
     const originalAmount = rights.get(purseOrPayment);
-
-    // esline-disable-next-line no-use-before-define
     const newAmount = assay.without(originalAmount, amount);
 
     // ///////////////// commit point //////////////////
@@ -49,12 +46,12 @@ export function makeMintController(assay) {
 
     rights.set(purseOrPayment, newAmount);
 
-    // reset the mappings from everything in the amount to the purses
-    // or payments that hold them
-    setPixelsToAsset(newAmount, purseOrPayment);
+    // Reset the mappings from everything in the amount to the purse
+    // or payment that holds them.
+    recordPixelsAsAsset(newAmount, purseOrPayment);
 
-    // delete pixel from pixelToPursePayment
-    pixelToPursePayment.delete(pixel);
+    // delete pixel from pixelToAsset
+    pixelToAsset.delete(pixel);
   }
 
   function destroyAll() {
@@ -65,24 +62,24 @@ export function makeMintController(assay) {
   // amount within the purse
   function recordNewPurse(purse, initialAmount) {
     rights.init(purse, initialAmount);
-    setPixelsToAsset(initialAmount, purse);
+    recordPixelsAsAsset(initialAmount, purse);
   }
 
-  // creating a payment creates a new mapping from the payment to the
-  // amount within the payment
-  // It also takes that amount from the source purseOrPayment, so
-  // the source must be updated with the new (lesser) newPurseOrPaymentAmount
+  // Creating a payment creates a new mapping from the payment to the
+  // amount within the payment. It also takes that amount from the
+  // source purseOrPayment, so the source must be updated with the new
+  // (lesser) newSrcAmount.
   function recordNewPayment(
     srcPurseOrPayment,
+    newSrcAmount,
     payment,
     paymentAmount,
-    newSrcAmount,
   ) {
     rights.init(payment, paymentAmount);
     rights.set(srcPurseOrPayment, newSrcAmount);
 
-    setPixelsToAsset(paymentAmount, payment);
-    setPixelsToAsset(newSrcAmount, srcPurseOrPayment);
+    recordPixelsAsAsset(paymentAmount, payment);
+    recordPixelsAsAsset(newSrcAmount, srcPurseOrPayment);
   }
 
   // a deposit (putting a payment or part of a payment into a purse)
@@ -91,8 +88,8 @@ export function makeMintController(assay) {
     rights.set(payment, newPaymentAmount);
     rights.set(purse, newPurseAmount);
 
-    setPixelsToAsset(newPaymentAmount, payment);
-    setPixelsToAsset(newPurseAmount, purse);
+    recordPixelsAsAsset(newPaymentAmount, payment);
+    recordPixelsAsAsset(newPurseAmount, purse);
   }
 
   function getAmount(pursePayment) {
