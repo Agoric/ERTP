@@ -4,28 +4,42 @@ export function makeBasicMintController() {
   // Map from purse or payment to the rights it currently
   // holds. Rights can move via payments
 
-  // purse/payment to amount
-  let rights = makePrivateName();
+  // purse to amount
+  let purses = makePrivateName();
+  // payment to amount
+  let payments = makePrivateName();
 
   function destroy(_amount) {
     throw new Error('destroy is not implemented');
   }
 
   function destroyAll() {
-    rights = makePrivateName(); // reset rights
+    purses = makePrivateName(); // reset rights
+    payments = makePrivateName(); // reset rights
   }
 
-  function updateAmount(purseOrPayment, newAmount) {
-    rights.set(purseOrPayment, newAmount);
+  function updateAmount(purseOrPayment, isPurse, newAmount) {
+    if (isPurse) {
+      purses.set(purseOrPayment, newAmount);
+    } else {
+      payments.set(purseOrPayment, newAmount);
+    }
   }
 
-  function recordNewAsset(purseOrPayment, initialAmount) {
-    rights.init(purseOrPayment, initialAmount);
+  function recordNewAsset(purseOrPayment, isPurse, initialAmount) {
+    if (isPurse) {
+      purses.init(purseOrPayment, initialAmount);
+    } else {
+      payments.init(purseOrPayment, initialAmount);
+    }
   }
 
   // getAmount just returns the amount associated with the purse or payment.
-  function getAmount(purseOrPayment) {
-    return rights.get(purseOrPayment);
+  function getAmount(purseOrPayment, isPurse) {
+    if (isPurse) {
+      return purses.get(purseOrPayment);
+    }
+    return payments.get(purseOrPayment);
   }
 
   const mintController = {
