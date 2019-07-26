@@ -24,13 +24,14 @@ interface Issuer {
    * Make a new Payment that has exclusive rights to the amount, only if the
    * Purse had those rights, exclusively or not.
    */
-  getExclusive(amount:Amount, src:Purse, name:String = 'a payment') -> (Payment);
+  getExclusive(amount:Amount, src:PurseOrPayment, name:String = 'a payment')
+    -> (Payment);
 
   /**
    * Make a new Payment that has exclusive rights to all the contents of the
    * purse.
    */
-  getExclusiveAll(src:Purse, name:String = 'a payment') -> (Payment);
+  getExclusiveAll(src:PurseOrPayment, name:String = 'a payment') -> (Payment);
 
   /**
    * Burn (remove) amount of the rights from src. If the rights are fungible,
@@ -178,5 +179,5 @@ interface MintController {
   recordMint(purse:Purse, initialAmount:Amount);
 
   /** Return the Amount contained in purse. */
-  getAmount(purse:Purse) -> (Amount);
+  getAmount(purseOrPayment:PurseOrPayment) -> (Amount);
 }

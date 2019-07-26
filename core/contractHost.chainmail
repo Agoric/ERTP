@@ -1,6 +1,6 @@
 /**
  * ContractHost provides a way to install and run verifiable contracts.
- *
+ * 
  * Install(source) creates Installations. Installations represent particular
  * contract forms, which can be spawn()'d to create Contract instances
  * initialized with specific terms. These Contracts manage invitations for
