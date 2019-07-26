@@ -24,23 +24,24 @@ interface Issuer {
    * Make a new Payment that has exclusive rights to the amount, only if the
    * Purse had those rights, exclusively or not.
    */
-  getExclusive(amount:Amount, src:Purse, name:String = 'a payment') -> (Payment);
+  getExclusive(amount:Amount, src:PurseOrPayment, name:String = 'a payment')
+    -> (Payment);
 
   /**
    * Make a new Payment that has exclusive rights to all the contents of the
    * purse.
    */
-  getExclusiveAll(src:Purse, name:String = 'a payment') -> (Payment);
+  getExclusiveAll(src:PurseOrPayment, name:String = 'a payment') -> (Payment);
 
   /**
-   * Burn (destroy) amount of the rights in src. If the rights are fungible,
-   * this directly removes the rights from the purse, while if the rights are
-   * non-fungible, this ensures that no purse has access to those rights. This
-   * step is often a prelude to re-issuing the rights.
+   * Burn (remove) amount of the rights from src. If the rights are fungible,
+   * this directly removes the rights from the payment, while if the rights are
+   * non-fungible, this ensures that no purse or payment has access to those
+   * rights.
    */
   burn(amount:Amount, src:Payment);
 
-  /** Burn (destroy) all of the rights in src. */
+  /** Burn (remove) all of the rights from src. */
   burnAll(src:Payment);
 }
 
@@ -78,10 +79,10 @@ interface Mint {
    */
   mint(initialBalance:Amount, name:String = 'a purse') -> (Purse);
 
-  /** Reset all purses to contain nothing. */
+  /** Reset all purses and payments to contain nothing. */
   destroyAll();
 
-  /** (Non-fungible amounts only.) Ensure no purse contains amount. */
+  /** (Non-fungible amounts only) Ensure no purse or payment contains amount. */
   destroy(amount:Amount);
 
   /**
@@ -93,9 +94,10 @@ interface Mint {
 
 /**
  * Purses hold verified amounts of certain rights issued by Mints. Purses can
- * transfer part of the balance they hold in a Payment, which has a narrower
- * interface. A purse's balance can rise and fall, through the action of deposit
- * and withdraw, while payments don't accept deposits.
+ * transfer part of the balance they hold in a payment, which has a narrower
+ * interface. A purse's balance can rise and fall, through the action of
+ * deposit() and withdraw(), while payments don't accept deposits, but can be
+ * reduced with burn() or by passing them as a parameter to deposit().
  *
  * The primary use for Purses and Payments is for currency-like and goods-like
  * valuables, but they can also be used to represent other kinds of rights, such
@@ -121,7 +123,7 @@ interface Purse extends (PurseOrPayment) {
  * Payments hold verified amounts of certain rights issued by Mints. Amounts
  * from payments can be deposited in purses, but otherwise, the entire amount is
  * available when the payment is transferred. A payment's balance can only fall,
- * through the action of withdraw.
+ * through the action of deposit() or burn().
  * 
  * Payments can be converted to Purses by calling
  * payment.getIssuer().makeEmptyPurse().depositAll(payment);
@@ -146,7 +148,9 @@ interface PurseOrPayment {
 
 /** MintController records the amounts contained by purses. */
 interface MintController {
-  /** (Non-fungible amounts only.) Ensure no purse contains amount. */
+  /**
+   * (Non-fungible amounts only.) Ensure no purse or payment contains amount.
+   */
   destroy(amount:Amount);
 
   /** Reset all purses to contain nothing. */
@@ -156,13 +160,18 @@ interface MintController {
    * Record that payment is a new Payment containing amount, and that src
    * now contains srcNewRightsAmount.
    */
-  recordPayment(src, payment, amount, srcNewRightsAmount);
+  recordPayment(
+    src:Purse, payment:Payment, amount:Amount, srcNewRightsAmount:Amount);
 
   /**
    * Record that srcPayment now contains srcNewRightsAmount, and purse is a new
    * Purse containing purseNewRightsAmount.
    */
-  recordDeposit(scPayment, srcNewRightsAmount, purse, purseNewRightsAmount);
+  recordDeposit(
+    src:PurseOrPayment,
+	srcNewRightsAmount:Amount,
+	purse:Purse,
+	purseNewRightsAmount:Amount);
 
   /**
    * Record that purse is a new Purse containing srcNewRightsAmount.
@@ -170,5 +179,5 @@ interface MintController {
   recordMint(purse:Purse, initialAmount:Amount);
 
   /** Return the Amount contained in purse. */
-  getAmount(purse:Purse) -> (Amount);
+  getAmount(purseOrPayment:PurseOrPayment) -> (Amount);
 }

@@ -1,12 +1,12 @@
 /**
  * ContractHost provides a way to install and run verifiable contracts.
- *
+ * 
  * Install(source) creates Installations. Installations represent particular
  * contract forms, which can be spawn()'d to create Contract instances
  * initialized with specific terms. These Contracts manage invitations for
  * multiple seats, each of which repesents a role in an transaction. After a
- * role has carried out its responsibilities, it may collect (q.v.) winnings and
- * refunds into appropriate purses.
+ * role has carried out its responsibilities, it may call collect() (described
+ * later) to collect winnings and refunds into appropriate purses.
  */
 interface ContractHost {
   /**

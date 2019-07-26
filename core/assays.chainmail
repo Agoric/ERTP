@@ -1,57 +1,44 @@
 /**
- * Creator and validator of resource Amounts.
+ * Creator and validator of asset Amounts.
  * 
- * Amounts are the foundation for our representation of tradable
- * goods. The are the base resources manipulated by mints, and
- * represent the goods and currency carried by purses and
- * payments. They can be used to represent currency, stock, or the
- * abstract right to participate in a particular exchange.
+ * Amounts are the canonical description of tradable goods. They are manipulated
+ * by mints, and represent the goods and currency carried by purses and
+ * payments. They can be used to represent currency, stock, or the abstract
+ * right to participate in a particular exchange.
  * 
- * Assays distinguish between Quantities and Amounts.  An Amount is a
- * pass-by-copy description of some set of erights. An amount has a
- * label and a Quantity. All Amounts made by the same Assay have the
- * same label but differ in Quantity.  This module treats labels as
- * black boxes. It is not aware of issuers, and so can handle labels
- * whose issuers are merely presences of remote issuers.
+ * Assays distinguish between Quantities and Amounts. Quantities describe the
+ * extent of something that can be owned or shared, while Amounts are wrappers
+ * on those Quantities that have been validated by the Assay, and can be
+ * verified as having been issued by the Assay.  All Amounts made by the same
+ * Assay have the same label.
  * 
- * Quantities are descriptions of specific rights, while Amounts are
- * wrappers on those Quantities that have been validated by the Assay,
- * and can be verified as having been issued by the Assay. Quantities
- * include natural numbers representing how much of a fungible good is
- * being discussed, arbitrary objects describing particular
- * non-fungible goods, and names representing abstract rights.
- * 
- * An assay is pass-by-presence, but is not designed to be usefully
- * passed.  Rather, we expect that each vat that needs to operate on
- * amounts will have its own local assay to do so.
+ * Quantities include natural numbers representing how much of a fungible good
+ * is being discussed, arbitrary objects describing particular non-fungible
+ * goods, or names representing abstract rights.
  */
 interface Assay {
 
-  /** Human readable name for the resource. */
+  /** Human readable name for the asset. */
   getLabel() -> (String);
 
   /** Make a new verified Amount containing the allegedQuantity. */
   make(allegedQuantity:Quantity) -> (Amount);
 
   /**
-   * Verify that an Amount was issued by this Assay. Notice that this
-   * is different from coerce(), which will accept manually
-   * constructed amounts and amounts from other assays with the same
-   * label.
+   * Verify that an Amount was created by this Assay. Notice that this is
+   * different from coerce(), which will accept manually constructed amounts and
+   * amounts from other assays with the same label.
    */
   vouch(amount:Amount) -> (Amount);
 
   /**
-  * Is this like an Amount object made by this Assay, such as one
-  * received by pass-by-copy from an otherwise-identical remote
-  * Amount? On success, return an Amount object made by this
-  * Assay. Otherwise error.
-  * 
-  * Until we have good support for pass-by-construction, the full
-  * assay style is too awkward to use remotely. See
-  * mintTestAssay. So coerce also accepts a bare number which it
-  * will coerce to a labeled number via assay.make.
-  */
+   * Is this like an Amount object made by this Assay, such as one received by
+   * pass-by-copy from an otherwise-identical remote Amount? On success, return
+   * an Amount object made by this Assay. Otherwise error.
+   * 
+   * For fungible amounts based on natural numbers, coerce also accepts a bare
+   * number which it will coerce to a labeled number via assay.make().
+   */
   coerce(allegedAmount:Amount) -> (Amount);
 
   /** Return the Quantity contained in the Amount parameter. */
@@ -71,7 +58,7 @@ interface Assay {
 
   /**
    * Returns a new amount that includes the portion of leftAmount not included
-   * in rightAmount.
+   * in rightAmount. If leftAmount doesn't include rightAmout, throw an error.
    */
   without(leftAmount:Amount, rightAmount:Amount) -> (Amount);
 };
