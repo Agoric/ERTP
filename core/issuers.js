@@ -15,17 +15,12 @@ function makeMint(
   insist(description)`\
 Description must be truthy: ${description}`;
 
-  // src is a purse or payment. Return a fresh payment.  One internal
+  // assetSrc is a purse or payment. Return a fresh payment.  One internal
   // function used for both cases, since they are so similar.
-  function takePayment(
-    purseOrPaymentSrc,
-    isPurse,
-    paymentAmount,
-    unsafePaymentName,
-  ) {
+  function takePayment(assetSrc, isPurse, paymentAmount, unsafePaymentName) {
     const paymentName = `${unsafePaymentName}`;
     paymentAmount = assay.coerce(paymentAmount);
-    const oldSrcAmount = mintController.getAmount(purseOrPaymentSrc, isPurse);
+    const oldSrcAmount = mintController.getAmount(assetSrc, isPurse);
     const newSrcAmount = assay.without(oldSrcAmount, paymentAmount);
 
     const payment = harden({
@@ -45,7 +40,7 @@ Description must be truthy: ${description}`;
     // During side effects below, any early exits should be made into
     // fatal turn aborts.
     mintController.recordNewAsset(payment, false, paymentAmount);
-    mintController.updateAmount(purseOrPaymentSrc, isPurse, newSrcAmount);
+    mintController.updateAmount(assetSrc, isPurse, newSrcAmount);
     return payment;
   }
 

@@ -15,12 +15,12 @@ export function makeMintController(assay) {
   // pixel to purse/payment
   const pixelToAsset = new Map();
 
-  function recordPixelsAsAsset(amount, purseOrPayment) {
+  function recordPixelsAsAsset(amount, asset) {
     // purse or payment is the key of rights
     amount = assay.coerce(amount);
     const pixelList = assay.quantity(amount);
     for (const pixel of pixelList) {
-      pixelToAsset.set(getString(pixel), purseOrPayment);
+      pixelToAsset.set(getString(pixel), asset);
     }
   }
 
@@ -35,7 +35,7 @@ export function makeMintController(assay) {
     const strPixel = getString(pixel);
     insist(pixelToAsset.has(strPixel))`\
       pixel ${strPixel} could not be found to be destroyed`;
-    const purseOrPayment = pixelToAsset.get(strPixel);
+    const asset = pixelToAsset.get(strPixel);
     // amount is guaranteed to be there
     amount = assay.coerce(amount);
 
@@ -45,22 +45,22 @@ export function makeMintController(assay) {
     // fatal turn aborts.
 
     // we don't know if this is a purse or payment, so handle both cases
-    if (purses.has(purseOrPayment)) {
-      const originalAmount = purses.get(purseOrPayment);
+    if (purses.has(asset)) {
+      const originalAmount = purses.get(asset);
       const newAmount = assay.without(originalAmount, amount);
-      purses.set(purseOrPayment, newAmount);
+      purses.set(asset, newAmount);
       // Reset the mappings from everything in the amount to the purse
       // or payment that holds them.
-      recordPixelsAsAsset(newAmount, purseOrPayment);
+      recordPixelsAsAsset(newAmount, asset);
     }
 
-    if (payments.has(purseOrPayment)) {
-      const originalAmount = payments.get(purseOrPayment);
+    if (payments.has(asset)) {
+      const originalAmount = payments.get(asset);
       const newAmount = assay.without(originalAmount, amount);
-      payments.set(purseOrPayment, newAmount);
+      payments.set(asset, newAmount);
       // Reset the mappings from everything in the amount to the purse
       // or payment that holds them.
-      recordPixelsAsAsset(newAmount, purseOrPayment);
+      recordPixelsAsAsset(newAmount, asset);
     }
 
     // delete pixel from pixelToAsset
@@ -72,30 +72,30 @@ export function makeMintController(assay) {
     payments = makePrivateName();
   }
 
-  function updateAmount(purseOrPayment, isPurse, newAmount) {
+  function updateAmount(asset, isPurse, newAmount) {
     if (isPurse) {
-      purses.set(purseOrPayment, newAmount);
+      purses.set(asset, newAmount);
     } else {
-      payments.set(purseOrPayment, newAmount);
+      payments.set(asset, newAmount);
     }
-    recordPixelsAsAsset(newAmount, purseOrPayment);
+    recordPixelsAsAsset(newAmount, asset);
   }
 
-  function recordNewAsset(purseOrPayment, isPurse, initialAmount) {
+  function recordNewAsset(asset, isPurse, initialAmount) {
     if (isPurse) {
-      purses.init(purseOrPayment, initialAmount);
+      purses.init(asset, initialAmount);
     } else {
-      payments.init(purseOrPayment, initialAmount);
+      payments.init(asset, initialAmount);
     }
 
-    recordPixelsAsAsset(initialAmount, purseOrPayment);
+    recordPixelsAsAsset(initialAmount, asset);
   }
 
-  function getAmount(purseOrPayment, isPurse) {
+  function getAmount(asset, isPurse) {
     if (isPurse) {
-      return purses.get(purseOrPayment);
+      return purses.get(asset);
     }
-    return payments.get(purseOrPayment);
+    return payments.get(asset);
   }
 
   const mintController = {

@@ -18,28 +18,28 @@ export function makeBasicMintController() {
     payments = makePrivateName(); // reset rights
   }
 
-  function updateAmount(purseOrPayment, isPurse, newAmount) {
+  function updateAmount(asset, isPurse, newAmount) {
     if (isPurse) {
-      purses.set(purseOrPayment, newAmount);
+      purses.set(asset, newAmount);
     } else {
-      payments.set(purseOrPayment, newAmount);
+      payments.set(asset, newAmount);
     }
   }
 
-  function recordNewAsset(purseOrPayment, isPurse, initialAmount) {
+  function recordNewAsset(asset, isPurse, initialAmount) {
     if (isPurse) {
-      purses.init(purseOrPayment, initialAmount);
+      purses.init(asset, initialAmount);
     } else {
-      payments.init(purseOrPayment, initialAmount);
+      payments.init(asset, initialAmount);
     }
   }
 
   // getAmount just returns the amount associated with the purse or payment.
-  function getAmount(purseOrPayment, isPurse) {
+  function getAmount(asset, isPurse) {
     if (isPurse) {
-      return purses.get(purseOrPayment);
+      return purses.get(asset);
     }
-    return payments.get(purseOrPayment);
+    return payments.get(asset);
   }
 
   const mintController = {
