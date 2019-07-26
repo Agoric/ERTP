@@ -19,7 +19,7 @@ export function makeMintController(assay) {
     }
   }
 
-  function makeAssetController() {
+  function makeAssetController(type) {
     // asset to amount
     let assets = makePrivateName();
     return {
@@ -34,17 +34,33 @@ export function makeMintController(assay) {
       getAmount(asset) {
         return assets.get(asset);
       },
+      getType() {
+        return `${type}`;
+      },
+      has(asset) {
+        return assets.has(asset);
+      },
       destroyAll() {
         assets = makePrivateName(); // reset completely
       },
     };
   }
 
-  const purseController = makeAssetController();
-  const paymentController = makeAssetController();
+  const purseController = makeAssetController('purse');
+  const paymentController = makeAssetController('payment');
+
+  function isPurse(asset) {
+    return purseController.has(asset);
+  }
+
+  function isPayment(asset) {
+    return paymentController.has(asset);
+  }
 
   // This amount (must be nonfungible) will be forcibly taken out of
-  // all purses and payments that it is currently in
+  // all purses and payments that it is currently in. Destroy is
+  // outside of an assetController because it could affect purses or
+  // payments
   function destroy(amount) {
     // amount must only contain one pixel
     const pixelList = assay.quantity(amount);
@@ -63,8 +79,7 @@ export function makeMintController(assay) {
     // During side effects below, any early exits should be made into
     // fatal turn aborts.
 
-    const type = asset.getType();
-    const controller = type === 'purse' ? purseController : paymentController;
+    const controller = isPurse(asset) ? purseController : paymentController;
 
     const originalAmount = controller.getAmount(asset);
     const newAmount = assay.without(originalAmount, amount);
@@ -81,6 +96,8 @@ export function makeMintController(assay) {
     destroy,
     purseController,
     paymentController,
+    isPurse,
+    isPayment,
   };
   return mintController;
 }

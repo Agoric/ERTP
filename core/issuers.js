@@ -38,9 +38,6 @@ Description must be truthy: ${description}`;
       getName() {
         return paymentName;
       },
-      getType() {
-        return 'payment';
-      },
     });
 
     // ///////////////// commit point //////////////////
@@ -182,9 +179,6 @@ Description must be truthy: ${description}`;
             purseController.getAmount(purse),
             paymentName,
           );
-        },
-        getType() {
-          return 'purse';
         },
       });
       purseController.recordNew(purse, initialBalance);
