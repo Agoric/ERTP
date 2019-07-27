@@ -57,6 +57,18 @@ export function makeMintController(assay) {
     return paymentController.has(asset);
   }
 
+  function getController(asset) {
+    if (purseController.has(asset)) {
+      return purseController;
+    }
+    if (paymentController.has(asset)) {
+      return paymentController;
+    }
+    throw new Error(
+      `asset ${asset.getName()} was not recognized as a purse or a payment`,
+    );
+  }
+
   // This amount (must be nonfungible) will be forcibly taken out of
   // all purses and payments that it is currently in. Destroy is
   // outside of an assetController because it could affect purses or
@@ -74,15 +86,14 @@ export function makeMintController(assay) {
     // amount is guaranteed to be there
     amount = assay.coerce(amount);
 
+    const controller = getController(asset);
+    const originalAmount = controller.getAmount(asset);
+    const newAmount = assay.without(originalAmount, amount);
+
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
     // During side effects below, any early exits should be made into
     // fatal turn aborts.
-
-    const controller = isPurse(asset) ? purseController : paymentController;
-
-    const originalAmount = controller.getAmount(asset);
-    const newAmount = assay.without(originalAmount, amount);
     controller.updateAmount(asset, newAmount);
     // Reset the mappings from everything in the amount to the purse
     // or payment that holds them.
