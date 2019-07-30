@@ -97,7 +97,7 @@ function build(E, log) {
     return E(host)
       .getInstallationSourceCode(installationP)
       .then(src => {
-        log('Does source ', src, ' match? ', src.start === contractSrcs.start);
+        log('Does source match? ', src.start === contractSrcs.start);
 
         const fooInviteP = E(installationP).spawn('foo terms');
 
