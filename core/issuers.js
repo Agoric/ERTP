@@ -141,9 +141,9 @@ Description must be truthy: ${description}`;
       this.destroy(amount);
       return mint(amount);
     },
-    mint(initialBalance, unsafeName = 'a purse') {
+    mint(initialBalance, name = 'a purse') {
       initialBalance = assay.coerce(initialBalance);
-      const name = `${unsafeName}`;
+      name = `${name}`;
 
       const purse = harden({
         getName() {

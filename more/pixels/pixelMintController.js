@@ -80,8 +80,9 @@ export function makeMintController(assay) {
 
     const pixel = pixelList[0];
     const strPixel = getString(pixel);
-    insist(pixelToAsset.has(strPixel))`\
-      pixel ${strPixel} could not be found to be destroyed`;
+    insist(
+      pixelToAsset.has(strPixel),
+    )`pixel ${strPixel} could not be found to be destroyed`;
     const asset = pixelToAsset.get(strPixel);
     // amount is guaranteed to be there
     amount = assay.coerce(amount);
