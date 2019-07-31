@@ -19,7 +19,7 @@ export function makeMintController(assay) {
     }
   }
 
-  function makeAssetController(type) {
+  function makeAssetController() {
     // asset to amount
     let assets = makePrivateName();
     return {
@@ -33,9 +33,6 @@ export function makeMintController(assay) {
       },
       getAmount(asset) {
         return assets.get(asset);
-      },
-      getType() {
-        return `${type}`;
       },
       has(asset) {
         return assets.has(asset);
