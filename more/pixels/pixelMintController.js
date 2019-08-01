@@ -1,6 +1,5 @@
 import { makePrivateName } from '../../util/PrivateName';
 import { insist } from '../../util/insist';
-
 import { getString } from './types/pixel';
 
 export function makeMintController(assay) {

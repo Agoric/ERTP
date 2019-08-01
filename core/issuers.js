@@ -11,9 +11,38 @@ function makeMint(
   description,
   makeMintController = makeBasicMintController,
   makeAssay = makeNatAssay,
+  makeUseObj = harden((_issuer, _purseOrPayment) => harden({})),
+  parentIssuer,
 ) {
   insist(description)`\
 Description must be truthy: ${description}`;
+
+  let childIssuer;
+  let childMint;
+
+  function getOrMakeChildMint() {
+    if (childMint === undefined) {
+      childMint = makeMint(
+        description,
+        makeMintController,
+        makeAssay,
+        makeUseObj,
+        issuer,
+      );
+      childIssuer = childMint.getIssuer();
+    }
+    return childMint;
+  }
+
+  function getChildAmount(amount) {
+    getOrMakeChildMint();
+    // quantity is the same, but amounts are different for
+    // different issuers
+    const quantity = assay.quantity(amount);
+    const childAssay = childIssuer.getAssay();
+    const childAmount = childAssay.make(quantity);
+    return childAmount;
+  }
 
   // assetSrc is a purse or payment. Return a fresh payment.  One internal
   // function used for both cases, since they are so similar.
@@ -37,6 +66,21 @@ Description must be truthy: ${description}`;
       },
       getName() {
         return paymentName;
+      },
+      getUse() {
+        return makeUseObj(issuer, payment);
+      },
+      getDelegatedUse() {
+        // quantity is the same, but amounts are different for
+        // different issuers
+        const childAmount = getChildAmount(payment.getBalance());
+        const childPurse = childMint.mint(childAmount);
+        const childPayment = childPurse.withdrawAll();
+        return makeUseObj(childIssuer, childPayment);
+      },
+      revokeChildren() {
+        const childAmount = getChildAmount(payment.getBalance());
+        childMint.revoke(childAmount);
       },
     });
 
@@ -96,6 +140,23 @@ Description must be truthy: ${description}`;
       const sinkPurse = issuer.makeEmptyPurse('sink purse');
       return sinkPurse.depositAll(srcPaymentP);
     },
+
+    getParentIssuer() {
+      return parentIssuer;
+    },
+    getChildIssuer() {
+      getOrMakeChildMint();
+      return childIssuer;
+    },
+    isDescendantIssuer(allegedDescendant) {
+      if (childIssuer === undefined) {
+        return false;
+      }
+      if (childIssuer === issuer) {
+        return true;
+      }
+      return childIssuer.isDescendantIssuer(allegedDescendant);
+    },
   });
 
   const label = harden({ issuer, description });
@@ -131,15 +192,22 @@ Description must be truthy: ${description}`;
       purseController.destroyAll();
       paymentController.destroyAll();
     },
-    destroy(amount) {
-      amount = assay.coerce(amount);
-      // for non-fungible tokens that are unique, destroy them by removing them from
-      // the purses/payments that they live in
-      destroy(amount);
-    },
     revoke(amount) {
-      this.destroy(amount);
-      return mint(amount);
+      amount = assay.coerce(amount);
+      // for non-fungible tokens that are unique, revoke them by removing them from
+      // the purses/payments that they live in
+
+      // the amount may not exist in the case of childMint amounts, so
+      // catch the error
+
+      try {
+        destroy(amount);
+        if (childMint !== undefined) {
+          childMint.revoke(getChildAmount(amount)); // recursively revoke child assets
+        }
+      } catch (err) {
+        console.log(err);
+      }
     },
     mint(initialBalance, name = 'a purse') {
       initialBalance = assay.coerce(initialBalance);
@@ -180,13 +248,23 @@ Description must be truthy: ${description}`;
             paymentName,
           );
         },
+        getUse() {
+          return makeUseObj(issuer, purse);
+        },
+        getDelegatedUse() {
+          const childAmount = getChildAmount(purse.getBalance());
+          const childPurse = childMint.mint(childAmount);
+          return makeUseObj(childIssuer, childPurse);
+        },
+        revokeChildren() {
+          const childAmount = getChildAmount(purse.getBalance());
+          childMint.revoke(childAmount);
+        },
       });
       purseController.recordNew(purse, initialBalance);
       return purse;
     },
   });
-
-  // TODO: pass along destroyMint capability too
   return mint;
 }
 harden(makeMint);
