@@ -2,12 +2,12 @@
 
 import harden from '@agoric/harden';
 
-import { escrowExchangeSrcs } from '../../core/escrow';
-import { makeUniAssayMaker } from '../../core/assays';
-import { makeBasicMintController } from '../../core/mintController';
-import { insist } from '../../util/insist';
-import { makeMint } from '../../core/issuers';
-import { allComparable } from '../../util/sameStructure';
+import { escrowExchangeSrcs } from '../../../core/escrow';
+import { makeUniAssayMaker } from '../../../core/assays';
+import { makeBasicMintController } from '../../../core/mintController';
+import { insist } from '../../../util/insist';
+import { makeMint } from '../../../core/issuers';
+import { allComparable } from '../../../util/sameStructure';
 
 function build(E, log) {
   function testEscrowServiceMismatches(host, randMintP, artMintP) {
