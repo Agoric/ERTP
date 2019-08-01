@@ -72,9 +72,7 @@ const coveredCall = {
     const allegedInviteMoney = allegedInviteTerms.money;
     if (allegedInviteMoney.quantity !== termsMoney.quantity) {
       throw new Error(
-        `Wrong money quantity: ${allegedInviteMoney.quantity}, expected ${
-          termsMoney.quantity
-        }`,
+        `Wrong money quantity: ${allegedInviteMoney.quantity}, expected ${termsMoney.quantity}`,
       );
     }
     if (!sameStructure(allegedInviteMoney, termsMoney)) {
@@ -90,9 +88,7 @@ const coveredCall = {
     }
     if (allegedInviteTerms.deadline !== termsDeadline) {
       throw new Error(
-        `Wrong deadline: ${
-          allegedInviteTerms.deadline
-        }, expected ${termsDeadline}`,
+        `Wrong deadline: ${allegedInviteTerms.deadline}, expected ${termsDeadline}`,
       );
     }
     if (termsTimer !== allegedInviteTerms.timer) {
