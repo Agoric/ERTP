@@ -1,18 +1,20 @@
 import Nat from '@agoric/nat';
 import harden from '@agoric/harden';
 
-import {
-  makeCompoundPixelAssayMaker,
-  makeTransferRightPixelAssayMaker,
-  makeUseRightPixelAssayMaker,
-} from './pixelAssays';
 import { makeCollect } from '../../core/contractHost';
-
+import { insist } from '../../util/insist';
+import { makePixelListAssayMaker } from './pixelAssays';
 import { makeMint } from '../../core/issuers';
-import { makeWholePixelList, insistPixelList } from './types/pixelList';
-import { insistPixel, isEqual as isEqualPixel } from './types/pixel';
+import { makeWholePixelList } from './types/pixelList';
+import {
+  insistPixel,
+  isEqual as isEqualPixel,
+  getDistance,
+  getDistanceFromCenter,
+} from './types/pixel';
 import { makeMintController } from './pixelMintController';
 import { makeLruQueue } from './lruQueue';
+import { getRandomColor } from './randomColor';
 
 import { escrowExchangeSrcs } from '../../core/escrow';
 
@@ -27,34 +29,6 @@ export function makeGallery(
   stateChangeHandler = mockStateChangeHandler,
   canvasSize = 10,
 ) {
-  function getRandomColor(fraction, num) {
-    // This is a linear-feedback shift register with computed startState
-    // and number of iterations.  Thus, it is totally deterministic, but
-    // at least looks a little random.
-
-    /* eslint-disable no-bitwise */
-    const startState = Math.floor(fraction * 0xffffffff) ^ 0xdeadbeef;
-    let lfsr = startState;
-    for (let i = -3; i < num; i += 1) {
-      lfsr ^= lfsr >>> 7;
-      lfsr ^= (lfsr << 9) & 0xffffffff;
-      lfsr ^= lfsr >>> 13;
-    }
-    /* eslint-enable no-bitwise */
-
-    // lfsr may be negative, so we make it start at 0.
-    const rand = (Math.floor(lfsr) % 0x800000) + 0x7fffff;
-
-    // Need to pad the beginning of the string with zeros.
-    const randomColor = `#${rand.toString(16).padStart(6, '0')}`;
-    const isHexColor = color => /^#[0-9A-F]{6}$/i.test(color);
-    if (!isHexColor(randomColor)) {
-      throw new Error(`color ${randomColor} is not a valid color`);
-    }
-    return randomColor;
-  }
-  const collect = makeCollect(E, log);
-
   function makeRandomData() {
     const pixels = [];
     for (let x = 0; x < canvasSize; x += 1) {
@@ -81,201 +55,136 @@ export function makeGallery(
     isEqualPixel,
   );
 
-  for (const pixel of allPixels) {
-    lruQueueBuilder.push(pixel);
+  function insistNonEmptyAmount(issuer, amount) {
+    insist(!issuer.getAssay().isEmpty(amount))`\
+      no use rights present in amount ${amount}`;
   }
-  lruQueueBuilder.resortArbitrarily(allPixels.length, 7);
 
-  function setPixelState(pixel, newColor) {
-    state[pixel.x][pixel.y] = newColor;
-    lruQueue.requeue(pixel);
-    // for now we pass the whole state
+  function insistAssetHasAmount(issuer, asset, amount) {
+    insist(issuer.getAssay().includes(asset.getBalance(), amount))`\
+      ERTP asset ${asset} does not include amount ${amount}`;
+  }
+
+  function getPixelList(issuer, amount) {
+    return issuer.getAssay().quantity(amount);
+  }
+
+  const collect = makeCollect(E, log);
+  function insistColor(allegedColor) {
+    // TODO: write rules
+    insist(true)`color ${allegedColor} must be a valid color`;
+  }
+
+  function setPixelListState(pixelList, newColor) {
+    for (let i = 0; i < pixelList.length; i += 1) {
+      const pixel = pixelList[i];
+      state[pixel.x][pixel.y] = newColor;
+      // eslint-disable-next-line no-use-before-define
+      lruQueue.requeue(pixel);
+    }
+
+    // for now we pass the whole state, but only once per call
     stateChangeHandler(getState());
   }
 
-  // read-only access for the admin interface.
-  function reportPosition(entry) {
-    return lruQueueAdmin.reportPosition(entry);
+  // anyone can getPixelColor, no restrictions, no tokens
+  function getPixelColor(x, y) {
+    const rawPixel = { x: Nat(x), y: Nat(y) };
+    return state[rawPixel.x][rawPixel.y];
   }
 
-  // START ERTP
+  function makeUseObj(issuer, asset) {
+    const useObj = harden({
+      changeColor(amount, newColor) {
+        insistNonEmptyAmount(issuer, amount);
+        insistAssetHasAmount(issuer, asset, amount);
+        insistColor(newColor);
+        const pixelList = getPixelList(issuer, amount);
+        setPixelListState(pixelList, newColor);
+        return amount;
+      },
+      changeColorAll(newColor) {
+        return useObj.changeColor(asset.getBalance(), newColor);
+      },
+      getRawPixels() {
+        const assay = issuer.getAssay();
+        const pixelList = assay.quantity(asset.getBalance());
+        return pixelList;
+      },
+      getColors() {
+        const pixelList = useObj.getRawPixels();
+        const colors = [];
+        for (const pixel of pixelList) {
+          const colorPerPixel = {
+            x: pixel.x,
+            y: pixel.y,
+            color: getPixelColor(pixel.x, pixel.y),
+          };
+          colors.push(colorPerPixel);
+        }
+        return colors;
+      },
+      getERTP() {
+        return asset;
+      },
+    });
+    return useObj;
+  }
 
-  const makePixelListAssay = makeCompoundPixelAssayMaker(canvasSize);
-  const makeTransferAssay = makeTransferRightPixelAssayMaker(canvasSize);
-  const makeUseAssay = makeUseRightPixelAssayMaker(canvasSize);
+  const makePixelAssay = makePixelListAssayMaker(canvasSize);
 
-  // a pixel represents the right to color and transfer the right to color
-  const pixelMint = makeMint('pixels', makeMintController, makePixelListAssay);
-  const pixelIssuer = pixelMint.getIssuer();
-  const pixelAssay = pixelIssuer.getAssay();
-  const pixelLabel = harden({ issuer: pixelIssuer, description: 'pixels' });
-
-  const transferRightMint = makeMint(
-    'pixelTransferRights',
-    makeMintController,
-    makeTransferAssay,
+  // a pixel represents the right to color and to transfer the right to color
+  const galleryPixelMint = makeMint(
+    'pixels',
+    harden(makeMintController),
+    harden(makePixelAssay),
+    harden(makeUseObj),
   );
-  const useRightMint = makeMint(
-    'pixelUseRights',
-    makeMintController,
-    makeUseAssay,
-  );
-  const useRightIssuer = useRightMint.getIssuer();
-  const useRightAssay = useRightIssuer.getAssay();
-  const transferRightIssuer = transferRightMint.getIssuer();
-  const transferRightAssay = transferRightIssuer.getAssay();
+  const galleryPixelIssuer = galleryPixelMint.getIssuer();
+  const galleryPixelAssay = galleryPixelIssuer.getAssay();
+
+  const consumerPixelIssuer = galleryPixelIssuer.getChildIssuer();
+  const consumerPixelAssay = consumerPixelIssuer.getAssay();
 
   // Dust is the currency that the Gallery accepts for pixels
   const dustMint = makeMint('dust');
   const dustIssuer = dustMint.getIssuer();
   const dustAssay = dustIssuer.getAssay();
 
-  // get the pixelList from the LRU
-  function makePixelPayment(rawPixelList) {
-    insistPixelList(rawPixelList, canvasSize);
-    const pixelAmount = {
-      label: pixelLabel,
-      quantity: rawPixelList,
-    };
-    // we need to create this, since it was just destroyed
-    const newGalleryPurse = pixelMint.mint(pixelAmount, 'gallery');
-    const payment = newGalleryPurse.withdraw(pixelAmount);
-    return payment;
+  const pixelToPayment = new Map();
+
+  function getPixelStr(pixel) {
+    return `x:${pixel.x},y:${pixel.y}`;
   }
 
-  const gallerySplitPixelPurse = pixelIssuer.makeEmptyPurse();
-
-  // split pixelList into UseRights and TransferRights
-  async function split(pixelListPaymentP) {
-    return Promise.resolve(pixelListPaymentP).then(async pixelListPayment => {
-      const pixelListAmount = pixelListPayment.getBalance();
-
-      const exclusivePayment = await pixelIssuer.getExclusiveAll(
-        pixelListPayment,
-      );
-      await gallerySplitPixelPurse.depositAll(exclusivePayment); // conserve pixels
-
-      const { transferAmount, useAmount } = pixelAssay.toTransferAndUseRights(
-        pixelListAmount,
-        useRightAssay,
-        transferRightAssay,
-      );
-
-      const transferRightPurse = transferRightMint.mint(transferAmount);
-      const useRightPurse = useRightMint.mint(useAmount);
-
-      const transferRightPayment = await transferRightPurse.withdrawAll(
-        'transferRights',
-      );
-      const useRightPayment = await useRightPurse.withdrawAll('useRights');
-
-      return {
-        transferRightPayment,
-        useRightPayment,
-      };
-    });
+  // TODO: build lruQueue from an array, without iterating here
+  for (const pixel of allPixels) {
+    lruQueueBuilder.push(pixel);
+    const amount = galleryPixelAssay.make(harden([pixel]));
+    const purse = galleryPixelMint.mint(amount);
+    const payment = purse.withdrawAll();
+    pixelToPayment.set(getPixelStr(pixel), payment);
   }
+  lruQueueBuilder.resortArbitrarily(allPixels.length, 7);
 
-  // merge UseRights and TransferRights into a pixel
-  async function toPixel(transferRightPaymentP) {
-    return Promise.resolve(transferRightPaymentP).then(
-      async transferRightPayment => {
-        // someone else may have the useRightPayment so we must destroy the
-        // useRight
-
-        // we have an exclusive on the transfer right
-        const transferAmount = transferRightPayment.getBalance();
-        await transferRightIssuer.getExclusiveAll(transferRightPayment);
-
-        const pixelListAmount = transferRightAssay.toPixel(
-          transferAmount,
-          pixelAssay,
-        );
-
-        const { useAmount } = pixelAssay.toTransferAndUseRights(
-          pixelListAmount,
-          useRightAssay,
-          transferRightAssay,
-        );
-
-        // commit point
-        await useRightMint.destroy(useAmount);
-        await transferRightMint.destroy(transferAmount);
-
-        const pixelPayment = await gallerySplitPixelPurse.withdraw(
-          pixelListAmount,
-          'pixels',
-        ); // conserve pixels
-        return pixelPayment;
-      },
-    );
-  }
-
-  function insistColor(_myColor) {
-    // TODO: check whether allowed
-  }
-
-  async function changeColor(useRightPaymentP, newColor) {
-    return Promise.resolve(useRightPaymentP).then(async useRightPayment => {
-      const emptyAmount = useRightAssay.make(harden([]));
-
-      // withdraw empty amount from payment
-      // if this doesn't error, it was a useRightPayment
-      useRightIssuer.getExclusive(emptyAmount, useRightPaymentP);
-
-      const pixelAmount = useRightPayment.getBalance();
-
-      if (useRightAssay.isEmpty(pixelAmount)) {
-        throw new Error('no use rights present');
-      }
-      insistColor(newColor);
-
-      const pixelList = useRightAssay.quantity(pixelAmount);
-
-      for (let i = 0; i < pixelList.length; i += 1) {
-        const pixel = pixelList[i];
-        setPixelState(pixel, newColor);
-      }
-      return pixelAmount;
-    });
-  }
-
-  function revokePixel(rawPixel) {
-    const pixelList = harden([rawPixel]);
-    const pixelAmount = pixelAssay.make(pixelList);
-    const useRightAmount = useRightAssay.make(pixelList);
-    const transferRightAmount = transferRightAssay.make(pixelList);
-
-    try {
-      pixelMint.destroy(pixelAmount);
-      useRightMint.destroy(useRightAmount);
-      transferRightMint.destroy(transferRightAmount);
-    } catch (err) {
-      console.log(err);
-    }
+  // read-only access for the admin interface.
+  function reportPosition(rawPixel) {
+    return lruQueueAdmin.reportPosition(rawPixel);
   }
 
   function tapFaucet() {
-    const rawPixel = lruQueue.popToTail();
-    revokePixel(rawPixel);
-    return makePixelPayment(harden([rawPixel]));
-  }
+    const pixel = lruQueue.popToTail();
+    const payment = pixelToPayment.get(getPixelStr(pixel));
+    payment.revokeChildren();
 
-  function getDistance(a, b) {
-    const { x: xA, y: yA } = a;
-    const { x: xB, y: yB } = b;
-    return Math.floor(Math.sqrt((xA - xB) ** 2 + (yA - yB) ** 2));
-  }
-
-  function getDistanceFromCenter(rawPixel) {
-    const centerCoord = Math.floor(canvasSize / 2);
-    const center = { x: centerCoord, y: centerCoord };
-    return getDistance(rawPixel, center);
+    // give the user the child use rights, from which they can get an
+    // ERTP object
+    return payment.getDelegatedUse();
   }
 
   function pricePixelInternal(rawPixel) {
     insistPixel(rawPixel, canvasSize);
-    const distance = getDistanceFromCenter(rawPixel);
+    const distance = getDistanceFromCenter(rawPixel, canvasSize);
     // prices are simplistic for now
     // they range from canvasSize / 2 to canvasSize
     const rawPrice = canvasSize - distance;
@@ -283,8 +192,8 @@ export function makeGallery(
   }
 
   function pricePixelAmount(pixelAmount) {
-    pixelAmount = pixelAssay.coerce(pixelAmount);
-    const rawPixelList = pixelAssay.quantity(pixelAmount);
+    pixelAmount = consumerPixelAssay.coerce(pixelAmount);
+    const rawPixelList = consumerPixelAssay.quantity(pixelAmount);
     let totalPriceInDust = 0;
     for (const rawPixel of rawPixelList) {
       totalPriceInDust += pricePixelInternal(rawPixel);
@@ -292,19 +201,13 @@ export function makeGallery(
     return dustAssay.make(totalPriceInDust);
   }
 
-  // anyone can getColor, no restrictions, no tokens
-  function getColor(x, y) {
-    const rawPixel = { x: Nat(x), y: Nat(y) };
-    return state[rawPixel.x][rawPixel.y];
-  }
-
-  const sellBuyPixelPurseP = pixelIssuer.makeEmptyPurse();
+  const sellBuyPixelPurseP = consumerPixelIssuer.makeEmptyPurse();
   const sellBuyDustPurseP = dustIssuer.makeEmptyPurse();
 
-  // only pixels can be sold to the gallery, not use or transfer rights
+  // only direct child pixels of the galleryPixels can be sold to the gallery
   function sellToGallery(pixelAmountP) {
     return Promise.resolve(pixelAmountP).then(async pixelAmount => {
-      pixelAmount = pixelAssay.coerce(pixelAmount);
+      pixelAmount = consumerPixelAssay.coerce(pixelAmount);
       const dustAmount = pricePixelAmount(pixelAmount);
       // just mint the dust that we need
       const tempDustPurseP = dustMint.mint(dustAmount);
@@ -330,15 +233,15 @@ export function makeGallery(
     });
   }
 
-  // only pixels can be bought from the gallery, not use or transfer rights
+  // only direct children of the gallery pixels can be bought from gallery
   function buyFromGallery(pixelAmountP) {
     return Promise.resolve(pixelAmountP).then(async pixelAmount => {
-      pixelAmount = pixelAssay.coerce(pixelAmount);
+      pixelAmount = consumerPixelAssay.coerce(pixelAmount);
 
       // if the gallery purse contains this pixelAmount, we will
       // create a invite to trade, otherwise we return a message
       const pixelPurseAmount = sellBuyPixelPurseP.getBalance();
-      if (!pixelAssay.includes(pixelPurseAmount, pixelAmount)) {
+      if (!consumerPixelAssay.includes(pixelPurseAmount, pixelAmount)) {
         return {
           inviteP: undefined,
           host: undefined,
@@ -379,19 +282,18 @@ export function makeGallery(
 
   function getIssuers() {
     return {
-      pixelIssuer,
-      useRightIssuer,
-      transferRightIssuer,
+      pixelIssuer: consumerPixelIssuer,
       dustIssuer,
     };
   }
 
+  function getPayment(pixel) {
+    return pixelToPayment.get(getPixelStr(pixel));
+  }
+
   const userFacet = {
-    changeColor,
-    getColor,
+    getPixelColor,
     tapFaucet,
-    split,
-    toPixel,
     getIssuers,
     getCanvasSize() {
       return canvasSize;
@@ -403,17 +305,17 @@ export function makeGallery(
   };
 
   const adminFacet = {
-    revokePixel,
     getDistance,
     getDistanceFromCenter,
     reportPosition,
     pricePixelAmount,
     dustMint,
+    getPayment,
   };
 
   const readFacet = {
     getState,
-    getColor,
+    getPixelColor,
   };
 
   const gallery = {
