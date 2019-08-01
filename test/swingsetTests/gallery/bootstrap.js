@@ -15,7 +15,12 @@ function build(E, log) {
     const aliceP = E(aliceMaker).make(gallery.userFacet);
     const alicePixelAmount = await E(aliceP).doChangeColor();
     const rawPixel = alicePixelAmount.quantity[0];
-    log(`current color ${gallery.userFacet.getColor(rawPixel.x, rawPixel.y)}`);
+    log(
+      `current color ${gallery.userFacet.getPixelColor(
+        rawPixel.x,
+        rawPixel.y,
+      )}`,
+    );
     log(`pixel index is ${gallery.adminFacet.reportPosition(rawPixel)}`);
   }
   async function testAliceSendsOnlyUseRight(aliceMaker, bobMaker, gallery) {
@@ -28,7 +33,8 @@ function build(E, log) {
     log('starting testGalleryRevokes');
     const aliceP = E(aliceMaker).make(gallery.userFacet);
     const rawPixel = await E(aliceP).doTapFaucetAndStore();
-    gallery.adminFacet.revokePixel(rawPixel);
+    const galleryPayment = gallery.adminFacet.getPayment(rawPixel);
+    E(galleryPayment).revokeChildren();
     E(aliceP).checkAfterRevoked();
   }
   async function testAliceSellsAndBuys(aliceMaker, bobMaker, gallery) {
@@ -59,6 +65,14 @@ function build(E, log) {
       _res => log('++ aliceSellsToBob done'),
       rej => log('++ aliceSellsToBob reject: ', rej),
     );
+  }
+
+  async function testAliceCreatesFakeChild(aliceMaker, bobMaker, gallery) {
+    log('starting testAliceCreatesFakeChild');
+    const { userFacet } = gallery;
+    const aliceP = E(aliceMaker).make(userFacet);
+    const bobP = E(bobMaker).make(userFacet);
+    await E(aliceP).doCreateFakeChild(bobP);
   }
 
   const obj0 = {
@@ -121,6 +135,13 @@ function build(E, log) {
           const { aliceMaker, bobMaker, gallery } = await makeStartingObjs();
           const handoffSvc = await E(vats.handoff).makeHandoffService();
           return testAliceSellsToBob(aliceMaker, bobMaker, gallery, handoffSvc);
+        }
+        case 'aliceCreatesFakeChild': {
+          log('starting aliceCreatesFakeChild');
+          const aliceMaker = await E(vats.alice).makeAliceMaker();
+          const bobMaker = await E(vats.bob).makeBobMaker();
+          const gallery = makeGallery(E, log, stateChangeHandler, canvasSize);
+          return testAliceCreatesFakeChild(aliceMaker, bobMaker, gallery);
         }
         default: {
           throw new Error(`unrecognized argument value ${argv[0]}`);
