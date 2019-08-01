@@ -39,7 +39,7 @@
     "ses": "^0.5.3"
   },
   "devDependencies": {
-    "@agoric/swingset-vat": "^0.0.16",
+    "@agoric/swingset-vat": "0.0.18",
     "eslint": "^6.1.0",
     "eslint-config-airbnb": "^17.1.1",
     "eslint-config-prettier": "^6.0.0",
