@@ -3,9 +3,8 @@
  * 
  * Amounts are the canonical description of tradable goods. They are manipulated
  * by mints, and represent the goods and currency carried by purses and
- * payments. They can be used to represent currency, stock, or the abstract
- * right to participate in a particular exchange.
- * 
+ * payments. They can be used to represent things like currency, stock, and the
+ * abstract right to participate in a particular exchange.
  */
 interface Assay {
 
@@ -18,21 +17,21 @@ interface Assay {
   /**
    * Verify that an Amount was created by this Assay. Notice that this is
    * different from coerce(), which will accept manually constructed amounts and
-   * amounts from other assays with the same label.
+   * amounts from other assays.
    */
   vouch(amount:Amount) -> (Amount);
 
   /**
    * Is this like an Amount object made by this Assay, such as one received by
-   * pass-by-copy from an otherwise-identical remote Amount? On success, return
-   * an Amount object made by this Assay. Otherwise error.
-   * 
+   * pass-by-copy from an otherwise-identical remote Amount? If so, return an
+   * Amount object made by this Assay. Otherwise error.
+   *
    * For fungible amounts based on natural numbers, coerce also accepts a bare
    * number which it will coerce to a labeled number via assay.make().
    */
   coerce(allegedAmount:Amount) -> (Amount);
 
-  /** Return the Quantity contained in the Amount parameter. */
+  /** Return a Quantity representing the Amount parameter. */
   quantity(amount:Amount) -> (Quantity);
 
   /** Return an empty amount. Conveys no authority. */
@@ -44,7 +43,12 @@ interface Assay {
   /** Returns true if the leftAmount contains the rightAmount. */
   includes(leftAmount:Amount, rightAmount:Amount) -> (boolean);
 
-  /** Returns a new amount that includes both leftAmount and rightAmount. */
+  /** 
+   * Returns a new amount that includes both leftAmount and rightAmount.
+   * 
+   * For fungible amounts this means adding the quantities. For other kinds of
+   * amounts, it usually means adding both.
+   */
   with(leftAmount:Amount, rightAmount:Amount) -> (Amount);
 
   /**
@@ -54,9 +58,9 @@ interface Assay {
   without(leftAmount:Amount, rightAmount:Amount) -> (Amount);
 };
 
-/** 
- * UniAssay represents amounts that have unique descriptions. 
- * 
+/**
+ * UniAssay represents amounts that have unique descriptions.
+ *
  * The quantity must either be null, in which case it is empty, or be some
  * truthy comparable value, in which case it represents a single unique unit
  * described by that truthy quantity. Combining two uni amounts with different
@@ -67,11 +71,10 @@ interface Assay {
 interface UniAssay extends (Assay) {
 }
 
-/** 
+/**
  * Assay for a labeled natural number describing a quantity of fungible
- * erights. The label describes what kinds of rights these are. This is a form
- * of labeled unit, as in unit typing.
- * 
+ * erights. The label describes what kinds of rights these are.
+ *
  * Empty amounts have zero units. 'includes()' verifies that leftAmount is
  * greater than rightAmount. 'with()' and 'without()' add and subtract their
  * contents.
@@ -83,7 +86,7 @@ interface NatAssay extends (Assay) {
  * Amounts are wrappers on quantities that have been validated by an Assay, and
  * can be verified as having been issued by the Assay. They contain their
  * quantity and a Label, which is unique to a particular assay.
- * 
+ *
  * Quantities describe the extent of something that can be owned or shared.
  * The format is determined by their assay. Fungible quantities are normally
  * represented by natural numbers. Other quantities may be represented as
@@ -96,7 +99,15 @@ struct Amount {
   quantity:Object;
 }
 
-/**  */
+/**
+ * The label for an amount identifies the issuer, and includes a description of
+ * the rights it represents.
+ * 
+ * Every amount created by the Assay will have the same label, but recipients
+ * cannot use the label by itself to verify that a purported amount is
+ * authentic, since the label can be copied. To validate an amount call
+ * assay.vouch(amount).
+ */
 struct Label {
   issuer:Issuer;
   description:Description;
