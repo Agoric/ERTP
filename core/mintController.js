@@ -29,29 +29,23 @@ export function makeBasicMintController() {
     };
   }
 
-  // destroy is outside of an assetController because it could affect
-  // purses or payments
-  function destroy(_amount) {
-    throw new Error('destroy is not implemented');
-  }
-
   const purseController = makeAssetController('purse');
   const paymentController = makeAssetController('payment');
 
-  function isPurse(asset) {
-    return purseController.has(asset);
-  }
-
-  function isPayment(asset) {
-    return paymentController.has(asset);
-  }
-
   const mintController = {
-    destroy,
     purseController,
     paymentController,
-    isPurse,
-    isPayment,
+    // destroy is outside of an assetController because it could affect
+    // purses or payments
+    destroy(_amount) {
+      throw new Error('destroy is not implemented');
+    },
+    isPurse(asset) {
+      return purseController.has(asset);
+    },
+    isPayment(asset) {
+      return paymentController.has(asset);
+    },
   };
   return mintController;
 }

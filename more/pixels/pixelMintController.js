@@ -46,14 +46,6 @@ export function makeMintController(assay) {
   const purseController = makeAssetController('purse');
   const paymentController = makeAssetController('payment');
 
-  function isPurse(asset) {
-    return purseController.has(asset);
-  }
-
-  function isPayment(asset) {
-    return paymentController.has(asset);
-  }
-
   function getController(asset) {
     if (purseController.has(asset)) {
       return purseController;
@@ -66,47 +58,50 @@ export function makeMintController(assay) {
     );
   }
 
-  // This amount (must be nonfungible) will be forcibly taken out of
-  // all purses and payments that it is currently in. Destroy is
-  // outside of an assetController because it could affect purses or
-  // payments
-  function destroy(amount) {
-    // amount must only contain one pixel
-    const pixelList = assay.quantity(amount);
-    insist(pixelList.length === 1)`amount must contain exactly one pixel`;
-
-    const pixel = pixelList[0];
-    const strPixel = getString(pixel);
-    insist(
-      pixelToAsset.has(strPixel),
-    )`pixel ${strPixel} could not be found to be destroyed`;
-    const asset = pixelToAsset.get(strPixel);
-    // amount is guaranteed to be there
-    amount = assay.coerce(amount);
-
-    const controller = getController(asset);
-    const originalAmount = controller.getAmount(asset);
-    const newAmount = assay.without(originalAmount, amount);
-
-    // ///////////////// commit point //////////////////
-    // All queries above passed with no side effects.
-    // During side effects below, any early exits should be made into
-    // fatal turn aborts.
-    controller.updateAmount(asset, newAmount);
-    // Reset the mappings from everything in the amount to the purse
-    // or payment that holds them.
-    recordPixelsAsAsset(newAmount, asset);
-
-    // delete pixel from pixelToAsset
-    pixelToAsset.delete(pixel);
-  }
-
   const mintController = {
-    destroy,
     purseController,
     paymentController,
-    isPurse,
-    isPayment,
+
+    // This amount (must be nonfungible) will be forcibly taken out of
+    // all purses and payments that it is currently in. Destroy is
+    // outside of an assetController because it could affect purses or
+    // payments
+    destroy(amount) {
+      // amount must only contain one pixel
+      const pixelList = assay.quantity(amount);
+      insist(pixelList.length === 1)`amount must contain exactly one pixel`;
+
+      const pixel = pixelList[0];
+      const strPixel = getString(pixel);
+      insist(
+        pixelToAsset.has(strPixel),
+      )`pixel ${strPixel} could not be found to be destroyed`;
+      const asset = pixelToAsset.get(strPixel);
+      // amount is guaranteed to be there
+      amount = assay.coerce(amount);
+
+      const controller = getController(asset);
+      const originalAmount = controller.getAmount(asset);
+      const newAmount = assay.without(originalAmount, amount);
+
+      // ///////////////// commit point //////////////////
+      // All queries above passed with no side effects.
+      // During side effects below, any early exits should be made into
+      // fatal turn aborts.
+      controller.updateAmount(asset, newAmount);
+      // Reset the mappings from everything in the amount to the purse
+      // or payment that holds them.
+      recordPixelsAsAsset(newAmount, asset);
+
+      // delete pixel from pixelToAsset
+      pixelToAsset.delete(pixel);
+    },
+    isPurse(asset) {
+      return purseController.has(asset);
+    },
+    isPayment(asset) {
+      return paymentController.has(asset);
+    },
   };
   return mintController;
 }
