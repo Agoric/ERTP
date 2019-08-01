@@ -17,31 +17,31 @@ interface Issuer {
   /** Make an Amount that contains the indicated quantity. */
   makeAmount(quantity:Quantity) -> (Amount);
 
-  /** Make an empty purse associated for this kind of right. */
+  /** Make an empty purse associated with this kind of right. */
   makeEmptyPurse(name:String) -> (Purse);
 
   /**
-   * Make a new Payment that has exclusive rights to the amount, only if the
-   * Purse had those rights, exclusively or not.
+   * Make a new Payment that has exclusive rights to the amount, only if src had
+   * those rights, exclusively or not. The src payment retains any excess not
+   * included in amount.
    */
-  getExclusive(amount:Amount, src:PurseOrPayment, name:String = 'a payment')
+  getExclusive(amount:Amount, src:Payment, name:String = 'a payment')
     -> (Payment);
 
   /**
-   * Make a new Payment that has exclusive rights to all the contents of the
-   * purse.
+   * Make a new Payment that has exclusive rights to all the contents of src.
    */
-  getExclusiveAll(src:PurseOrPayment, name:String = 'a payment') -> (Payment);
+  getExclusiveAll(src:Payment, name:String = 'a payment') -> (Payment);
 
   /**
-   * Burn (remove) amount of the rights from src. If the rights are fungible,
-   * this directly removes the rights from the payment, while if the rights are
+   * Burn amount of the rights from src. If the rights are fungible, this
+   * directly removes the rights from the payment, while if the rights are
    * non-fungible, this ensures that no purse or payment has access to those
    * rights.
    */
   burn(amount:Amount, src:Payment);
 
-  /** Burn (remove) all of the rights from src. */
+  /** Burn all of the rights from src. */
   burnAll(src:Payment);
 }
 
@@ -108,14 +108,28 @@ interface Mint {
  * distinguish use rights from transfer rights, like a membership card; you can
  * exercise the rights without giving them up.
  */
-interface Purse extends (PurseOrPayment) {
+interface Purse {
+  /** Get the name of this purse. */
+  getName() -> (String);
+
   /** Get the Issuer for this mint. */
   getIssuer() -> (Issuer);
-  getXferBalance() -> (Amount);
-  getUseBalance() -> (Amount);
-  deposit(amount:Amount, srcPayment:PurseOrPayment) -> (Amount);
-  depositAll(srcPayment:PurseOrPayment) -> (Amount);
+
+  /** Get the amount contained in this purse, confirmed by the issuer. */
+  getBalance() -> (Amount);
+
+  /** Deposit amount from srcPayment into this purse, returning the amount. */
+  deposit(amount:Amount, srcPayment:Payment) -> (Amount);
+
+  /**
+   * Deposit all the contents of srcPayment into this purse, returning the
+   * amount.
+   */
+  depositAll(srcPayment:Payment) -> (Amount);
+
+  /** Withdrow amount from this purse into a new Payment. */
   withdraw(amount:Amount, name:String) -> (Payment);
+  /** Withdrow entire content of this purse into a new Payment. */
   withdrawAll(name:String) -> (Payment);
 }
 
@@ -128,56 +142,13 @@ interface Purse extends (PurseOrPayment) {
  * Payments can be converted to Purses by calling
  * payment.getIssuer().makeEmptyPurse().depositAll(payment);
  */
-interface Payment extends (PurseOrPayment) {
+interface Payment {
+  /** Get the name of this purse. */
+  getName() -> (String);
+
+  /** Get the Issuer for this mint. */
   getIssuer() -> (Issuer);
-  getXferBalance() -> (Amount);
-}
 
-/**
- * PurseOrPayment is the parent type of Purse and Payment. Most interfaces only
- * accept one of the sub-types to reduce the incidence of the common mistake of
- * giving away a purse when you meant to hold on to the purse and give away part
- * of the contents. deposit() and depositAll() are the two exceptions, for which
- * the caller explicitly says to give up all contained rights, or provides an
- * explicit amount to transfer.
- */
-interface PurseOrPayment {
-  getIssuer() -> (Issuer);
-  getXferBalance() -> (Amount);
-}
-
-/** MintController records the amounts contained by purses. */
-interface MintController {
-  /**
-   * (Non-fungible amounts only.) Ensure no purse or payment contains amount.
-   */
-  destroy(amount:Amount);
-
-  /** Reset all purses to contain nothing. */
-  destroyAll();
-
-  /**
-   * Record that payment is a new Payment containing amount, and that src
-   * now contains srcNewRightsAmount.
-   */
-  recordPayment(
-    src:Purse, payment:Payment, amount:Amount, srcNewRightsAmount:Amount);
-
-  /**
-   * Record that srcPayment now contains srcNewRightsAmount, and purse is a new
-   * Purse containing purseNewRightsAmount.
-   */
-  recordDeposit(
-    src:PurseOrPayment,
-	srcNewRightsAmount:Amount,
-	purse:Purse,
-	purseNewRightsAmount:Amount);
-
-  /**
-   * Record that purse is a new Purse containing srcNewRightsAmount.
-   */
-  recordMint(purse:Purse, initialAmount:Amount);
-
-  /** Return the Amount contained in purse. */
-  getAmount(purseOrPayment:PurseOrPayment) -> (Amount);
+  /** Get the amount contained in this payment, confirmed by the issuer. */
+  getBalance() -> (Amount);
 }

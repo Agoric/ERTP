@@ -6,15 +6,6 @@
  * payments. They can be used to represent currency, stock, or the abstract
  * right to participate in a particular exchange.
  * 
- * Assays distinguish between Quantities and Amounts. Quantities describe the
- * extent of something that can be owned or shared, while Amounts are wrappers
- * on those Quantities that have been validated by the Assay, and can be
- * verified as having been issued by the Assay.  All Amounts made by the same
- * Assay have the same label.
- * 
- * Quantities include natural numbers representing how much of a fungible good
- * is being discussed, arbitrary objects describing particular non-fungible
- * goods, or names representing abstract rights.
  */
 interface Assay {
 
@@ -88,4 +79,25 @@ interface UniAssay extends (Assay) {
 interface NatAssay extends (Assay) {
 }
 
+/**
+ * Amounts are wrappers on quantities that have been validated by an Assay, and
+ * can be verified as having been issued by the Assay. They contain their
+ * quantity and a Label, which is unique to a particular assay.
+ * 
+ * Quantities describe the extent of something that can be owned or shared.
+ * The format is determined by their assay. Fungible quantities are normally
+ * represented by natural numbers. Other quantities may be represented as
+ * strings naming a particular right, or an arbitrary object that sensibly
+ * represents the rights at issue. All Amounts made by the same Assay have the
+ * same label.
+ */
+struct Amount {
+  label:Label;
+  quantity:Object;
+}
 
+/**  */
+struct Label {
+  issuer:Issuer;
+  description:Description;
+}
