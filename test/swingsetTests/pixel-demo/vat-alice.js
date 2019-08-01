@@ -3,8 +3,8 @@
 
 import harden from '@agoric/harden';
 
-import { allComparable } from '../../util/sameStructure';
-import { makeCollect } from '../../core/contractHost';
+import { allComparable } from '../../../util/sameStructure';
+import { makeCollect } from '../../../core/contractHost';
 
 function makeAliceMaker(E, host, log) {
   const collect = makeCollect(E, log);

@@ -2,9 +2,9 @@
 
 import harden from '@agoric/harden';
 
-import { escrowExchangeSrcs } from '../../core/escrow';
-import { coveredCallSrcs } from '../../core/coveredCall';
-import { makeWholePixelList } from '../../more/pixels/types/pixelList';
+import { escrowExchangeSrcs } from '../../../core/escrow';
+import { coveredCallSrcs } from '../../../core/coveredCall';
+import { makeWholePixelList } from '../../../more/pixels/types/pixelList';
 
 function build(E, log) {
   // TODO BUG: All callers should wait until settled before doing

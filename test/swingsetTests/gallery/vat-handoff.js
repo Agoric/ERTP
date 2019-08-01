@@ -3,7 +3,7 @@
 import harden from '@agoric/harden';
 import evaluate from '@agoric/evaluate';
 
-import { makeHandoffService } from '../../more/handoff/handoff';
+import { makeHandoffService } from '../../../more/handoff/handoff';
 
 function setup(syscall, state, helpers) {
   return helpers.makeLiveSlots(

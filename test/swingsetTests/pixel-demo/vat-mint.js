@@ -2,9 +2,9 @@
 
 import harden from '@agoric/harden';
 
-import { makeMint } from '../../core/issuers';
-import { makeCompoundPixelAssayMaker } from '../../more/pixels/pixelAssays';
-import { makeMintController } from '../../more/pixels/pixelMintController';
+import { makeMint } from '../../../core/issuers';
+import { makeCompoundPixelAssayMaker } from '../../../more/pixels/pixelAssays';
+import { makeMintController } from '../../../more/pixels/pixelMintController';
 
 function build(_E, _log) {
   function makePixelListMint(canvasSize) {

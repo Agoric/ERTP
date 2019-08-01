@@ -1,8 +1,10 @@
 import { test } from 'tape-promise/tape';
 import { loadBasedir, buildVatController } from '@agoric/swingset-vat';
+import path from 'path';
 
 async function main(withSES, basedir, argv) {
-  const config = await loadBasedir(basedir);
+  const dir = path.resolve('test/swingsetTests', basedir);
+  const config = await loadBasedir(dir);
   const ldSrcPath = require.resolve(
     '@agoric/swingset-vat/src/devices/loopbox-src',
   );
@@ -23,13 +25,13 @@ const expectedTapFaucetLog = [
 ];
 
 test('run gallery demo tapFaucet with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['tapFaucet']);
+  const dump = await main(true, 'gallery', ['tapFaucet']);
   t.deepEquals(dump.log, expectedTapFaucetLog);
   t.end();
 });
 
 test('run gallery demo tapFaucet without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['tapFaucet']);
+  const dump = await main(false, 'gallery', ['tapFaucet']);
   t.deepEquals(dump.log, expectedTapFaucetLog);
   t.end();
 });
@@ -46,13 +48,13 @@ const expectedAliceChangesColorLog = [
 ];
 
 test('run gallery demo aliceChangesColor with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceChangesColor']);
+  const dump = await main(true, 'gallery', ['aliceChangesColor']);
   t.deepEquals(dump.log, expectedAliceChangesColorLog);
   t.end();
 });
 
 test('run gallery demo aliceChangesColor without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceChangesColor']);
+  const dump = await main(false, 'gallery', ['aliceChangesColor']);
   t.deepEquals(dump.log, expectedAliceChangesColorLog);
   t.end();
 });
@@ -72,13 +74,13 @@ const expectedAliceSendsOnlyUseRightLog = [
 ];
 
 test('run gallery demo aliceSendsOnlyUseRight with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceSendsOnlyUseRight']);
+  const dump = await main(true, 'gallery', ['aliceSendsOnlyUseRight']);
   t.deepEquals(dump.log, expectedAliceSendsOnlyUseRightLog);
   t.end();
 });
 
 test('run gallery demo aliceSendsOnlyUseRight without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceSendsOnlyUseRight']);
+  const dump = await main(false, 'gallery', ['aliceSendsOnlyUseRight']);
   t.deepEquals(dump.log, expectedAliceSendsOnlyUseRightLog);
   t.end();
 });
@@ -94,13 +96,13 @@ const expectedGalleryRevokesLog = [
 ];
 
 test('run gallery demo galleryRevokes with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['galleryRevokes']);
+  const dump = await main(true, 'gallery', ['galleryRevokes']);
   t.deepEquals(dump.log, expectedGalleryRevokesLog);
   t.end();
 });
 
 test('run gallery demo galleryRevokes without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['galleryRevokes']);
+  const dump = await main(false, 'gallery', ['galleryRevokes']);
   t.deepEquals(dump.log, expectedGalleryRevokesLog);
   t.end();
 });
@@ -119,13 +121,13 @@ const expectedAliceSellsAndBuysLog = [
 ];
 
 test('run gallery demo aliceSellsAndBuys with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceSellsAndBuys']);
+  const dump = await main(true, 'gallery', ['aliceSellsAndBuys']);
   t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();
 });
 
 test('run gallery demo aliceSellsAndBuys without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceSellsAndBuys']);
+  const dump = await main(false, 'gallery', ['aliceSellsAndBuys']);
   t.deepEquals(dump.log, expectedAliceSellsAndBuysLog);
   t.end();
 });
@@ -143,13 +145,13 @@ const expectedAliceSellsToBobLog = [
 ];
 
 test('run gallery demo aliceSellsToBob with SES', async t => {
-  const dump = await main(true, 'demo/gallery', ['aliceSellsToBob']);
+  const dump = await main(true, 'gallery', ['aliceSellsToBob']);
   t.deepEquals(dump.log, expectedAliceSellsToBobLog);
   t.end();
 });
 
 test('run gallery demo aliceSellsToBob without SES', async t => {
-  const dump = await main(false, 'demo/gallery', ['aliceSellsToBob']);
+  const dump = await main(false, 'gallery', ['aliceSellsToBob']);
   t.deepEquals(dump.log, expectedAliceSellsToBobLog);
   t.end();
 });

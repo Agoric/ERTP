@@ -1,8 +1,10 @@
 import { test } from 'tape-promise/tape';
+import path from 'path';
 import { buildVatController, loadBasedir } from '@agoric/swingset-vat';
 
 async function main(withSES, basedir, argv) {
-  const config = await loadBasedir(basedir);
+  const dir = path.resolve('test/swingsetTests', basedir);
+  const config = await loadBasedir(dir);
   const ldSrcPath = require.resolve(
     '@agoric/swingset-vat/src/devices/loopbox-src',
   );
@@ -24,13 +26,13 @@ const contractMintGolden = [
 ];
 
 test('run contractHost Demo --mint with SES', async t => {
-  const dump = await main(true, 'demo/contractHost', ['mint']);
+  const dump = await main(true, 'contractHost', ['mint']);
   t.deepEquals(dump.log, contractMintGolden);
   t.end();
 });
 
 test('run contractHost Demo --mint without SES', async t => {
-  const dump = await main(false, 'demo/contractHost', ['mint']);
+  const dump = await main(false, 'contractHost', ['mint']);
   t.deepEquals(dump.log, contractMintGolden);
   t.end();
 });
@@ -46,13 +48,13 @@ const contractTrivialGolden = [
 ];
 
 test('run contractHost Demo --trivial with SES', async t => {
-  const dump = await main(true, 'demo/contractHost', ['trivial']);
+  const dump = await main(true, 'contractHost', ['trivial']);
   t.deepEquals(dump.log, contractTrivialGolden);
   t.end();
 });
 
 test('run contractHost Demo --trivial without SES', async t => {
-  const dump = await main(false, 'demo/contractHost', ['trivial']);
+  const dump = await main(false, 'contractHost', ['trivial']);
   t.deepEquals(dump.log, contractTrivialGolden);
   t.end();
 });
@@ -65,13 +67,13 @@ const contractAliceFirstGolden = [
 ];
 
 test('run contractHost Demo --alice-first with SES', async t => {
-  const dump = await main(true, 'demo/contractHost', ['alice-first']);
+  const dump = await main(true, 'contractHost', ['alice-first']);
   t.deepEquals(dump.log, contractAliceFirstGolden);
   t.end();
 });
 
 test('run contractHost Demo --alice-first without SES', async t => {
-  const dump = await main(false, 'demo/contractHost', ['alice-first']);
+  const dump = await main(false, 'contractHost', ['alice-first']);
   t.deepEquals(dump.log, contractAliceFirstGolden);
   t.end();
 });
@@ -94,13 +96,13 @@ const contractBobFirstGolden = [
 ];
 
 test('run contractHost Demo --bob-first with SES', async t => {
-  const dump = await main(true, 'demo/contractHost', ['bob-first']);
+  const dump = await main(true, 'contractHost', ['bob-first']);
   t.deepEquals(dump.log, contractBobFirstGolden);
   t.end();
 });
 
 test('run contractHost Demo --bob-first without SES', async t => {
-  const dump = await main(false, 'demo/contractHost', ['bob-first']);
+  const dump = await main(false, 'contractHost', ['bob-first']);
   t.deepEquals(dump.log, contractBobFirstGolden);
   t.end();
 });
@@ -124,13 +126,13 @@ const contractCoveredCallGolden = [
 ];
 
 test('run contractHost Demo --covered-call with SES', async t => {
-  const dump = await main(true, 'demo/contractHost', ['covered-call']);
+  const dump = await main(true, 'contractHost', ['covered-call']);
   t.deepEquals(dump.log, contractCoveredCallGolden);
   t.end();
 });
 
 test('run contractHost Demo --covered-call without SES', async t => {
-  const dump = await main(false, 'demo/contractHost', ['covered-call']);
+  const dump = await main(false, 'contractHost', ['covered-call']);
   t.deepEquals(dump.log, contractCoveredCallGolden);
   t.end();
 });
@@ -161,67 +163,14 @@ const contractCoveredCallSaleGolden = [
 ];
 
 test('run contractHost Demo --covered-call-sale with SES', async t => {
-  const dump = await main(true, 'demo/contractHost', ['covered-call-sale']);
+  const dump = await main(true, 'contractHost', ['covered-call-sale']);
   t.deepEquals(dump.log, contractCoveredCallSaleGolden);
   t.end();
 });
 
 test('run contractHost Demo --covered-call-sale without SES', async t => {
-  const dump = await main(false, 'demo/contractHost', ['covered-call-sale']);
+  const dump = await main(false, 'contractHost', ['covered-call-sale']);
   t.deepEquals(dump.log, contractCoveredCallSaleGolden);
-  t.end();
-});
-
-const corkboardContentsGolden = [
-  '=> setup called',
-  'starting testCorkboardStorage',
-];
-
-test('run handoff Demo --corkboard contents', async t => {
-  const dump = await main(false, 'demo/handoff', ['corkboard']);
-  t.deepEquals(dump.log, corkboardContentsGolden);
-  t.end();
-});
-
-test('run handoff Demo --corkboard contents', async t => {
-  const dump = await main(true, 'demo/handoff', ['corkboard']);
-  t.deepEquals(dump.log, corkboardContentsGolden);
-  t.end();
-});
-
-const handoffTestGolden = [
-  '=> setup called',
-  'starting testHandoffStorage',
-  'expected validate to throw',
-];
-
-test('run handoff Demo --handoff service', async t => {
-  const dump = await main(false, 'demo/handoff', ['handoff']);
-  t.deepEquals(dump.log, handoffTestGolden);
-  t.end();
-});
-
-test('run handoff Demo --handoff service', async t => {
-  const dump = await main(true, 'demo/handoff', ['handoff']);
-  t.deepEquals(dump.log, handoffTestGolden);
-  t.end();
-});
-
-const twoPartyHandoffGolden = [
-  '=> setup called',
-  'starting testHandoffStorage',
-  'expecting coordination on 42.',
-];
-
-test('run handoff Demo --Two Party handoff', async t => {
-  const dump = await main(false, 'demo/handoff', ['twoVatHandoff']);
-  t.deepEquals(dump.log, twoPartyHandoffGolden);
-  t.end();
-});
-
-test('run handoff Demo --Two Party handoff', async t => {
-  const dump = await main(true, 'demo/handoff', ['twoVatHandoff']);
-  t.deepEquals(dump.log, twoPartyHandoffGolden);
   t.end();
 });
 
@@ -233,13 +182,13 @@ const successfulWithdraw = [
 ];
 
 test('run Pixel Demo mint and withdraw with SES', async t => {
-  const dump = await main(true, 'demo/pixel-demo', ['mint']);
+  const dump = await main(true, 'pixel-demo', ['mint']);
   t.deepEquals(dump.log, successfulWithdraw);
   t.end();
 });
 
 test('run Pixel Demo mint and withdraw without SES', async t => {
-  const dump = await main(false, 'demo/pixel-demo', ['mint']);
+  const dump = await main(false, 'pixel-demo', ['mint']);
   t.deepEquals(dump.log, successfulWithdraw);
   t.end();
 });
@@ -255,13 +204,13 @@ const contractAliceFirstGoldenPixel = [
 ];
 
 test('run Pixel Demo --alice-first with SES', async t => {
-  const dump = await main(true, 'demo/pixel-demo', ['alice-first']);
+  const dump = await main(true, 'pixel-demo', ['alice-first']);
   t.deepEquals(dump.log, contractAliceFirstGoldenPixel);
   t.end();
 });
 
 test('run Pixel Demo --alice-first without SES', async t => {
-  const dump = await main(false, 'demo/pixel-demo', ['alice-first']);
+  const dump = await main(false, 'pixel-demo', ['alice-first']);
   t.deepEquals(dump.log, contractAliceFirstGoldenPixel);
   t.end();
 });
@@ -284,13 +233,13 @@ const contractBobFirstGoldenPixel = [
 ];
 
 test('run Pixel Demo --bob-first with SES', async t => {
-  const dump = await main(true, 'demo/pixel-demo', ['bob-first']);
+  const dump = await main(true, 'pixel-demo', ['bob-first']);
   t.deepEquals(dump.log, contractBobFirstGoldenPixel);
   t.end();
 });
 
 test('run Pixel Demo --bob-first without SES', async t => {
-  const dump = await main(false, 'demo/pixel-demo', ['bob-first']);
+  const dump = await main(false, 'pixel-demo', ['bob-first']);
   t.deepEquals(dump.log, contractBobFirstGoldenPixel);
   t.end();
 });
@@ -314,13 +263,13 @@ const contractCoveredCallGoldenPixel = [
 ];
 
 test('run Pixel Demo --covered-call with SES', async t => {
-  const dump = await main(true, 'demo/pixel-demo', ['covered-call']);
+  const dump = await main(true, 'pixel-demo', ['covered-call']);
   t.deepEquals(dump.log, contractCoveredCallGoldenPixel);
   t.end();
 });
 
 test('run Pixel Demo --covered-call without SES', async t => {
-  const dump = await main(false, 'demo/pixel-demo', ['covered-call']);
+  const dump = await main(false, 'pixel-demo', ['covered-call']);
   t.deepEquals(dump.log, contractCoveredCallGoldenPixel);
   t.end();
 });
