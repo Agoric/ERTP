@@ -18,7 +18,7 @@ const corruptedPresenceGolden = [
   '++ Expect creation of purse',
 ];
 
-test.only('`run corrupted presence with SES', async t => {
+test('`run corrupted presence with SES', async t => {
   const dump = await main(true, 'test/presenceCorruption', [
     'corrupted-presence',
   ]);
