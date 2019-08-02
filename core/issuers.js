@@ -7,7 +7,7 @@ import { insist } from '../util/insist';
 
 import { makeBasicConfig } from './config/basicConfig';
 
-function makeMint(description, makeConfig = makeBasicConfig, parentIssuer) {
+function makeMint(description, makeConfig = makeBasicConfig) {
   insist(description)`\
 Description must be truthy: ${description}`;
 
@@ -110,7 +110,7 @@ Description must be truthy: ${description}`;
 
   const issuer = harden({
     ...coreIssuer,
-    ...makeCustomIssuer(coreIssuer, parentIssuer),
+    ...makeCustomIssuer(coreIssuer),
   });
 
   const label = harden({ issuer, description });
@@ -198,7 +198,7 @@ Description must be truthy: ${description}`;
     },
   });
 
-  const customMint = makeCustomMint(assay, destroy);
+  const customMint = makeCustomMint(assay, destroy, issuer);
 
   const mint = harden({
     ...coreMint,

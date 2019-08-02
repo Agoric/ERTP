@@ -3,8 +3,8 @@ import harden from '@agoric/harden';
 import { makeMintController } from './pixelMintController';
 import { makePixelListAssayMaker } from './pixelAssays';
 
-function makePixelConfigMaker(makeUseObj, canvasSize = 10) {
-  const pixelConfigMaker = {
+function makePixelConfigMaker(makeUseObj, canvasSize = 10, parentIssuer) {
+  const pixelConfigMaker = harden({
     makePixelConfig(makeMint, description) {
       let childIssuer;
       let childMint;
@@ -13,18 +13,19 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10) {
 
       function getOrMakeChildMint(issuer) {
         if (childMint === undefined) {
-          childMint = makeMint(
-            description,
-            pixelConfigMaker.makePixelConfig,
+          const childConfig = makePixelConfigMaker(
+            makeUseObj,
+            canvasSize,
             issuer,
           );
+          childMint = makeMint(description, childConfig.makePixelConfig);
           childIssuer = childMint.getIssuer();
         }
         return childMint;
       }
 
-      function getChildAmount(amount) {
-        getOrMakeChildMint();
+      function getChildAmount(issuer, amount) {
+        getOrMakeChildMint(issuer);
         // quantity is the same, but amounts are different for
         // different issuers
         const { quantity } = amount;
@@ -33,7 +34,7 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10) {
         return childAmount;
       }
 
-      return {
+      return harden({
         makeCustomPayment(issuer, payment) {
           const delegatedUsePaymentMethods = harden({
             getUse() {
@@ -42,13 +43,13 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10) {
             getDelegatedUse() {
               // quantity is the same, but amounts are different for
               // different issuers
-              const childAmount = getChildAmount(payment.getBalance());
+              const childAmount = getChildAmount(issuer, payment.getBalance());
               const childPurse = childMint.mint(childAmount);
               const childPayment = childPurse.withdrawAll();
               return makeUseObj(childIssuer, childPayment);
             },
             revokeChildren() {
-              const childAmount = getChildAmount(payment.getBalance());
+              const childAmount = getChildAmount(issuer, payment.getBalance());
               childMint.revoke(childAmount);
             },
           });
@@ -60,18 +61,18 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10) {
               return makeUseObj(issuer, purse);
             },
             getDelegatedUse() {
-              const childAmount = getChildAmount(purse.getBalance());
+              const childAmount = getChildAmount(issuer, purse.getBalance());
               const childPurse = childMint.mint(childAmount);
               return makeUseObj(childIssuer, childPurse);
             },
             revokeChildren() {
-              const childAmount = getChildAmount(purse.getBalance());
+              const childAmount = getChildAmount(issuer, purse.getBalance());
               childMint.revoke(childAmount);
             },
           });
           return delegatedUsePurseMethods;
         },
-        makeCustomMint(assay, destroy) {
+        makeCustomMint(assay, destroy, issuer) {
           const customMint = harden({
             revoke(amount) {
               amount = assay.coerce(amount);
@@ -84,7 +85,7 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10) {
               try {
                 destroy(amount);
                 if (childMint !== undefined) {
-                  childMint.revoke(getChildAmount(amount)); // recursively revoke child assets
+                  childMint.revoke(getChildAmount(issuer, amount)); // recursively revoke child assets
                 }
               } catch (err) {
                 console.log(err);
@@ -93,13 +94,13 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10) {
           });
           return customMint;
         },
-        makeCustomIssuer(issuer, parentIssuer) {
+        makeCustomIssuer(issuer) {
           return harden({
             getParentIssuer() {
               return parentIssuer;
             },
             getChildIssuer() {
-              getOrMakeChildMint();
+              getOrMakeChildMint(issuer);
               return childIssuer;
             },
             isDescendantIssuer(allegedDescendant) {
@@ -115,9 +116,9 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10) {
         },
         makeMintController,
         makeAssay: makePixelAssay,
-      };
+      });
     },
-  };
+  });
   return pixelConfigMaker;
 }
 

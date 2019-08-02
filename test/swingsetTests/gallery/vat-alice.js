@@ -265,13 +265,13 @@ function makeAliceMaker(E, log, contractHost) {
             return useObj;
           }
 
-          const { makePixelConfig } = makePixelConfigMaker(harden(makeUseObj));
-
-          const fakeChildMint = makeMint(
-            'pixels',
-            makePixelConfig,
-            pixelIssuer,
+          const { makePixelConfig } = makePixelConfigMaker(
+            harden(makeUseObj),
+            10,
+            harden(pixelIssuer),
           );
+
+          const fakeChildMint = makeMint('pixels', makePixelConfig);
 
           // use the fakeChildMint to create a payment to trick Bob
           const fakeChildIssuer = E(fakeChildMint).getIssuer();
