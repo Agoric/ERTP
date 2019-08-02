@@ -187,11 +187,9 @@ Description must be truthy: ${description}`;
         },
       });
 
-      const delegatedUsePurseMethods = makeCustomPurse(issuer, corePurse);
-
       const purse = harden({
         ...corePurse,
-        ...delegatedUsePurseMethods,
+        ...makeCustomPurse(issuer, corePurse),
       });
       purseController.recordNew(purse, initialBalance);
       return purse;
