@@ -9,8 +9,7 @@ import { escrowExchangeSrcs } from '../../../core/escrow';
 
 // only used by doCreateFakeChild test below
 import { makeMint } from '../../../core/issuers';
-import { makeMintController } from '../../../more/pixels/pixelMintController';
-import { makePixelListAssayMaker } from '../../../more/pixels/pixelAssays';
+import { makePixelConfigMaker } from '../../../more/pixels/pixelConfig';
 
 let storedUseObj;
 let storedERTPAsset;
@@ -238,7 +237,6 @@ function makeAliceMaker(E, log, contractHost) {
           const { pixelIssuer } = await E(gallery).getIssuers();
 
           // create a fake childMint controlled entirely by Alice
-          const makePixelAssay = makePixelListAssayMaker(10);
           function makeUseObj(issuer, asset) {
             const useObj = harden({
               changeColor(amount, _newColor) {
@@ -266,11 +264,12 @@ function makeAliceMaker(E, log, contractHost) {
             });
             return useObj;
           }
+
+          const { makePixelConfig } = makePixelConfigMaker(harden(makeUseObj));
+
           const fakeChildMint = makeMint(
             'pixels',
-            makeMintController,
-            makePixelAssay,
-            makeUseObj,
+            makePixelConfig,
             pixelIssuer,
           );
 

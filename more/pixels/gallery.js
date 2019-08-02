@@ -3,7 +3,7 @@ import harden from '@agoric/harden';
 
 import { makeCollect } from '../../core/contractHost';
 import { insist } from '../../util/insist';
-import { makePixelListAssayMaker } from './pixelAssays';
+import { makePixelConfigMaker } from './pixelConfig';
 import { makeMint } from '../../core/issuers';
 import { makeWholePixelList } from './types/pixelList';
 import {
@@ -12,7 +12,7 @@ import {
   getDistance,
   getDistanceFromCenter,
 } from './types/pixel';
-import { makeMintController } from './pixelMintController';
+
 import { makeLruQueue } from './lruQueue';
 import { getRandomColor } from './randomColor';
 
@@ -131,15 +131,10 @@ export function makeGallery(
     return useObj;
   }
 
-  const makePixelAssay = makePixelListAssayMaker(canvasSize);
+  const { makePixelConfig } = makePixelConfigMaker(makeUseObj);
 
   // a pixel represents the right to color and to transfer the right to color
-  const galleryPixelMint = makeMint(
-    'pixels',
-    harden(makeMintController),
-    harden(makePixelAssay),
-    harden(makeUseObj),
-  );
+  const galleryPixelMint = makeMint('pixels', harden(makePixelConfig));
   const galleryPixelIssuer = galleryPixelMint.getIssuer();
   const galleryPixelAssay = galleryPixelIssuer.getAssay();
 

@@ -1,4 +1,4 @@
-import { makePrivateName } from '../util/PrivateName';
+import { makePrivateName } from '../../util/PrivateName';
 
 export function makeBasicMintController() {
   // An asset can either be a purse or payment. An asset controller
