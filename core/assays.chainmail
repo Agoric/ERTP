@@ -1,25 +1,49 @@
 /**
+ * Amounts are wrappers on quantities that have been validated by an Assay, and
+ * can be verified as having been issued by the Assay. They contain their
+ * quantity and a Label. The label identifies a particular issuer.
+ */
+struct Amount (Quantity, Label) {
+  label :Label;
+  quantity :Quantity;
+}
+
+/**
+ * Quantities describe the extent of something that can be owned or shared.
+ * The format is determined by their assay. Fungible quantities are normally
+ * represented by natural numbers. Other quantities may be represented as
+ * strings naming a particular right, or an arbitrary object that sensibly
+ * represents the rights at issue. All Amounts made by the same Assay have the
+ * same label.
+ */
+interface Quantity extends (Comparable) {
+}
+
+/**
  * Creator and validator of asset Amounts.
- * 
+ *
  * Amounts are the canonical description of tradable goods. They are manipulated
  * by mints, and represent the goods and currency carried by purses and
  * payments. They can be used to represent things like currency, stock, and the
  * abstract right to participate in a particular exchange.
+ *
+ * The assay treats the Label as an opaque object. It's used in the
+ * amounts produced by this assay.
  */
-interface Assay {
+interface Assay (Amount (Quantity, Label)) {
 
-  /** Human readable name for the asset. */
-  getLabel() -> (String);
+  /** Return this assay's label. */
+  getLabel() -> (Label);
 
   /** Make a new verified Amount containing the allegedQuantity. */
-  make(allegedQuantity:Quantity) -> (Amount);
+  make(allegedQuantity :Quantity) -> (Amount);
 
   /**
    * Verify that an Amount was created by this Assay. Notice that this is
    * different from coerce(), which will accept manually constructed amounts and
    * amounts from other assays.
    */
-  vouch(amount:Amount) -> (Amount);
+  vouch(amount :Amount) -> (Amount);
 
   /**
    * Is this like an Amount object made by this Assay, such as one received by
@@ -29,19 +53,19 @@ interface Assay {
    * For fungible amounts based on natural numbers, coerce also accepts a bare
    * number which it will coerce to a labeled number via assay.make().
    */
-  coerce(allegedAmount:Amount) -> (Amount);
+  coerce(allegedAmount :Amount) -> (Amount);
 
   /** Return a Quantity representing the Amount parameter. */
-  quantity(amount:Amount) -> (Quantity);
+  quantity(amount :Amount) -> (Quantity);
 
   /** Return an empty amount. Conveys no authority. */
   empty() -> (Amount);
 
   /** Return true if the Amount is empty. Otherwise false. */
-  isEmpty(amount:Amount) -> (boolean);
+  isEmpty(amount :Amount) -> (boolean);
 
   /** Returns true if the leftAmount contains the rightAmount. */
-  includes(leftAmount:Amount, rightAmount:Amount) -> (boolean);
+  includes(leftAmount :Amount, rightAmount :Amount) -> (boolean);
 
   /** 
    * Returns a new amount that includes both leftAmount and rightAmount.
@@ -49,55 +73,14 @@ interface Assay {
    * For fungible amounts this means adding the quantities. For other kinds of
    * amounts, it usually means adding both.
    */
-  with(leftAmount:Amount, rightAmount:Amount) -> (Amount);
+  with(leftAmount :Amount, rightAmount :Amount) -> (Amount);
 
   /**
    * Returns a new amount that includes the portion of leftAmount not included
    * in rightAmount. If leftAmount doesn't include rightAmout, throw an error.
    */
-  without(leftAmount:Amount, rightAmount:Amount) -> (Amount);
+  without(leftAmount :Amount, rightAmount :Amount) -> (Amount);
 };
-
-/**
- * UniAssay represents amounts that have unique descriptions.
- *
- * The quantity must either be null, in which case it is empty, or be some
- * truthy comparable value, in which case it represents a single unique unit
- * described by that truthy quantity. Combining two uni amounts with different
- * truthy quantities fails, as they represent non-combinable rights. Distinct
- * amounts can be added to a single purse, producing a purse containing
- * multiple amounts.
- */
-interface UniAssay extends (Assay) {
-}
-
-/**
- * Assay for a labeled natural number describing a quantity of fungible
- * erights. The label describes what kinds of rights these are.
- *
- * Empty amounts have zero units. 'includes()' verifies that leftAmount is
- * greater than rightAmount. 'with()' and 'without()' add and subtract their
- * contents.
- */
-interface NatAssay extends (Assay) {
-}
-
-/**
- * Amounts are wrappers on quantities that have been validated by an Assay, and
- * can be verified as having been issued by the Assay. They contain their
- * quantity and a Label, which is unique to a particular assay.
- *
- * Quantities describe the extent of something that can be owned or shared.
- * The format is determined by their assay. Fungible quantities are normally
- * represented by natural numbers. Other quantities may be represented as
- * strings naming a particular right, or an arbitrary object that sensibly
- * represents the rights at issue. All Amounts made by the same Assay have the
- * same label.
- */
-struct Amount {
-  label:Label;
-  quantity:Object;
-}
 
 /**
  * The label for an amount identifies the issuer, and includes a description of
@@ -109,6 +92,36 @@ struct Amount {
  * assay.vouch(amount).
  */
 struct Label {
-  issuer:Issuer;
-  description:Description;
+  issuer :Issuer;
+  description :Description;
+}
+
+interface Description extends (Comparable) {
+}
+
+/**
+ * 
+ * UniAssay represents amounts that have unique descriptions. It is a
+ * refinement of Assay that we've found useful, but has no special
+ * place in the protocol.
+ *
+ * The quantity must either be null, in which case it is empty, or be some
+ * truthy comparable value, in which case it represents a single unique unit
+ * described by that truthy quantity. Combining two uni amounts with different
+ * truthy quantities fails, as they represent non-combinable rights.
+ */
+interface UniAssay extends (Assay) {
+}
+
+/**
+ * Assay for a labeled natural number describing a quantity of fungible
+ * erights. The label describes what kinds of rights these are. NatAssay is a
+ * refinement of Assay that we've found useful, but has no special place in the
+ * protocol.
+ *
+ * Empty amounts have zero units. 'includes()' verifies that leftAmount is
+ * greater than or equal to rightAmount. 'with()' and 'without()' add and
+ * subtract their contents.
+ */
+interface NatAssay extends (Assay) {
 }

@@ -4,7 +4,9 @@
  * Install(source) creates Installations. Installations represent particular
  * contract forms, which can be spawn()'d to create Contract instances
  * initialized with specific terms. These Contracts manage invitations for
- * multiple seats, each of which repesents a role in a transaction. After a
+ * multiple seats, each of which repesents a role in a transaction. 
+ * 
+ * After a
  * role has carried out its responsibilities, it may call collect() (described
  * later) to collect winnings and refunds into appropriate purses.
  */
@@ -12,10 +14,10 @@ interface ContractHost {
   /**
    * ContractSrc is the source code for a Contract. See Contract for details.
    */
-  install(contractSrc:String) -> (Installation);
+  install(contractSrc :String) -> (Installation);
 
   /** Returns the actual source of the Installation. */
-  getInstallationSourceCode(installation:Installation) -> (String);
+  getInstallationSourceCode(installation :Installation) -> (String);
 
   /**
    * Seat invitations are packaged as payments from the Invite Issuer. Redeeming
@@ -23,7 +25,7 @@ interface ContractHost {
    * is at the discretion of the contract) which supports interaction according
    * to the terms.
    */
-  redeem(invite:Payment) -> (Object);
+  redeem(invite :Payment) -> (Object);
 
   /**
    * The issuer allows holders of seat invitations to get exclusive access to a
@@ -52,7 +54,7 @@ interface Installation {
    * invitations for the roles in the contract, but see coveredCall for an
    * exception.
    *
-  spawn(terms:Terms) -> (invites:Object); // usually a collection of seat Invites
+  spawn(terms :Terms) -> (invites :Object); // usually a collection of seat Invites
 };
 
 /**
@@ -87,7 +89,7 @@ interface Installation {
   */
 interface Contract {
   /** Start execution of the contract. May return invites for seats. */
-  start(terms:Terms, inviteMaker:InviteMaker) -> (Object);
+  start(terms :Terms, inviteMaker :InviteMaker) -> (Object);
 
  /**
   * The writer of the contract can provide methods to help users of the contract
@@ -116,7 +118,7 @@ interface Contract {
   * payment corresponding to the seat.
   */
 interface InviteMaker {
-  make(seatDesc:String, seat:Object, name:String) -> (Purse);
+  make(seatDesc :String, seat :Object, name :String) -> (Purse);
 }
 
 /**
@@ -129,6 +131,6 @@ interface InviteMaker {
   * the seats defined by the contract.
   */
 interface Collector {
-  collect(seatP:Object, winPurseP:Purse, refundPurseP:Purse, name:String)
+  collect(seatP :Object, winPurseP :Purse, refundPurseP :Purse, name :String)
     -> ([wins, refs]);
 }

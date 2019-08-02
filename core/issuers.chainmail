@@ -4,35 +4,35 @@
  * to a Purse or Payment that you already hold, or to burn some or all of the
  * contained rights.
  */
-interface Issuer {
+interface Issuer (Amount (Quantity)) {
   /**
    * Get the label for this Issuer.
    *
    * Labels can be used to manually construct amounts
    */
-  getLabel() -> (Object);
+  getLabel() -> (Comparable);
 
   /* Get the Assay for this Issuer. */
   getAssay() -> (Assay);
 
   /** Make an Amount that contains the indicated quantity. */
-  makeAmount(quantity:Quantity) -> (Amount);
+  makeAmount(quantity :Quantity) -> (Amount);
 
   /** Make an empty purse associated with this kind of right. */
-  makeEmptyPurse(name:String) -> (Purse);
+  makeEmptyPurse(name :String) -> (Purse);
 
   /**
    * Make a new Payment that has exclusive rights to the amount, only if src had
    * those rights, exclusively or not. The src payment retains any excess not
    * included in amount.
    */
-  getExclusive(amount:Amount, src:Payment, name:String = 'a payment')
+  getExclusive(amount :Amount, src :Payment, name :String = 'a payment')
     -> (Payment);
 
   /**
    * Make a new Payment that has exclusive rights to all the contents of src.
    */
-  getExclusiveAll(src:Payment, name:String = 'a payment') -> (Payment);
+  getExclusiveAll(src :Payment, name :String = 'a payment') -> (Payment);
 
   /**
    * Burn amount of the rights from src. If the rights are fungible, this
@@ -40,10 +40,10 @@ interface Issuer {
    * non-fungible, this ensures that no purse or payment has access to those
    * rights.
    */
-  burn(amount:Amount, src:Payment) -> (Amount);
+  burn(amount :Amount, src :Payment) -> (Amount);
 
   /** Burn all of the rights from src. */
-  burnAll(src:Payment) -> (Amount);
+  burnAll(src :Payment) -> (Amount);
 }
 
 /**
@@ -58,9 +58,9 @@ interface Issuer {
  */
 interface MintMaker {
   makeMint(
-      description:String,
-      makeMintController:MintControllerMaker,
-	  makeAssay:AssayMaker)
+      description :String,
+      makeMintController :MintControllerMaker,
+	  makeAssay :AssayMaker)
 	-> (Mint);
 }
 
@@ -70,7 +70,7 @@ interface MintMaker {
  * associated with the issuer will only interact with others using the same
  * mint.
  */
-interface Mint {
+interface Mint (Amount (Quantity)) {
   /** Get the Issuer for this mint. */
   getIssuer() -> (Issuer);
 
@@ -78,19 +78,19 @@ interface Mint {
    * Create a new Purse containing the amount. Give it the specified name or "a
    * purse".
    */
-  mint(initialBalance:Amount, name:String = 'a purse') -> (Purse);
+  mint(initialBalance :Amount, name :String = 'a purse') -> (Purse);
 
   /** Reset all purses and payments to contain nothing. */
   destroyAll();
 
   /** (Non-fungible amounts only) Ensure no purse or payment contains amount. */
-  destroy(amount:Amount);
+  destroy(amount :Amount);
 
   /**
    * Destroy any purses or payments containing amount, then issue a new Purse
    * with that amount.
    */
-  revoke(amount:Amount) -> (Purse);
+  revoke(amount :Amount) -> (Purse);
 }
 
 /**
@@ -109,7 +109,7 @@ interface Mint {
  * distinguish use rights from transfer rights, like a membership card; you can
  * exercise the rights without giving them up.
  */
-interface Purse {
+interface Purse (Amount) {
   /** Get the name of this purse. */
   getName() -> (String);
 
@@ -120,19 +120,19 @@ interface Purse {
   getBalance() -> (Amount);
 
   /** Deposit amount from srcPayment into this purse, returning the amount. */
-  deposit(amount:Amount, srcPayment:Payment) -> (Amount);
+  deposit(amount :Amount, srcPayment :Payment) -> (Amount);
 
   /**
    * Deposit all the contents of srcPayment into this purse, returning the
    * amount.
    */
-  depositAll(srcPayment:Payment) -> (Amount);
+  depositAll(srcPayment :Payment) -> (Amount);
 
   /** Withdrow amount from this purse into a new Payment. */
-  withdraw(amount:Amount, name:String) -> (Payment);
+  withdraw(amount :Amount, name :String) -> (Payment);
 
   /** Withdrow entire content of this purse into a new Payment. */
-  withdrawAll(name:String) -> (Payment);
+  withdrawAll(name :String) -> (Payment);
 }
 
 /**
@@ -144,7 +144,7 @@ interface Purse {
  * Payments can be converted to Purses by calling
  * payment.getIssuer().makeEmptyPurse().depositAll(payment);
  */
-interface Payment {
+interface Payment (Amount) {
   /** Get the name of this purse. */
   getName() -> (String);
 
