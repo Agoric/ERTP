@@ -11,6 +11,8 @@ import {
   makeWholePixelList,
 } from '../../../../../more/pixels/types/pixelList';
 
+import { compare } from '../../../../more/pixels/types/pixel';
+
 test('pixelList insistPixelList', t => {
   const startPixel = { x: 0, y: 0 };
   const secondPixel = { x: 0, y: 1 };
@@ -77,7 +79,7 @@ test('pixelList includesPixelList', t => {
   t.end();
 });
 
-test('pixelList withPixelList', t => {
+test.only('pixelList withPixelList', t => {
   const startPixel = { x: 0, y: 0 };
   const secondPixel = { x: 0, y: 1 };
   t.deepEqual(withPixelList(harden([]), harden([])), []);
@@ -144,6 +146,35 @@ test('pixelList makeWholePixelList', t => {
       x: 1,
       y: 1,
     },
+  ]);
+  t.end();
+});
+
+test('pixelList sort with compare', t => {
+  const pixels = [
+    {
+      x: 2,
+      y: 1,
+    },
+    {
+      x: 0,
+      y: 0,
+    },
+    {
+      x: 0,
+      y: 1,
+    },
+    {
+      x: 1,
+      y: 2,
+    },
+  ];
+  pixels.sort(compare);
+  t.deepEqual(pixels, [
+    { x: 0, y: 0 },
+    { x: 0, y: 1 },
+    { x: 1, y: 2 },
+    { x: 2, y: 1 },
   ]);
   t.end();
 });

@@ -1,6 +1,6 @@
 import { passStyleOf } from '@agoric/marshal';
 
-import { insistPixel, isEqual } from './pixel';
+import { insistPixel, isEqual, compare } from './pixel';
 import { insist } from '../../../util/insist';
 
 // pixelList is the most naive bundling of pixels
@@ -12,15 +12,31 @@ function insistPixelList(pixelList, canvasSize) {
   }
 }
 
+function binarySearch(pixels, pixel, start = 0) {
+  let stop = pixels.length - 1;
+  let middle = Math.floor((start + stop) / 2);
+
+  while (start < stop && !isEqual(pixels[middle], pixel)) {
+    // adjust search area
+    if (compare(pixel, pixels[middle]) < 0) {
+      stop = middle - 1;
+    } else if (compare(pixel, pixels[middle] > 0)) {
+      start = middle + 1;
+    }
+
+    // recalculate middle
+    middle = Math.floor((stop + start) / 2);
+  }
+
+  // make sure it's the right value
+  return !isEqual(pixels[middle], pixel) ? -1 : middle;
+}
+
 // does not check validity of the pixel or pixelList
 function includesPixel(pixelList, pixel) {
-  let result = false;
-  for (const p of pixelList) {
-    if (isEqual(pixel, p)) {
-      result = true;
-    }
-  }
-  return result;
+  // assumes pixelList is ordered
+  const result = binarySearch(pixelList, pixel);
+  return result >= 0;
 }
 
 // does not check validity of the pixel or pixelList
@@ -34,13 +50,18 @@ function includesPixelList(leftPixelList, rightPixelList) {
   // iterate through the pixels in the rightPixelList, see if left
   // includes it
 
+  // assumes both lists are ordered
+
+  let leftStart = 0;
+
   // if rightPixelList is empty, this just returns true
   for (let i = 0; i < rightPixelList.length; i += 1) {
     const rightPixel = rightPixelList[i];
-    const result = includesPixel(leftPixelList, rightPixel);
-    if (!result) {
-      return false; // return early if false
+    const result = binarySearch(leftPixelList, rightPixel, leftStart);
+    if (result < 0) {
+      return false; // return early
     }
+    leftStart = result + 1; // don't revisit left
   }
   return true;
 }
@@ -51,11 +72,37 @@ function insistIncludesPixelList(leftPixelList, rightPixelList) {
 }
 
 function withPixelList(leftPixelList, rightPixelList) {
-  const combinedList = Array.from(leftPixelList);
-  for (const rightPixel of rightPixelList) {
-    if (!includesPixel(leftPixelList, rightPixel)) {
-      combinedList.push(rightPixel);
+  const combinedList = [];
+  let index = 0;
+
+  while (index < leftPixelList.length && index < rightPixelList.length) {
+    const leftPixel = leftPixelList[index];
+    const rightPixel = rightPixelList[index];
+    const result = compare(leftPixel, rightPixel);
+    // left is before right
+    if (result < 0) {
+      combinedList.push(leftPixel, rightPixel);
     }
+    if (result === 0) {
+      combinedList.push(leftPixel); // they are equal, only use one
+    }
+    index += 1;
+  }
+
+  while (index < leftPixelList.length) {
+    // ensure that we are not duplicating
+    if (!isEqual(rightPixelList[index - 1], leftPixelList[index])) {
+      combinedList.push(leftPixelList[index]);
+    }
+    index += 1;
+  }
+
+  while (index < rightPixelList.length) {
+    // ensure that we are not duplicating
+    if (!isEqual(leftPixelList[index - 1], rightPixelList[index])) {
+      combinedList.push(rightPixelList[index]);
+    }
+    index += 1;
   }
   return combinedList;
 }
@@ -65,12 +112,30 @@ function withPixelList(leftPixelList, rightPixelList) {
 // Describe the erights described by `leftAmount` and not described
 // by `rightAmount`.
 function withoutPixelList(leftPixelList, rightPixelList) {
-  insistIncludesPixelList(leftPixelList, rightPixelList);
   const leftMinusRight = [];
-  for (const leftPixel of leftPixelList) {
-    if (!includesPixel(rightPixelList, leftPixel)) {
+
+  let index = 0;
+
+  while (index < leftPixelList.length && index < rightPixelList.length) {
+    const leftPixel = leftPixelList[index];
+    const rightPixel = rightPixelList[index];
+    const result = compare(leftPixel, rightPixel);
+    // left is before right
+    if (result !== 0) {
       leftMinusRight.push(leftPixel);
     }
+    index += 1;
+  }
+
+  while (index < leftPixelList.length) {
+    leftMinusRight.push(leftPixelList[index]);
+    index += 1;
+  }
+
+  while (index < rightPixelList.length) {
+    throw new Error(
+      'right is longer than left, and therefore left cannot contain right',
+    );
   }
   return leftMinusRight;
 }

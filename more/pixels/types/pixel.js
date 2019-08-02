@@ -19,18 +19,45 @@ function insistPixel(pixel, canvasSize) {
   insistWithinBounds(pixel.y, canvasSize);
 }
 
-// should only be used with valid pixels - no checks
-function isEqual(leftPixel, rightPixel) {
-  return leftPixel.x === rightPixel.x && leftPixel.y === rightPixel.y;
-}
-
 // upper left is 0, 0
 // lower right is NUM_PIXEL, NUM_PIXEL
 // upper left is "less than" lower right
 
+function compare(a, b) {
+  if (!a || !b) {
+    return undefined;
+  }
+  const xLess = a.x < b.x;
+  const yLess = a.y < b.y;
+  const xEqual = a.x === b.x;
+  const yEqual = a.y === b.y;
+
+  if (xEqual && yEqual) {
+    return 0;
+  }
+
+  // 1, 2 before 2, 1
+  if (xLess) {
+    return -1;
+  }
+
+  // 1, 2 before 1, 3
+  if (xEqual && yLess) {
+    return -1;
+  }
+
+  // must be greater
+  return 1;
+}
+
 // should only be used with valid pixels
 function isLessThanOrEqual(leftPixel, rightPixel) {
-  return leftPixel.x <= rightPixel.x && leftPixel.y <= rightPixel.y;
+  return compare(leftPixel, rightPixel) <= 0;
+}
+
+// should only be used with valid pixels - no checks
+function isEqual(leftPixel, rightPixel) {
+  return compare(leftPixel, rightPixel) === 0;
 }
 
 function getString(pixel) {
@@ -42,5 +69,6 @@ export {
   insistPixel,
   isEqual,
   isLessThanOrEqual,
+  compare,
   getString,
 };

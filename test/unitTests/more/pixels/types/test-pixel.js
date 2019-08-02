@@ -5,6 +5,7 @@ import {
   insistPixel,
   isEqual,
   isLessThanOrEqual,
+  compare,
 } from '../../../../../more/pixels/types/pixel';
 
 test('pixel insistWithinBounds', t => {
@@ -42,5 +43,14 @@ test('pixel isLessThanOrEqual', t => {
   t.true(isLessThanOrEqual({ x: 0, y: 0 }, { x: 2, y: 2 }));
   t.false(isLessThanOrEqual({ x: 2, y: 2 }, { x: 0, y: 0 }));
   t.false(isLessThanOrEqual({ x: 1, y: 0 }, { x: 0, y: 0 }));
+  t.end();
+});
+
+test('pixel compare', t => {
+  t.strictEqual(compare({ x: 0, y: 0 }, { x: 0, y: 0 }), 0);
+  t.strictEqual(compare({ x: 0, y: 0 }, { x: 2, y: 2 }), -1);
+  t.strictEqual(compare({ x: 2, y: 2 }, { x: 0, y: 0 }), 1);
+  t.strictEqual(compare({ x: 1, y: 0 }, { x: 0, y: 0 }), 1);
+  t.strictEqual(compare({ x: 1, y: 0 }, { x: 0, y: 1 }), 1);
   t.end();
 });
