@@ -102,7 +102,7 @@ interface Contract {
   * Users usually want to validate their invitation, the terms of the deal
   * they're attmpting to participate in, and which role/seat they are taking.
   */
-  checkAmount(installation, inviteAmount, terms);
+  checkAmount(installation :FIXME, inviteAmount :Amount, terms :FIXME);
 }
 
 /**
@@ -130,7 +130,8 @@ interface InviteMaker {
   * is made available by providing getWinnings() and getRefunds() methods on
   * the seats defined by the contract.
   */
+/* FIXME: Returntype was [wins, refs] */
 interface Collector {
   collect(seatP :Object, winPurseP :Purse, refundPurseP :Purse, name :String)
-    -> ([wins, refs]);
+    -> (WinRefsArray);
 }
