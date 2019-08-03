@@ -16,11 +16,11 @@ function binarySearch(pixels, pixel, start = 0) {
   let stop = pixels.length - 1;
   let middle = Math.floor((start + stop) / 2);
 
-  while (start < stop && !isEqual(pixels[middle], pixel)) {
+  while (start <= stop && !isEqual(pixels[middle], pixel)) {
     // adjust search area
     if (compare(pixel, pixels[middle]) < 0) {
       stop = middle - 1;
-    } else if (compare(pixel, pixels[middle] > 0)) {
+    } else if (compare(pixel, pixels[middle]) > 0) {
       start = middle + 1;
     }
 
@@ -114,25 +114,36 @@ function withPixelList(leftPixelList, rightPixelList) {
 function withoutPixelList(leftPixelList, rightPixelList) {
   const leftMinusRight = [];
 
-  let index = 0;
+  let leftIndex = 0;
+  let rightIndex = 0;
 
-  while (index < leftPixelList.length && index < rightPixelList.length) {
-    const leftPixel = leftPixelList[index];
-    const rightPixel = rightPixelList[index];
+  while (
+    leftIndex < leftPixelList.length &&
+    rightIndex < rightPixelList.length
+  ) {
+    const leftPixel = leftPixelList[leftIndex];
+    const rightPixel = rightPixelList[rightIndex];
     const result = compare(leftPixel, rightPixel);
     // left is before right
-    if (result !== 0) {
+    if (result < 0) { // left is less than right
+      // keep leftPixel and go to the next leftPixel
       leftMinusRight.push(leftPixel);
+      leftIndex += 1;
+    } else if (result > 0) {// left is greater than right
+      // move forward on right
+      rightIndex += 1;
+    } else if (result === 0) {
+      leftIndex += 1;
+      rightIndex += 1;
     }
-    index += 1;
   }
 
-  while (index < leftPixelList.length) {
-    leftMinusRight.push(leftPixelList[index]);
-    index += 1;
+  while (leftIndex < leftPixelList.length) {
+    leftMinusRight.push(leftPixelList[leftIndex]);
+    leftIndex += 1;
   }
 
-  while (index < rightPixelList.length) {
+  while (rightIndex < rightPixelList.length) {
     throw new Error(
       'right is longer than left, and therefore left cannot contain right',
     );
@@ -169,4 +180,5 @@ export {
   withoutPixelList,
   makeWholePixelList,
   insistPixelListEqual,
+  binarySearch,
 };

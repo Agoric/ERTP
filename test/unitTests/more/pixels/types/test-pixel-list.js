@@ -11,7 +11,7 @@ import {
   makeWholePixelList,
 } from '../../../../../more/pixels/types/pixelList';
 
-import { compare } from '../../../../more/pixels/types/pixel';
+import { compare } from '../../../../../more/pixels/types/pixel';
 
 test('pixelList insistPixelList', t => {
   const startPixel = { x: 0, y: 0 };
@@ -79,7 +79,7 @@ test('pixelList includesPixelList', t => {
   t.end();
 });
 
-test.only('pixelList withPixelList', t => {
+test('pixelList withPixelList', t => {
   const startPixel = { x: 0, y: 0 };
   const secondPixel = { x: 0, y: 1 };
   t.deepEqual(withPixelList(harden([]), harden([])), []);

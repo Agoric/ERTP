@@ -1,11 +1,19 @@
-import { insistPixel, isLessThanOrEqual } from './pixel';
-import { insistIncludesPixel } from './pixelList';
+import {
+  insistPixel,
+  isLessThanOrEqual,
+  isEqual as isEqualPixel,
+} from './pixel';
 
 import { insist } from '../../../util/insist';
 
 function insistLessThanOrEqual(start, end) {
   insist(isLessThanOrEqual(start, end))`/
   the starting pixel must be "less than or equal" to the ending pixel`;
+}
+
+function insistIsEqualPixel(left, right) {
+  insist(isEqualPixel(left, right))`/
+  the left pixel must be equal to the right pixel`;
 }
 
 function insistArea(area, canvasSize) {
@@ -43,13 +51,18 @@ function includes(area, pixel) {
 function makeArea(allegedArea, pixelList, canvasSize) {
   const { start, end } = allegedArea;
   const area = insistArea(allegedArea, canvasSize);
+  let count = 0;
 
   for (let { x } = start; x <= end.x; x += 1) {
     for (let { y } = start; y <= end.y; y += 1) {
       // check that all of the pixels within the area are included in
       // the pixelList
       const pixel = { x, y };
-      insistIncludesPixel(pixelList, pixel);
+
+      // assume pixelList is ordered and compare with next entry
+      const pixelListPixel = pixelList[count];
+      insistIsEqualPixel(pixelListPixel, pixel);
+      count += 1;
     }
   }
   return area;
