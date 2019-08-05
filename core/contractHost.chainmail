@@ -4,8 +4,8 @@
  * Install(source) creates Installations. Installations represent particular
  * contract forms, which can be spawn()'d to create Contract instances
  * initialized with specific terms. These Contracts manage invitations for
- * multiple seats, each of which repesents a role in a transaction. 
- * 
+ * multiple seats, each of which repesents a role in a transaction.
+ *
  * After a
  * role has carried out its responsibilities, it may call collect() (described
  * later) to collect winnings and refunds into appropriate purses.
@@ -40,21 +40,32 @@ interface ContractHost {
   * seats representing a specific group of agents interacting according to the
   * same prescribed roles.
   *
-  * The Installation can also have functions with names starting `check`, as
-  * defined by the contract. These functions are intended to assist the various
-  * roles in the contract in validating that the terms they're expecting are
-  * actually the same as the terms of this spawned contract. The Installation
-  * is inserted as the first parameter to the check... functions by the
-  * ContactHost.
+  * The Installation can also have functions defined by the contract that can be
+  * used to validate that the expected terms are actually the same as the terms
+  * of this spawned contract. The Installation is inserted by the ContactHost as
+  * the first parameter to these functions.
   */
 interface Installation {
-  /** 
+  /**
    * Create a new InviteMaker, then call the Contract's start() method and
    * return its results. The results are expected to be a collection of seat
    * invitations for the roles in the contract, but see coveredCall for an
    * exception.
    *
   spawn(terms :Terms) -> (invites :Object); // usually a collection of seat Invites
+
+ /**
+  * The writer of the contract can provide methods to help users of the contract
+  * verify that the terms of the contract match their expectation. These methods
+  * are defined with the installation as the first parameter, so the verifiers
+  * can validate that the caller's invitation was issued by the same one. The
+  * invocation by clients should omit this parameter, as they will be supplied
+  * with a copy of the function with that information already supplied.
+  *
+  * Users usually want to validate their invitation, the terms of the deal
+  * they're attmpting to participate in, and which role/seat they are taking.
+  */
+  checkAmount(installation :Installation, inviteAmount :Amount, terms :Terms);
 };
 
 /**
@@ -74,14 +85,14 @@ interface Installation {
   * and collected by the respective parties. This representation is flexible
   * enough to support trading of money, non-fungible items, or
   * partially-executed positions in other contracts among other possibilities.
-  * 
+  *
   * Javascript gives access to the source from a function, but not from an
   * object. We make the source accessible to the ContractHost by having
   * contracts export a record containing the source. The contract can also
   * define methods that can be called by participants in the contract to
   * validate that the terms they expect the contract to have been installed with
   * are in agreement with the contract.
-  * 
+  *
   * const escrowExchangeSrcs = {
   *   start: `${escrowExchange.start}`,
   *   checkAmount: `${escrowExchange.checkAmount}`,
@@ -90,19 +101,6 @@ interface Installation {
 interface Contract {
   /** Start execution of the contract. May return invites for seats. */
   start(terms :Terms, inviteMaker :InviteMaker) -> (Object);
-
- /**
-  * The writer of the contract can provide methods to help users of the contract
-  * verify that the terms of the contract match their expectation. These methods
-  * are defined with the installation as the first parameter, so the verifiers
-  * can validate that the caller's invitation was issued by the same one. The
-  * invocation by clients should omit this parameter, as they will be supplied
-  * with a copy of the function with that information already supplied.
-  *  
-  * Users usually want to validate their invitation, the terms of the deal
-  * they're attmpting to participate in, and which role/seat they are taking.
-  */
-  checkAmount(installation :FIXME, inviteAmount :Amount, terms :FIXME);
 }
 
 /**
@@ -122,16 +120,30 @@ interface InviteMaker {
 }
 
 /**
-  * 'collect()' is a free function that can be imported from
+  * 'collect()' is a pure function that can be imported from
   * 'contractHost.js'. It calls getWinnings() and 'getRefund()' on seatP and
   * deposits the proceeds respectively into winPurseP and refundPurseP. 'name'
   * (which defaults to 'collecting') is converted to a String, and used for
-  * logging the results. This establishes that the normal outcome of a contract
+  * logging the results. 
+  * 
+  * This establishes that the normal outcome of a contract
   * is made available by providing getWinnings() and getRefunds() methods on
   * the seats defined by the contract.
+  * 
+  * collect() violates our usual rule of only sending payments, and never sharing purses. Jessie will eventually provide assurances that, because of the way that we import modules, collect is a pure 
   */
-/* FIXME: Returntype was [wins, refs] */
 interface Collector {
   collect(seatP :Object, winPurseP :Purse, refundPurseP :Purse, name :String)
-    -> (WinRefsArray);
+    -> (winsAndRefunds :Object);
+}
+
+/**
+  * Arbitrary terms defined by each contract.
+  *
+  * These are defined by the contract, passed to spawn(), and available to be
+  * validated in the check methods (or manually) by contract participants to
+  * ensure they are connected to a contract with matching expectations about
+  * what will be traded, and which role they are playing.
+  */
+interface Terms {
 }
