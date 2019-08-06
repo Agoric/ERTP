@@ -20,13 +20,6 @@ import {
 // This is less than ideal for efficiency and expressiveness but will
 // do for now
 
-// a label is an object w/ the properties 'issuer' and 'description'
-// issuer is an obj with methods like getExclusive & getEmptyPurse
-// description is a string
-
-// our PixelLists should have the same issuer and the same description
-// the description is "pixelList"
-
 function makePixelListAssayMaker(canvasSize) {
   function makePixelListAssay(pixelLabel) {
     mustBeComparable(pixelLabel);
