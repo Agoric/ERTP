@@ -4,13 +4,25 @@
 import harden from '@agoric/harden';
 
 import { insist } from '../util/insist';
-
 import { makeFungibleConfig } from './config/fungibleConfig';
 
+/**
+ * makeMint takes in a string description as well as a function to
+ * make a configuration. This configuration can be used to add custom
+ * methods to issuers, payments, purses, and mints, and it also
+ * defines the functions to make the "mintKeeper" (the actual holder
+ * of the mappings from purses/payments to amounts) and to make the
+ * "assay" (the object that describes the logic of how amounts are
+ * withdrawn or deposited, among other things).
+ * @param  {string} description
+ * @param  {function} makeConfig=makeFungibleConfig
+ */
 function makeMint(description, makeConfig = makeFungibleConfig) {
   insist(description)`\
 Description must be truthy: ${description}`;
 
+  // Each of these methods is used below and must be defined (even in
+  // a trivial way) in any configuration
   const {
     makeCustomIssuer,
     makeCustomPayment,
@@ -40,6 +52,9 @@ Description must be truthy: ${description}`;
       },
     });
 
+    // makeCustomPayment is defined in the passed-in configuration and
+    // allows for the customization of the payment, including adding
+    // additional methods
     const payment = makeCustomPayment(corePayment, issuer);
 
     // ///////////////// commit point //////////////////
@@ -100,6 +115,9 @@ Description must be truthy: ${description}`;
     },
   });
 
+  // makeCustomIssuer is defined in the passed-in configuration and
+  // allows for the customization of the issuer, including adding
+  // additional methods
   const issuer = makeCustomIssuer(coreIssuer);
 
   const label = harden({ issuer, description });
@@ -171,12 +189,18 @@ Description must be truthy: ${description}`;
         },
       });
 
+      // makeCustomPurse is defined in the passed-in configuration and
+      // allows for the customization of the purse, including adding
+      // additional methods
       const purse = makeCustomPurse(corePurse, issuer);
       purseKeeper.recordNew(purse, initialBalance);
       return purse;
     },
   });
 
+  // makeCustomMint is defined in the passed-in configuration and
+  // allows for the customization of the mint, including adding
+  // additional methods
   const mint = makeCustomMint(coreMint, issuer, assay, mintKeeper);
 
   return mint;
