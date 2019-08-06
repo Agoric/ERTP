@@ -76,15 +76,15 @@ export function makePixelMintKeeper(assay) {
       // amount is guaranteed to be there
       amount = assay.coerce(amount);
 
-      const controller = getKeeper(asset);
-      const originalAmount = controller.getAmount(asset);
+      const keeper = getKeeper(asset);
+      const originalAmount = keeper.getAmount(asset);
       const newAmount = assay.without(originalAmount, amount);
 
       // ///////////////// commit point //////////////////
       // All queries above passed with no side effects.
       // During side effects below, any early exits should be made into
       // fatal turn aborts.
-      controller.updateAmount(asset, newAmount);
+      keeper.updateAmount(asset, newAmount);
       // Reset the mappings from everything in the amount to the purse
       // or payment that holds them.
       recordPixelsAsAsset(newAmount, asset);
