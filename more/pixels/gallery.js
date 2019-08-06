@@ -124,9 +124,6 @@ export function makeGallery(
         }
         return colors;
       },
-      getERTP() {
-        return asset;
-      },
     });
     return useObj;
   }
@@ -174,7 +171,7 @@ export function makeGallery(
 
     // give the user the child use rights, from which they can get an
     // ERTP object
-    return payment.getDelegatedUse();
+    return payment.getChildPayment();
   }
 
   function pricePixelInternal(rawPixel) {

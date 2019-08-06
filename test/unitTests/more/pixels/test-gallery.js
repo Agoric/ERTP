@@ -9,8 +9,8 @@ import { insistPixelList } from '../../../../more/pixels/types/pixelList';
 test('tapFaucet', t => {
   const { userFacet } = makeGallery();
   const { pixelIssuer } = userFacet.getIssuers();
-  const pixels = userFacet.tapFaucet();
-  const amount = pixels.getERTP().getBalance();
+  const pixelPayment = userFacet.tapFaucet();
+  const amount = pixelPayment.getBalance();
   const pixelAssay = pixelIssuer.getAssay();
   const quantity = pixelAssay.quantity(amount);
   t.doesNotThrow(() => insistPixelList(quantity, userFacet.getCanvasSize()));
@@ -19,8 +19,7 @@ test('tapFaucet', t => {
 
 test('get exclusive pixel payment from faucet', t => {
   const { userFacet } = makeGallery();
-  const pixels = userFacet.tapFaucet();
-  const payment = pixels.getERTP();
+  const payment = userFacet.tapFaucet();
   const { pixelIssuer } = userFacet.getIssuers();
   pixelIssuer.getExclusiveAll(payment).then(pixelPayment => {
     const amount = pixelPayment.getBalance();
@@ -36,7 +35,8 @@ test('the user changes the color of a pixel', async t => {
   const { userFacet } = makeGallery();
 
   // user actions
-  const pixels = userFacet.tapFaucet();
+  const payment = userFacet.tapFaucet();
+  const pixels = payment.getUse();
   const rawPixels = pixels.getRawPixels();
   const rawPixel = rawPixels[0];
   pixels.changeColorAll('#000000');

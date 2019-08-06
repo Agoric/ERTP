@@ -11,20 +11,19 @@ function makeBobMaker(E, log) {
   return harden({
     make(gallery) {
       const bob = harden({
-        async receiveUseObj(pixels) {
-          log('++ bob.receiveUseObj starting');
+        async receiveChildPayment(paymentP) {
+          log('++ bob.receiveChildPayment starting');
 
           const { pixelIssuer: originalPixelIssuer } = await E(
             gallery,
           ).getIssuers();
           const childIssuer = E(originalPixelIssuer).getChildIssuer();
           const childPixelPurse = E(childIssuer).makeEmptyPurse();
-          const payment = await E(pixels).getERTP();
 
           // putting it in a purse isn't useful but it allows us to
           // test the functionality and exclusivity
 
-          await E(childPixelPurse).depositAll(payment);
+          await E(childPixelPurse).depositAll(paymentP);
           const newPayment = await E(childPixelPurse).withdrawAll();
 
           const useObj = await E(newPayment).getUse();
@@ -33,7 +32,7 @@ function makeBobMaker(E, log) {
           const amountP = await E(useObj).changeColorAll('#B695C0');
 
           storedERTPAsset = newPayment;
-          storedPixels = pixels;
+          storedPixels = useObj;
           return amountP;
         },
         async tryToColorPixels() {

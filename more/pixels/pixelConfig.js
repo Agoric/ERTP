@@ -38,7 +38,7 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10, parentIssuer) {
           getUse() {
             return makeUseObj(issuer, superPayment);
           },
-          getDelegatedUse() {
+          getChildPayment() {
             // quantity is the same, but amounts are different for
             // different issuers
             const childAmount = getChildAmount(
@@ -46,8 +46,7 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10, parentIssuer) {
               superPayment.getBalance(),
             );
             const childPurse = childMint.mint(childAmount);
-            const childPayment = childPurse.withdrawAll();
-            return makeUseObj(childIssuer, childPayment);
+            return childPurse.withdrawAll();
           },
           revokeChildren() {
             const childAmount = getChildAmount(
@@ -64,10 +63,9 @@ function makePixelConfigMaker(makeUseObj, canvasSize = 10, parentIssuer) {
           getUse() {
             return makeUseObj(issuer, superPurse);
           },
-          getDelegatedUse() {
+          getChildPurse() {
             const childAmount = getChildAmount(issuer, superPurse.getBalance());
-            const childPurse = childMint.mint(childAmount);
-            return makeUseObj(childIssuer, childPurse);
+            return childMint.mint(childAmount);
           },
           revokeChildren() {
             const childAmount = getChildAmount(issuer, superPurse.getBalance());
