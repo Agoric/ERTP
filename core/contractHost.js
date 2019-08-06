@@ -11,7 +11,7 @@ import {
   mustBeSameStructure,
   sameStructure,
 } from '../util/sameStructure';
-import { makeInviteConfigMaker } from './config/inviteConfig';
+import { makeUniAssayConfigMaker } from './config/uniAssayConfig';
 import { makeMint } from './issuers';
 import makePromise from '../util/makePromise';
 
@@ -30,8 +30,8 @@ function makeContractHost(E, evaluate) {
     return seatDesc;
   }
 
-  const { makeInviteConfig } = makeInviteConfigMaker(descriptionCoercer);
-  const inviteMint = makeMint('contract host', makeInviteConfig);
+  const makeUniAssayConfig = makeUniAssayConfigMaker(descriptionCoercer);
+  const inviteMint = makeMint('contract host', makeUniAssayConfig);
   const inviteIssuer = inviteMint.getIssuer();
   const inviteAssay = inviteIssuer.getAssay();
 

@@ -5,9 +5,9 @@ import harden from '@agoric/harden';
 
 import { insist } from '../util/insist';
 
-import { makeBasicConfig } from './config/basicConfig';
+import { makeFungibleConfig } from './config/fungibleConfig';
 
-function makeMint(description, makeConfig = makeBasicConfig) {
+function makeMint(description, makeConfig = makeFungibleConfig) {
   insist(description)`\
 Description must be truthy: ${description}`;
 
@@ -16,21 +16,16 @@ Description must be truthy: ${description}`;
     makeCustomPayment,
     makeCustomPurse,
     makeCustomMint,
-    makeMintController,
+    makeMintKeeper,
     makeAssay,
   } = makeConfig(makeMint, description);
 
   // assetSrc is a purse or payment. Return a fresh payment.  One internal
   // function used for both cases, since they are so similar.
-  function takePayment(
-    assetSrc,
-    srcController,
-    paymentAmount,
-    unsafePaymentName,
-  ) {
+  function takePayment(assetSrc, srcKeeper, paymentAmount, unsafePaymentName) {
     const paymentName = `${unsafePaymentName}`;
     paymentAmount = assay.coerce(paymentAmount);
-    const oldSrcAmount = srcController.getAmount(assetSrc);
+    const oldSrcAmount = srcKeeper.getAmount(assetSrc);
     const newSrcAmount = assay.without(oldSrcAmount, paymentAmount);
 
     const corePayment = harden({
@@ -38,24 +33,21 @@ Description must be truthy: ${description}`;
         return issuer;
       },
       getBalance() {
-        return paymentController.getAmount(payment);
+        return paymentKeeper.getAmount(payment);
       },
       getName() {
         return paymentName;
       },
     });
 
-    const payment = harden({
-      ...corePayment,
-      ...makeCustomPayment(issuer, corePayment),
-    });
+    const payment = makeCustomPayment(corePayment, issuer);
 
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
     // During side effects below, any early exits should be made into
     // fatal turn aborts.
-    paymentController.recordNew(payment, paymentAmount);
-    srcController.updateAmount(assetSrc, newSrcAmount);
+    paymentKeeper.recordNew(payment, paymentAmount);
+    srcKeeper.updateAmount(assetSrc, newSrcAmount);
     return payment;
   }
 
@@ -79,7 +71,7 @@ Description must be truthy: ${description}`;
     getExclusive(amount, srcPaymentP, name) {
       return Promise.resolve(srcPaymentP).then(srcPayment => {
         name = name !== undefined ? name : srcPayment.getName(); // use old name
-        return takePayment(srcPayment, paymentController, amount, name);
+        return takePayment(srcPayment, paymentKeeper, amount, name);
       });
     },
 
@@ -88,8 +80,8 @@ Description must be truthy: ${description}`;
         name = name !== undefined ? name : srcPayment.getName(); // use old name
         return takePayment(
           srcPayment,
-          paymentController,
-          paymentController.getAmount(srcPayment),
+          paymentKeeper,
+          paymentKeeper.getAmount(srcPayment),
           name,
         );
       });
@@ -108,22 +100,18 @@ Description must be truthy: ${description}`;
     },
   });
 
-  const issuer = harden({
-    ...coreIssuer,
-    ...makeCustomIssuer(coreIssuer),
-  });
+  const issuer = makeCustomIssuer(coreIssuer);
 
   const label = harden({ issuer, description });
 
   const assay = makeAssay(label);
-  const { purseController, paymentController, destroy } = makeMintController(
-    assay,
-  );
+  const mintKeeper = makeMintKeeper(assay);
+  const { purseKeeper, paymentKeeper } = mintKeeper;
 
   function depositInto(purse, amount, payment) {
     amount = assay.coerce(amount);
-    const oldPurseAmount = purseController.getAmount(purse);
-    const oldPaymentAmount = paymentController.getAmount(payment);
+    const oldPurseAmount = purseKeeper.getAmount(purse);
+    const oldPaymentAmount = paymentKeeper.getAmount(payment);
     // Also checks that the union is representable
     const newPurseAmount = assay.with(oldPurseAmount, amount);
     const newPaymentAmount = assay.without(oldPaymentAmount, amount);
@@ -132,8 +120,8 @@ Description must be truthy: ${description}`;
     // All queries above passed with no side effects.
     // During side effects below, any early exits should be made into
     // fatal turn aborts.
-    paymentController.updateAmount(payment, newPaymentAmount);
-    purseController.updateAmount(purse, newPurseAmount);
+    paymentKeeper.updateAmount(payment, newPaymentAmount);
+    purseKeeper.updateAmount(purse, newPurseAmount);
 
     return amount;
   }
@@ -141,10 +129,6 @@ Description must be truthy: ${description}`;
   const coreMint = harden({
     getIssuer() {
       return issuer;
-    },
-    destroyAll() {
-      purseController.destroyAll();
-      paymentController.destroyAll();
     },
     mint(initialBalance, name = 'a purse') {
       initialBalance = assay.coerce(initialBalance);
@@ -158,7 +142,7 @@ Description must be truthy: ${description}`;
           return issuer;
         },
         getBalance() {
-          return purseController.getAmount(purse);
+          return purseKeeper.getAmount(purse);
         },
         deposit(amount, srcPaymentP) {
           return Promise.resolve(srcPaymentP).then(srcPayment => {
@@ -169,39 +153,32 @@ Description must be truthy: ${description}`;
           return Promise.resolve(srcPaymentP).then(srcPayment => {
             return depositInto(
               purse,
-              paymentController.getAmount(srcPayment),
+              paymentKeeper.getAmount(srcPayment),
               srcPayment,
             );
           });
         },
         withdraw(amount, paymentName = 'a withdrawal payment') {
-          return takePayment(purse, purseController, amount, paymentName);
+          return takePayment(purse, purseKeeper, amount, paymentName);
         },
         withdrawAll(paymentName = 'a withdrawal payment') {
           return takePayment(
             purse,
-            purseController,
-            purseController.getAmount(purse),
+            purseKeeper,
+            purseKeeper.getAmount(purse),
             paymentName,
           );
         },
       });
 
-      const purse = harden({
-        ...corePurse,
-        ...makeCustomPurse(issuer, corePurse),
-      });
-      purseController.recordNew(purse, initialBalance);
+      const purse = makeCustomPurse(corePurse, issuer);
+      purseKeeper.recordNew(purse, initialBalance);
       return purse;
     },
   });
 
-  const customMint = makeCustomMint(assay, destroy, issuer);
+  const mint = makeCustomMint(coreMint, issuer, assay, mintKeeper);
 
-  const mint = harden({
-    ...coreMint,
-    ...customMint,
-  });
   return mint;
 }
 harden(makeMint);

@@ -265,7 +265,7 @@ function makeAliceMaker(E, log, contractHost) {
             return useObj;
           }
 
-          const { makePixelConfig } = makePixelConfigMaker(
+          const makePixelConfig = makePixelConfigMaker(
             harden(makeUseObj),
             10,
             harden(pixelIssuer),

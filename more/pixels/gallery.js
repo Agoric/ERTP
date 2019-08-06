@@ -131,10 +131,10 @@ export function makeGallery(
     return useObj;
   }
 
-  const { makePixelConfig } = makePixelConfigMaker(makeUseObj);
+  const makePixelConfig = makePixelConfigMaker(makeUseObj);
 
   // a pixel represents the right to color and to transfer the right to color
-  const galleryPixelMint = makeMint('pixels', harden(makePixelConfig));
+  const galleryPixelMint = makeMint('pixels', makePixelConfig);
   const galleryPixelIssuer = galleryPixelMint.getIssuer();
   const galleryPixelAssay = galleryPixelIssuer.getAssay();
 

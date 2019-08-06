@@ -2,16 +2,13 @@ import harden from '@agoric/harden';
 import { makeNatAssay } from '../../core/config/assays';
 import { makeMint } from '../../core/issuers';
 
+// This implementation may be out of date
+
 // Creates a local issuer that locally represents a remotely issued
 // currency. Returns a promise for a peg object that asynchonously
 // converts between the two. The local currency is synchronously
 // transferable locally.
-function makePeg(
-  E,
-  remoteIssuerP,
-  makeMintController,
-  makeAssay = makeNatAssay,
-) {
+function makePeg(E, remoteIssuerP, makeMintKeeper, makeAssay = makeNatAssay) {
   const remoteLabelP = E(remoteIssuerP).getLabel();
 
   // The remoteLabel is a local copy of the remote pass-by-copy
@@ -23,7 +20,7 @@ function makePeg(
     const backingPurseP = E(remoteIssuerP).makeEmptyPurse('backing');
 
     const { description } = remoteLabel;
-    const localMint = makeMint(description, makeMintController, makeAssay);
+    const localMint = makeMint(description, makeMintKeeper, makeAssay);
     const localIssuer = localMint.getIssuer();
     const localLabel = localIssuer.getLabel();
 
