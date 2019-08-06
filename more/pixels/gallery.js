@@ -70,6 +70,7 @@ export function makeGallery(
   }
 
   const collect = makeCollect(E, log);
+
   function insistColor(allegedColor) {
     // TODO: write rules
     insist(true)`color ${allegedColor} must be a valid color`;
@@ -93,8 +94,15 @@ export function makeGallery(
     return state[rawPixel.x][rawPixel.y];
   }
 
+  // makeUseObj is part of the configuration passed into makeMint and
+  // is used to create the "use object" that is associated with an
+  // underlying asset (purse or payment). In this case, the use object
+  // has the methods for changing the color of pixels
+
   function makeUseObj(issuer, asset) {
     const useObj = harden({
+      // change the color of the pixels in the amount after checking
+      // that the asset has the authority to do so.
       changeColor(amount, newColor) {
         insistNonEmptyAmount(issuer, amount);
         insistAssetHasAmount(issuer, asset, amount);
@@ -103,14 +111,20 @@ export function makeGallery(
         setPixelListState(pixelList, newColor);
         return amount;
       },
+      // Call changeColor, just with the entire balance of the
+      // underlying asset.
       changeColorAll(newColor) {
         return useObj.changeColor(asset.getBalance(), newColor);
       },
+      // A helper function for getting a literal list of pixels from
+      // the asset. For example, [ { x:0, y:0 } ]
       getRawPixels() {
         const assay = issuer.getAssay();
         const pixelList = assay.quantity(asset.getBalance());
         return pixelList;
       },
+      // returns an array where each item is a pixel in this asset amount
+      // as well as its color
       getColors() {
         const pixelList = useObj.getRawPixels();
         const colors = [];
@@ -130,10 +144,13 @@ export function makeGallery(
 
   const makePixelConfig = makePixelConfigMaker(makeUseObj);
 
-  // a pixel represents the right to color and to transfer the right to color
   const galleryPixelMint = makeMint('pixels', makePixelConfig);
   const galleryPixelIssuer = galleryPixelMint.getIssuer();
   const galleryPixelAssay = galleryPixelIssuer.getAssay();
+
+  // For lack of a better word, the issuer below the gallery issuer is
+  // the "consumer issuer" - this is the issuer of the pixel payments
+  // that consumers get from calling `tapFaucet`
 
   const consumerPixelIssuer = galleryPixelIssuer.getChildIssuer();
   const consumerPixelAssay = consumerPixelIssuer.getAssay();
