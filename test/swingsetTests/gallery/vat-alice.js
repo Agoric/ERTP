@@ -9,8 +9,7 @@ import { escrowExchangeSrcs } from '../../../core/escrow';
 
 // only used by doCreateFakeChild test below
 import { makeMint } from '../../../core/issuers';
-import { makeMintController } from '../../../more/pixels/pixelMintController';
-import { makePixelListAssayMaker } from '../../../more/pixels/pixelAssays';
+import { makePixelConfigMaker } from '../../../more/pixels/pixelConfig';
 
 let storedUseObj;
 let storedERTPAsset;
@@ -238,7 +237,6 @@ function makeAliceMaker(E, log, contractHost) {
           const { pixelIssuer } = await E(gallery).getIssuers();
 
           // create a fake childMint controlled entirely by Alice
-          const makePixelAssay = makePixelListAssayMaker(10);
           function makeUseObj(issuer, asset) {
             const useObj = harden({
               changeColor(amount, _newColor) {
@@ -266,13 +264,14 @@ function makeAliceMaker(E, log, contractHost) {
             });
             return useObj;
           }
-          const fakeChildMint = makeMint(
-            'pixels',
-            makeMintController,
-            makePixelAssay,
-            makeUseObj,
-            pixelIssuer,
+
+          const makePixelConfig = makePixelConfigMaker(
+            harden(makeUseObj),
+            10,
+            harden(pixelIssuer),
           );
+
+          const fakeChildMint = makeMint('pixels', makePixelConfig);
 
           // use the fakeChildMint to create a payment to trick Bob
           const fakeChildIssuer = E(fakeChildMint).getIssuer();

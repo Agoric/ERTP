@@ -168,7 +168,7 @@ const expectedAliceCreatesFakeChild = [
 ];
 
 // Alice tries an attack. She somehow gets access to makeMint,
-// makeMintController, and makePixelListAssayMaker. She uses these to
+// makeMintKeeper, and makePixelListAssayMaker. She uses these to
 // create a childMint that she controls entirely. She wants to fool
 // Bob into accepting a payment from her mint (which costs her nothing
 // to make) for real money. Note that Alice has no control over the
