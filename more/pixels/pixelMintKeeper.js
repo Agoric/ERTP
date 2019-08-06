@@ -2,7 +2,7 @@ import { makePrivateName } from '../../util/PrivateName';
 import { insist } from '../../util/insist';
 import { getString } from './types/pixel';
 
-export function makeMintController(assay) {
+export function makePixelMintKeeper(assay) {
   // Map from purse or payment to the rights it currently
   // holds. Rights can move via payments
 
@@ -18,9 +18,9 @@ export function makeMintController(assay) {
     }
   }
 
-  function makeAssetController() {
+  function makeAssetKeeper() {
     // asset to amount
-    let assets = makePrivateName();
+    const assets = makePrivateName();
     return {
       updateAmount(asset, newAmount) {
         assets.set(asset, newAmount);
@@ -36,34 +36,31 @@ export function makeMintController(assay) {
       has(asset) {
         return assets.has(asset);
       },
-      destroyAll() {
-        assets = makePrivateName(); // reset completely
-      },
     };
   }
 
-  const purseController = makeAssetController('purse');
-  const paymentController = makeAssetController('payment');
+  const purseKeeper = makeAssetKeeper('purse');
+  const paymentKeeper = makeAssetKeeper('payment');
 
-  function getController(asset) {
-    if (purseController.has(asset)) {
-      return purseController;
+  function getKeeper(asset) {
+    if (purseKeeper.has(asset)) {
+      return purseKeeper;
     }
-    if (paymentController.has(asset)) {
-      return paymentController;
+    if (paymentKeeper.has(asset)) {
+      return paymentKeeper;
     }
     throw new Error(
       `asset ${asset.getName()} was not recognized as a purse or a payment`,
     );
   }
 
-  const mintController = {
-    purseController,
-    paymentController,
+  const pixelMintKeeper = {
+    purseKeeper,
+    paymentKeeper,
 
     // This amount (must be nonfungible) will be forcibly taken out of
     // all purses and payments that it is currently in. Destroy is
-    // outside of an assetController because it could affect purses or
+    // outside of an assetKeeper because it could affect purses or
     // payments
     destroy(amount) {
       // amount must only contain one pixel
@@ -79,15 +76,15 @@ export function makeMintController(assay) {
       // amount is guaranteed to be there
       amount = assay.coerce(amount);
 
-      const controller = getController(asset);
-      const originalAmount = controller.getAmount(asset);
+      const keeper = getKeeper(asset);
+      const originalAmount = keeper.getAmount(asset);
       const newAmount = assay.without(originalAmount, amount);
 
       // ///////////////// commit point //////////////////
       // All queries above passed with no side effects.
       // During side effects below, any early exits should be made into
       // fatal turn aborts.
-      controller.updateAmount(asset, newAmount);
+      keeper.updateAmount(asset, newAmount);
       // Reset the mappings from everything in the amount to the purse
       // or payment that holds them.
       recordPixelsAsAsset(newAmount, asset);
@@ -96,11 +93,11 @@ export function makeMintController(assay) {
       pixelToAsset.delete(pixel);
     },
     isPurse(asset) {
-      return purseController.has(asset);
+      return purseKeeper.has(asset);
     },
     isPayment(asset) {
-      return paymentController.has(asset);
+      return paymentKeeper.has(asset);
     },
   };
-  return mintController;
+  return pixelMintKeeper;
 }
