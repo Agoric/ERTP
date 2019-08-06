@@ -10,13 +10,13 @@ struct Amount (Quantity, Label) {
 
 /**
  * Quantities describe the extent of something that can be owned or shared.
- * The format is determined by their assay. Fungible quantities are normally
+ * The format is determined by its assay. Fungible quantities are normally
  * represented by natural numbers. Other quantities may be represented as
  * strings naming a particular right, or an arbitrary object that sensibly
  * represents the rights at issue. All Amounts made by the same Assay have the
  * same label.
  */
-interface Quantity extends (Comparable) {
+struct Quantity extends (Comparable) {
 }
 
 /**
@@ -71,7 +71,7 @@ interface Assay (Amount (Quantity, Label)) {
    * Returns a new amount that includes both leftAmount and rightAmount.
    * 
    * For fungible amounts this means adding the quantities. For other kinds of
-   * amounts, it usually means adding both.
+   * amounts, it usually means including both.
    */
   with(leftAmount :Amount, rightAmount :Amount) -> (Amount);
 
@@ -96,7 +96,8 @@ struct Label {
   description :Description;
 }
 
-interface Description extends (Comparable) {
+/** Human-readable description of a kind of rights. */
+struct Description extends (Comparable) {
 }
 
 /**

@@ -4,11 +4,12 @@
  * Install(source) creates Installations. Installations represent particular
  * contract forms, which can be spawn()'d to create Contract instances
  * initialized with specific terms. These Contracts manage invitations for
- * multiple seats, each of which repesents a role in a transaction.
- *
- * After a
- * role has carried out its responsibilities, it may call collect() (described
- * later) to collect winnings and refunds into appropriate purses.
+ * multiple seats, each of which repesents a role in an interaction.
+ * 
+ * Some roles provide the methods getWinnings() and getRefunds(), which return
+ * promises for payments for the outputs of the interaction. We provide the
+ * collect() method (described later) to simplify collection of winnings and
+ * refunds into appropriate purses.
  */
 interface ContractHost {
   /**
@@ -40,10 +41,11 @@ interface ContractHost {
   * seats representing a specific group of agents interacting according to the
   * same prescribed roles.
   *
-  * The Installation can also have functions defined by the contract that can be
-  * used to validate that the expected terms are actually the same as the terms
-  * of this spawned contract. The Installation is inserted by the ContactHost as
-  * the first parameter to these functions.
+  * The Installation can also have functions with names starting `check`, as
+  * defined by the contract. They can be used to validate that the expected
+  * terms are actually the same as the terms of this spawned contract. The
+  * Installation is inserted by the ContactHost as the first parameter to these
+  * functions. The naming restriction is likely to be lifted.
   */
 interface Installation {
   /**
@@ -70,21 +72,25 @@ interface Installation {
 
 /**
   * Contracts are pass-by-text.
-  *
-  * The ContractHost wants 'install()' to be called on an object with a start()
-  * method. In order to be able to verify to those relying on the contract that
-  * it implements the source code that they expect, the ContractHost needs to
-  * create the contract object by calling evaluate() on the source code.
-  *
+  * 
+  * The ContractHost's install() method is called on the source code for a
+  * contract. The contract needs to have a start() method with arguments as
+  * described below. Creating the contract object by calling evaluate() on the
+  * source code enables the ContractHost to guarantee to its clients that the
+  * resulting object implements that specific algorithm, and doesn't have any
+  * hidden powers.
+  * 
   * The form of the 'terms' argument to the contract's start() method is also
   * completely up to the individual contract. It should represent all the
   * information a participant needs in order to know they're participating in
-  * the contract they intended. 'escrow' represents a simple exchange of one
-  * bundle of goods for another. The terms object has the 'amount's to be
-  * traded as 'left' and 'right', which correspond to the amounts being offered
-  * and collected by the respective parties. This representation is flexible
-  * enough to support trading of money, non-fungible items, or
-  * partially-executed positions in other contracts among other possibilities.
+  * the contract they intended. As an example, the 'escrow' contract represents
+  * a simple exchange of one bundle of goods for another. Escrow's terms object
+  * has the 'amount's to be traded as 'left' and 'right', which correspond to
+  * the amounts being offered and collected by the respective parties. The
+  * Object returned by escrow is an array containing two invitations, but this
+  * isn't required. The representation is flexible enough to support trading of
+  * money, non-fungible items, or partially-executed positions in other
+  * contracts among other possibilities. Other contracts take different paths.
   *
   * Javascript gives access to the source from a function, but not from an
   * object. We make the source accessible to the ContractHost by having
@@ -120,17 +126,26 @@ interface InviteMaker {
 }
 
 /**
+  * collect() calls getWinnings() and 'getRefund()' on seatP and deposits the
+  * proceeds respectively into winPurseP and refundPurseP. 'name' (which
+  * defaults to 'collecting') is converted to a String, and used for logging the
+  * results.
+  * 
   * 'collect()' is a pure function that can be imported from
-  * 'contractHost.js'. It calls getWinnings() and 'getRefund()' on seatP and
-  * deposits the proceeds respectively into winPurseP and refundPurseP. 'name'
-  * (which defaults to 'collecting') is converted to a String, and used for
-  * logging the results. 
+  * 'contractHost.js'. (Jessie will eventually provide assurances, because of
+  * the way that we import modules, that it is confined.)  Since it is confined,
+  * users can be sure that it has no ability to skim any of the value being
+  * transferred.
   * 
-  * This establishes that the normal outcome of a contract
-  * is made available by providing getWinnings() and getRefunds() methods on
-  * the seats defined by the contract.
+  * collect() violates our usual rule of only transferring payments, and never
+  * sharing purses. This rule helps us ensure that users don't share a purse
+  * when they only intended to share a portion of the contents. We allow
+  * collect() to violate the rule because it's such a common pattern.
   * 
-  * collect() violates our usual rule of only sending payments, and never sharing purses. Jessie will eventually provide assurances that, because of the way that we import modules, collect is a pure 
+  * This function is a
+  * convenient wrapper that makes it easier to work with our Escrow contract,
+  * and has no privileged access.
+  * 
   */
 interface Collector {
   collect(seatP :Object, winPurseP :Purse, refundPurseP :Purse, name :String)

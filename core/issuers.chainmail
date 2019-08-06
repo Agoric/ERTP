@@ -58,7 +58,7 @@ interface Issuer (Amount (Quantity)) {
  */
 interface MintMaker {
   makeMint(
-      description :String,
+      description :Comparable,
       makeMintController :MintControllerMaker,
 	  makeAssay :AssayMaker)
 	-> (Mint);
@@ -66,9 +66,9 @@ interface MintMaker {
 
 /**
  * Holding a Mint carries the right to control issuance and destruction of
- * Purses containing amounts of a particular currency. Purses (and payments)
- * associated with the issuer will only interact with others using the same
- * mint.
+ * purses and payments containing amounts of a particular currency. Purses (and
+ * payments) associated with a particular issuer can only transfer value to
+ * others using the same mint.
  */
 interface Mint (Amount (Quantity)) {
   /** Get the Issuer for this mint. */
@@ -98,16 +98,12 @@ interface Mint (Amount (Quantity)) {
  * transfer part of the balance they hold in a payment, which has a narrower
  * interface. A purse's balance can rise and fall, through the action of
  * deposit() and withdraw(), while payments don't accept deposits, but can be
- * reduced with burn() or by passing them as a parameter to deposit().
+ * reduced with burn(), aggregated by passing them as a parameter to deposit(),
+ * or claimed using issuer.getExclusive().
  *
  * The primary use for Purses and Payments is for currency-like and goods-like
  * valuables, but they can also be used to represent other kinds of rights, such
  * as the right to participate in a particular contract.
- *
- * Currency-like assets are fungible, and don't distinguish use rights from
- * transfer rights. The only use of a currency is to spend it. Some goods
- * distinguish use rights from transfer rights, like a membership card; you can
- * exercise the rights without giving them up.
  */
 interface Purse (Amount) {
   /** Get the name of this purse. */
@@ -139,10 +135,10 @@ interface Purse (Amount) {
  * Payments hold verified amounts of certain rights issued by Mints. Amounts
  * from payments can be deposited in purses, but otherwise, the entire amount is
  * available when the payment is transferred. A payment's balance can only fall,
- * through the action of deposit() or burn().
+ * through the action of deposit(), getExclusive() or burn().
  *
- * Payments can be converted to Purses by calling
- * payment.getIssuer().makeEmptyPurse().depositAll(payment);
+ * Payments can be converted to Purses by getting a verified issuer and calling
+ * issuer.makeEmptyPurse().depositAll(payment);
  */
 interface Payment (Amount) {
   /** Get the name of this purse. */
