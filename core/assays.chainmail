@@ -67,9 +67,9 @@ interface Assay (Amount (Quantity, Label)) {
   /** Returns true if the leftAmount contains the rightAmount. */
   includes(leftAmount :Amount, rightAmount :Amount) -> (boolean);
 
-  /** 
+  /**
    * Returns a new amount that includes both leftAmount and rightAmount.
-   * 
+   *
    * For fungible amounts this means adding the quantities. For other kinds of
    * amounts, it usually means including both.
    */
@@ -85,7 +85,7 @@ interface Assay (Amount (Quantity, Label)) {
 /**
  * The label for an amount identifies the issuer, and includes a description of
  * the rights it represents.
- * 
+ *
  * Every amount created by the Assay will have the same label, but recipients
  * cannot use the label by itself to verify that a purported amount is
  * authentic, since the label can be copied. To validate an amount call
@@ -101,7 +101,6 @@ struct Description extends (Comparable) {
 }
 
 /**
- * 
  * UniAssay represents amounts that have unique descriptions. It is a
  * refinement of Assay that we've found useful, but has no special
  * place in the protocol.
