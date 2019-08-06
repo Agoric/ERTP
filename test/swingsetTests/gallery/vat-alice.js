@@ -56,22 +56,22 @@ function makeAliceMaker(E, log, contractHost) {
       const alice = harden({
         doTapFaucet() {
           log('++ alice.doTapFaucet starting');
-          const pixelPaymentP = E(E(gallery).tapFaucet()).getERTP();
+          const pixelPaymentP = E(gallery).tapFaucet();
           showPaymentBalance('pixel from faucet', pixelPaymentP);
         },
         async doChangeColor() {
           log('++ alice.doChangeColor starting');
-          const changedAmount = await E(E(gallery).tapFaucet()).changeColorAll(
-            '#000000',
-          );
+          const pixelPaymentP = E(gallery).tapFaucet();
+          const pixels = E(pixelPaymentP).getUse();
+          const changedAmount = await E(pixels).changeColorAll('#000000');
           log('tapped Faucet');
           return changedAmount;
         },
         async doSendOnlyUseRight(bob) {
           log('++ alice.doOnlySendUseRight starting');
-          const pixels = E(gallery).tapFaucet();
+          const pixelPaymentP = E(gallery).tapFaucet();
           log('tapped Faucet');
-          const pixelPaymentP = E(pixels).getERTP();
+          const pixels = E(pixelPaymentP).getUse();
           const rawPixels = await E(pixels).getRawPixels();
           const rawPixel = rawPixels[0];
           const origColors = await E(pixels).getColors();
@@ -83,9 +83,9 @@ function makeAliceMaker(E, log, contractHost) {
           // create child use object and send to bob
           // keep the original ERTP object and use right obj
 
-          const delegatedUseObj = await E(pixelPaymentP).getDelegatedUse();
+          const childPayment = await E(pixelPaymentP).getChildPayment();
 
-          const result = await E(bob).receiveUseObj(delegatedUseObj);
+          const result = await E(bob).receiveChildPayment(childPayment);
           const bobsRawPixel = result.quantity[0];
           insist(
             bobsRawPixel.x === rawPixel.x && bobsRawPixel.y === rawPixel.y,
@@ -138,10 +138,10 @@ function makeAliceMaker(E, log, contractHost) {
         },
         async doTapFaucetAndStore() {
           log('++ alice.doTapFaucetAndStore starting');
-          const pixels = E(gallery).tapFaucet();
+          const pixelPayment = await E(gallery).tapFaucet();
 
-          storedUseObj = pixels;
-          storedERTPAsset = await E(pixels).getERTP();
+          storedUseObj = E(pixelPayment).getUse();
+          storedERTPAsset = pixelPayment;
 
           const rawPixels = await E(storedUseObj).getRawPixels();
           return rawPixels[0];
@@ -166,11 +166,10 @@ function makeAliceMaker(E, log, contractHost) {
         },
         async doSellAndBuy() {
           log('++ alice.doSellAndBuy starting');
-          const pixels = E(gallery).tapFaucet();
+          const pixelPaymentP = E(gallery).tapFaucet();
           const { pixelIssuer, dustIssuer } = await E(gallery).getIssuers();
 
-          const payment = await E(pixels).getERTP();
-          const amount = await E(payment).getBalance();
+          const amount = await E(pixelPaymentP).getBalance();
 
           // sellToGallery creates a escrow smart contract with the
           // terms of the amount parameter plus what the gallery is
@@ -178,7 +177,7 @@ function makeAliceMaker(E, log, contractHost) {
           // sellToGallery returns an invite to the smart contract
           const { inviteP, host } = await E(gallery).sellToGallery(amount);
           const seatP = E(host).redeem(inviteP);
-          await E(seatP).offer(payment);
+          await E(seatP).offer(pixelPaymentP);
           const dustPurseP = E(dustIssuer).makeEmptyPurse();
           const pixelPurseP = E(pixelIssuer).makeEmptyPurse();
           await E(gallery).collectFromGallery(
@@ -211,10 +210,12 @@ function makeAliceMaker(E, log, contractHost) {
         async doTapFaucetAndOfferViaCorkboard(handoffSvc, dustPurseP) {
           log('++ alice.doTapFaucetAndOfferViaCorkboard starting');
           const { pixelIssuer } = await E(gallery).getIssuers();
-          const pixels = E(gallery).tapFaucet();
-          const payment = E(pixels).getERTP();
+          const pixelPaymentP = E(gallery).tapFaucet();
 
-          const { buyerInviteP } = await createSaleOffer(payment, dustPurseP);
+          const { buyerInviteP } = await createSaleOffer(
+            pixelPaymentP,
+            dustPurseP,
+          );
 
           // store buyerInviteP and contractHost in corkboard
           const cbP = E(handoffSvc).createBoard('MeetPoint');
@@ -257,9 +258,6 @@ function makeAliceMaker(E, log, contractHost) {
                   colors.push(gallery.getPixelColor(pixel.x, pixel.y));
                 }
                 return colors;
-              },
-              getERTP() {
-                return asset;
               },
             });
             return useObj;
