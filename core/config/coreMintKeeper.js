@@ -1,3 +1,5 @@
+import harden from '@agoric/harden';
+
 import { makePrivateName } from '../../util/PrivateName';
 
 export function makeCoreMintKeeper() {
@@ -7,7 +9,7 @@ export function makeCoreMintKeeper() {
   function makeAssetKeeper() {
     // asset to amount
     const assets = makePrivateName();
-    return {
+    return harden({
       updateAmount(asset, newAmount) {
         assets.set(asset, newAmount);
       },
@@ -20,13 +22,13 @@ export function makeCoreMintKeeper() {
       has(asset) {
         return assets.has(asset);
       },
-    };
+    });
   }
 
   const purseKeeper = makeAssetKeeper();
   const paymentKeeper = makeAssetKeeper();
 
-  const mintKeeper = {
+  const mintKeeper = harden({
     purseKeeper,
     paymentKeeper,
     isPurse(asset) {
@@ -35,6 +37,6 @@ export function makeCoreMintKeeper() {
     isPayment(asset) {
       return paymentKeeper.has(asset);
     },
-  };
+  });
   return mintKeeper;
 }

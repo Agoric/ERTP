@@ -1,4 +1,5 @@
 import Nat from '@agoric/nat';
+import harden from '@agoric/harden';
 
 import { insist } from '../../../util/insist';
 
@@ -41,7 +42,7 @@ function getDistance(a, b) {
 
 function getDistanceFromCenter(pixel, canvasSize = 10) {
   const centerCoord = Math.floor(canvasSize / 2);
-  const center = { x: centerCoord, y: centerCoord };
+  const center = harden({ x: centerCoord, y: centerCoord });
   return getDistance(pixel, center);
 }
 
