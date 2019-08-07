@@ -12,7 +12,7 @@ import {
   sameStructure,
 } from '../util/sameStructure';
 import { makeUniAssayMaker } from './assays';
-import { makeMint } from './issuers';
+import { makeMint, makePeg } from './issuers';
 import { makeBasicMintController } from './mintController';
 import makePromise from '../util/makePromise';
 
@@ -65,6 +65,7 @@ No invites left`;
       // more general approach to providing useful helpers.
       sameStructure,
       mustBeSameStructure,
+      makePeg,
     });
     insist(typeof fn === 'function')`\n
 "${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;

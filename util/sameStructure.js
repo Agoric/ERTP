@@ -233,7 +233,7 @@ function mustBeSameStructureInternal(left, right, message, path) {
     }
   }
 }
-function mustBeSameStructure(left, right, message) {
+function mustBeSameStructure(left, right, message = 'not the same') {
   mustBeSameStructureInternal(left, right, `${message}`, null);
 }
 harden(mustBeSameStructure);
