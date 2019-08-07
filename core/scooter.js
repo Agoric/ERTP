@@ -11,7 +11,7 @@ const scooterContract = harden({
   start: (terms, inviteMaker) => {
     const {
       issuers: [...issuerPs],
-      cancellationPolicy: cancellationPolicyP,
+      cancellationPolicy,
     } = terms;
 
     const indexes = [0, 1];
@@ -41,52 +41,101 @@ side must be 0 or 1: ${side}`;
       // scooter is held by the governing contract, and so must not
       // reveal anything the governing contract shouldn't get.
       const scooter = harden({
+        // Makes an invite that the governing contract can give to a
+        // player, that the player can use to place one sealed offer
+        // directly into the offerPool, to offer at most some amount
+        // of the offeredSide's erights in exchange for at least some
+        // amount of the (opposite) neededSide's erights. Returns a
+        // pair of this invite and the offerId for identifying this
+        // offer, should it ever arive.
+        makeSealerInvite(offeredSide) {
+          const neededSide = otherSide(offeredSide);
 
-        // Makes an invite that the governing contract can
-        // give to each player, that the player can use to place one
-        // sealed offer directly into the offerPool. Returns a pair of
-        // this invite and the offerId for identifying this offer,
-        // should it ever arive.
-        makeSealerInvite() {
-          let offerIdFlag = harden({});
+          // The offerId is a token initially shared only by scooter,
+          // the governing contract inviting a player to place an
+          // offer, and the player who places that offer. Although the
+          // invite's seatIdentity is unique to an invite, it is also
+          // exposed to all that have held that invitation right.
+          const offerId = harden({});
+          let enabled = true;
 
           // The seat obtained by redeeming an offer sealer invite.
           const offerSealer = harden({
-            sealOneOffer(offeredSide, offeredPaymentP, [...allegedAmounts]) {
-              insist(offerIdFlag)`\
+            sealOneOffer(offeredPaymentP, neededAmount) {
+              insist(enabled)`\
 This offer sealer is used up`;
-              const offerId = offerIdFlag;
-              offerIdFlag = null;
-
-              const neededSide = otherSide(offeredSide);
-              const amounts = indexes.map(i =>
-                localAssays[i].coerce(allegedAmounts[i]),
-              );
+              enabled = false;
 
               const escrowedPaymentP = pegs[offeredSide].retainAll(
                 offeredPaymentP,
               );
               return Promise.resolve(escrowedPaymentP).then(escrowedPayment => {
+                neededAmount = localAssays[neededSide].coerce(neededAmount);
+
                 const localPurses = localIssuers.map(issuer =>
                   issuer.makeEmptyPurse(),
                 );
-                const providedAmount = localPurses[offeredSide].depositAllNow(
+                const offeredAmount = localPurses[offeredSide].depositAllNow(
                   escrowedPayment,
                 );
 
+                const offerDescription = harden({
+                  offerId,
+                  offeredSide,
+                  neededSide,
+                  offeredAmount,
+                  neededAmount,
+                });
+
+                const offerStatus = harden({
+                  getBalances() {
+                    return localPurses.map(localPurse =>
+                      localPurse.getBalance(),
+                    );
+                  },
+                });
+
+                const exitPaymentsPR = makePromise();
+
                 const internalOffer = harden({
-                  getOfferId() { return offerId; },
+                  getOfferDescription() {
+                    return offerDescription;
+                  },
+                  getOfferStatus() {
+                    return offerStatus;
+                  },
+                  cancel() {
+                    const exitPayments = indexes.map(i =>
+                      pegs[i].redeemAll(localPurses[i].withdrawAll()),
+                    );
+                    exitPaymentsPR.res(exitPayments);
+                    offerPool.delete(offerId);
+                  },
                 });
                 offerPool.set(offerId, internalOffer);
+
                 const offerHandle = harden({
-                  getOfferId() { return offerId; },
+                  getOfferDescription() {
+                    return offerDescription;
+                  },
+                  getOfferStatus() {
+                    return offerStatus;
+                  },
+                  getExitPayments() {
+                    return exitPaymentsPR.p;
+                  },
                 });
                 return offerHandle;
               });
             },
           });
 
-          return [inviteMaker.make('offer sealer', offerSealer), offerIdFlag];
+          // By wrapping it in an invite, the player knows that, if
+          // redeemed, no one else has access to this offerSealer.
+          return [
+            inviteMaker.make(['offer sealer', offeredSide], offerSealer),
+            offerId,
+          ];
         },
       });
 
