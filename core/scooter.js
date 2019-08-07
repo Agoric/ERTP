@@ -97,6 +97,9 @@ This offer sealer is used up`;
 
                 const exitPaymentsPR = makePromise();
 
+                // These objects must remain fully encapsulated with
+                // scooter. The must not be exposed to either the
+                // governing contract nor the players.
                 const internalOffer = harden({
                   getOfferDescription() {
                     return offerDescription;
@@ -114,8 +117,12 @@ This offer sealer is used up`;
                 });
                 offerPool.set(offerId, internalOffer);
 
+                // This is returned to the player. The so-called
+                // sealed offer is the offerId obtained by
+                // offerHandle.describe().offerId
+                // Perpetual TODO: bikeshed names
                 const offerHandle = harden({
-                  getOfferDescription() {
+                  describe() {
                     return offerDescription;
                   },
                   getOfferStatus() {
@@ -136,6 +143,14 @@ This offer sealer is used up`;
             inviteMaker.make(['offer sealer', offeredSide], offerSealer),
             offerId,
           ];
+        },
+
+        rejectOffer(offerId) {
+
+        },
+
+        rearrangeRights() {
+
         },
       });
 
