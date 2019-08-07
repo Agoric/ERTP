@@ -285,6 +285,82 @@ function makeAliceMaker(E, log, contractHost) {
           // makes with her fakeChildMint, but this makes sense since
           // it is not a real child.
         },
+        async doSpendAndRevoke() {
+          // this tests how spending is related to revoking delegated
+          // rights
+          const pixelPaymentP = await E(gallery).tapFaucet();
+          const childPaymentP = E(pixelPaymentP).getChildPayment();
+          const grandchildPaymentP = E(childPaymentP).getChildPayment();
+
+          const { pixelIssuer } = await E(gallery).getIssuers();
+          const purseP = E(pixelIssuer).makeEmptyPurse();
+          const childIssuerP = E(pixelIssuer).getChildIssuer();
+          const childPurseP = E(childIssuerP).makeEmptyPurse();
+          const grandchildIssuerP = E(childIssuerP).getChildIssuer();
+          const grandchildPurseP = E(grandchildIssuerP).makeEmptyPurse();
+
+          showPaymentBalance('originalPixelPayment', pixelPaymentP);
+          showPaymentBalance('childPayment', childPaymentP);
+          showPaymentBalance('grandchildPayment', grandchildPaymentP);
+          showPaymentBalance('purse', purseP);
+          showPaymentBalance('childPurseP', childPurseP);
+          showPaymentBalance('grandchildPurseP', grandchildPurseP);
+
+          await E(childPurseP).depositAll(childPaymentP);
+
+          log('childPayment deposited in childPurse');
+
+          showPaymentBalance('originalPixelPayment', pixelPaymentP);
+          showPaymentBalance('childPayment', childPaymentP);
+          showPaymentBalance('grandchildPayment', grandchildPaymentP);
+          showPaymentBalance('purse', purseP);
+          showPaymentBalance('childPurseP', childPurseP);
+          showPaymentBalance('grandchildPurseP', grandchildPurseP);
+
+          await E(purseP).depositAll(pixelPaymentP);
+
+          log('originalPixelPayment deposited in purse');
+
+          showPaymentBalance('originalPixelPayment', pixelPaymentP);
+          showPaymentBalance('childPayment', childPaymentP);
+          showPaymentBalance('grandchildPayment', grandchildPaymentP);
+          showPaymentBalance('purse', purseP);
+          showPaymentBalance('childPurseP', childPurseP);
+          showPaymentBalance('grandchildPurseP', grandchildPurseP);
+
+          await E(grandchildPurseP).depositAll(grandchildPaymentP);
+
+          log('grandchildPayment deposited in grandchildPurse');
+
+          showPaymentBalance('originalPixelPayment', pixelPaymentP);
+          showPaymentBalance('childPayment', childPaymentP);
+          showPaymentBalance('grandchildPayment', grandchildPaymentP);
+          showPaymentBalance('purse', purseP);
+          showPaymentBalance('childPurseP', childPurseP);
+          showPaymentBalance('grandchildPurseP', grandchildPurseP);
+
+          await E(childPaymentP).revokeChildren(); // does nothing
+
+          log('childPayment.revokeChildren() does nothing');
+
+          showPaymentBalance('originalPixelPayment', pixelPaymentP);
+          showPaymentBalance('childPayment', childPaymentP);
+          showPaymentBalance('grandchildPayment', grandchildPaymentP);
+          showPaymentBalance('purse', purseP);
+          showPaymentBalance('childPurseP', childPurseP);
+          showPaymentBalance('grandchildPurseP', grandchildPurseP);
+
+          await E(purseP).revokeChildren(); // revokes childPurse and grandchildPurse
+
+          log('purse.revokeChildren() revokes childPurse and grandchildPurse');
+
+          showPaymentBalance('originalPixelPayment', pixelPaymentP);
+          showPaymentBalance('childPayment', childPaymentP);
+          showPaymentBalance('grandchildPayment', grandchildPaymentP);
+          showPaymentBalance('purse', purseP);
+          showPaymentBalance('childPurseP', childPurseP);
+          showPaymentBalance('grandchildPurseP', grandchildPurseP);
+        },
       });
       return alice;
     },

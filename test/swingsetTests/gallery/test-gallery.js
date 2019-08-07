@@ -191,3 +191,83 @@ test('run gallery demo aliceCreatesFakeChild without SES', async t => {
   t.deepEquals(dump.log, expectedAliceCreatesFakeChild);
   t.end();
 });
+
+const expectedSpendAndRevoke = [
+  '=> setup called',
+  'starting spendAndRevoke',
+  'starting testSpendAndRevoke',
+  'originalPixelPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'childPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'grandchildPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'purse balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'childPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'childPayment deposited in childPurse',
+  'grandchildPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'originalPixelPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'childPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'grandchildPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'purse balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'childPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'grandchildPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'originalPixelPayment deposited in purse',
+  'originalPixelPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'childPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'grandchildPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'purse balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'childPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'grandchildPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'grandchildPayment deposited in grandchildPurse',
+  'originalPixelPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'childPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'grandchildPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'purse balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'childPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'grandchildPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'childPayment.revokeChildren() does nothing',
+  'originalPixelPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'childPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'grandchildPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'purse balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'childPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'grandchildPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'purse.revokeChildren() revokes childPurse and grandchildPurse',
+  'originalPixelPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'childPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'grandchildPayment balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'purse balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'childPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+  'grandchildPurseP balance {"label":{"issuer":{},"description":"pixels"},"quantity":[]}',
+];
+
+// Mark asks: If the customized payment is spent (or even if the original payment
+// is spent if that's possible), calls revokeChildren of that
+// customized payment, or revoke the children by other means? Does
+// this revocation propagate to grandchildren, etc?
+
+// This test does the following and records the balances of all the
+// assets involved at each step:
+// 1. create a pixelPayment, an empty purse, a childPayment, an empty childPurse, a
+//    grandchildPayment, and an empty grandchildPurse
+// 2. deposit the childPayment in the childPurse. The pixel should
+//    have left the childPayment and been added to the childPurse.
+//    Nothing else should change
+// 3. Deposit pixelPayment into purse. Same thing here and nothing
+//    else should change
+// 4. Deposit grandchildPayment into grandchildPurse. Same thing here
+//    and nothing else should change.
+// 5. Try calling revokeChildren() on the (now empty) childPayment.
+//    Nothing happens.
+// 6. Call revokeChildren() on the purse, which has a pixel in it.
+//    This revokes the same pixel from the childPurse and grandchildPurse
+
+test('gallery - create childPayment, spend, revoke with SES', async t => {
+  const dump = await main(true, 'gallery', ['spendAndRevoke']);
+  t.deepEquals(dump.log, expectedSpendAndRevoke);
+  t.end();
+});
+
+test('gallery - create childPayment, spend, revoke without SES', async t => {
+  const dump = await main(false, 'gallery', ['spendAndRevoke']);
+  t.deepEquals(dump.log, expectedSpendAndRevoke);
+  t.end();
+});

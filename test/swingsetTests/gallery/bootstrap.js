@@ -75,6 +75,13 @@ function build(E, log) {
     await E(aliceP).doCreateFakeChild(bobP);
   }
 
+  async function testSpendAndRevoke(aliceMaker, gallery) {
+    log('starting testSpendAndRevoke');
+    const { userFacet } = gallery;
+    const aliceP = E(aliceMaker).make(userFacet);
+    await E(aliceP).doSpendAndRevoke();
+  }
+
   const obj0 = {
     async bootstrap(argv, vats) {
       const canvasSize = 10;
@@ -138,10 +145,13 @@ function build(E, log) {
         }
         case 'aliceCreatesFakeChild': {
           log('starting aliceCreatesFakeChild');
-          const aliceMaker = await E(vats.alice).makeAliceMaker();
-          const bobMaker = await E(vats.bob).makeBobMaker();
-          const gallery = makeGallery(E, log, stateChangeHandler, canvasSize);
+          const { aliceMaker, bobMaker, gallery } = await makeStartingObjs();
           return testAliceCreatesFakeChild(aliceMaker, bobMaker, gallery);
+        }
+        case 'spendAndRevoke': {
+          log('starting spendAndRevoke');
+          const { aliceMaker, gallery } = await makeStartingObjs();
+          return testSpendAndRevoke(aliceMaker, gallery);
         }
         default: {
           throw new Error(`unrecognized argument value ${argv[0]}`);
