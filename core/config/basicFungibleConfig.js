@@ -12,7 +12,7 @@ import { makeNatAssay } from './assays';
 
 // This configuration and others like it are passed into `makeMint` in
 // `issuers.js`.
-function makeFungibleConfig() {
+function makeBasicFungibleConfig() {
   return harden({
     ...noCustomization,
     makeMintKeeper: makeCoreMintKeeper,
@@ -20,4 +20,4 @@ function makeFungibleConfig() {
   });
 }
 
-export { makeFungibleConfig };
+export { makeBasicFungibleConfig };

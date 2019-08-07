@@ -4,7 +4,7 @@
 import harden from '@agoric/harden';
 
 import { insist } from '../util/insist';
-import { makeFungibleConfig } from './config/fungibleConfig';
+import { makeBasicFungibleConfig } from './config/basicFungibleConfig';
 
 /**
  * makeMint takes in a string description as well as a function to
@@ -15,9 +15,9 @@ import { makeFungibleConfig } from './config/fungibleConfig';
  * "assay" (the object that describes the logic of how amounts are
  * withdrawn or deposited, among other things).
  * @param  {string} description
- * @param  {function} makeConfig=makeFungibleConfig
+ * @param  {function} makeConfig=makeBasicFungibleConfig
  */
-function makeMint(description, makeConfig = makeFungibleConfig) {
+function makeMint(description, makeConfig = makeBasicFungibleConfig) {
   insist(description)`\
 Description must be truthy: ${description}`;
 
