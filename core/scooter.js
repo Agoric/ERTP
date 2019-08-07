@@ -11,7 +11,8 @@ const scooterContract = harden({
   start: (terms, inviteMaker) => {
     const {
       issuers: [...issuerPs],
-      cancellationPolicy,
+      checkinPolicy,
+      checkoutPolicy,
     } = terms;
 
     const indexes = [0, 1];
@@ -26,8 +27,8 @@ side must be 0 or 1: ${side}`;
 
     // Currently, we omit the optional args to makePeg, so currently
     // scooter is only compatible with simple default Nat
-    // issuers. However, we try to keep the code below as general as
-    // we can.
+    // issuers. However, we try to keep much of the code below
+    // general.
     const pegPs = issuerPs.map(issuerP => makePeg(E, issuerP));
     return Promise.all(pegPs).then(pegs => {
       const localIssuers = pegs.map(peg => peg.getLocalIssuer());
