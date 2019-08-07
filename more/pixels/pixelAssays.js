@@ -30,7 +30,7 @@ function makePixelListAssayMaker(canvasSize) {
     const emptyAmount = harden({ label: pixelLabel, quantity: [] });
     brand.add(emptyAmount);
 
-    const assay = {
+    const assay = harden({
       getLabel() {
         return pixelLabel;
       },
@@ -108,7 +108,7 @@ function makePixelListAssayMaker(canvasSize) {
 
         return assay.make(harden(resultPixelList));
       },
-    };
+    });
     return harden(assay);
   }
   return harden(makePixelListAssay);

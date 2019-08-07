@@ -100,12 +100,12 @@ function build(E, log) {
           stateChangeHandler,
           canvasSize,
         );
-        return {
+        return harden({
           host,
           aliceMaker,
           bobMaker,
           gallery,
-        };
+        });
       }
 
       switch (argv[0]) {

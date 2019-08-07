@@ -77,7 +77,10 @@ function makeBobMaker(E, log) {
               },
               rej => log('++ bob failed to color: ', rej),
             );
-          return { bobRefundP: dustRefundP, bobPixelP: exclusivePayment };
+          return harden({
+            bobRefundP: dustRefundP,
+            bobPixelP: exclusivePayment,
+          });
         },
         async receiveSuspiciousPayment(suspiciousPayment) {
           log('++ bob.receiveSuspiciousPayment starting');

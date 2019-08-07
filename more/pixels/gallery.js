@@ -90,7 +90,7 @@ export function makeGallery(
 
   // anyone can getPixelColor, no restrictions, no tokens
   function getPixelColor(x, y) {
-    const rawPixel = { x: Nat(x), y: Nat(y) };
+    const rawPixel = harden({ x: Nat(x), y: Nat(y) });
     return state[rawPixel.x][rawPixel.y];
   }
 
@@ -129,11 +129,11 @@ export function makeGallery(
         const pixelList = useObj.getRawPixels();
         const colors = [];
         for (const pixel of pixelList) {
-          const colorPerPixel = {
+          const colorPerPixel = harden({
             x: pixel.x,
             y: pixel.y,
             color: getPixelColor(pixel.x, pixel.y),
-          };
+          });
           colors.push(colorPerPixel);
         }
         return colors;
@@ -235,10 +235,10 @@ export function makeGallery(
       const seatP = E(contractHost).redeem(galleryInviteP);
       E(seatP).offer(dustPaymentP);
       collect(seatP, sellBuyPixelPurseP, sellBuyDustPurseP, 'gallery escrow');
-      return {
+      return harden({
         inviteP: userInviteP,
         host: contractHost,
-      };
+      });
     });
   }
 
@@ -251,11 +251,11 @@ export function makeGallery(
       // create a invite to trade, otherwise we return a message
       const pixelPurseAmount = sellBuyPixelPurseP.getBalance();
       if (!consumerPixelAssay.includes(pixelPurseAmount, pixelAmount)) {
-        return {
+        return harden({
           inviteP: undefined,
           host: undefined,
           message: 'gallery did not have the pixels required',
-        };
+        });
       }
       const pixelPaymentP = await E(sellBuyPixelPurseP).withdraw(pixelAmount);
       const dustAmount = pricePixelAmount(pixelAmount);
@@ -277,11 +277,11 @@ export function makeGallery(
       // gallery is selling, getting dust and giving pixels
       // win purse for gallery is a dust purse, refund is
       collect(seatP, sellBuyDustPurseP, sellBuyPixelPurseP, 'gallery escrow');
-      return {
+      return harden({
         inviteP: userInviteP,
         host: contractHost,
         dustNeeded: dustAmount,
-      };
+      });
     });
   }
 
@@ -290,17 +290,17 @@ export function makeGallery(
   }
 
   function getIssuers() {
-    return {
+    return harden({
       pixelIssuer: consumerPixelIssuer,
       dustIssuer,
-    };
+    });
   }
 
   function getPayment(pixel) {
     return pixelToPayment.get(getPixelStr(pixel));
   }
 
-  const userFacet = {
+  const userFacet = harden({
     getPixelColor,
     tapFaucet,
     getIssuers,
@@ -311,27 +311,27 @@ export function makeGallery(
     sellToGallery,
     buyFromGallery,
     collectFromGallery,
-  };
+  });
 
-  const adminFacet = {
+  const adminFacet = harden({
     getDistance,
     getDistanceFromCenter,
     reportPosition,
     pricePixelAmount,
     dustMint,
     getPayment,
-  };
+  });
 
-  const readFacet = {
+  const readFacet = harden({
     getState,
     getPixelColor,
-  };
+  });
 
-  const gallery = {
+  const gallery = harden({
     userFacet,
     adminFacet,
     readFacet,
-  };
+  });
 
   return gallery;
 }

@@ -49,7 +49,7 @@ function makeAliceMaker(E, log, contractHost) {
             );
           const pixelPurseP = E(pixelIssuer).makeEmptyPurse();
           collect(seatP, dustPurseP, pixelPurseP, 'alice escrow');
-          return { buyerInviteP, contractHost };
+          return harden({ buyerInviteP, contractHost });
         });
       }
 
@@ -226,12 +226,12 @@ function makeAliceMaker(E, log, contractHost) {
           );
 
           const pixelRefundP = E(pixelIssuer).makeEmptyPurse('refund');
-          return {
+          return harden({
             aliceRefundP: pixelRefundP,
             alicePaymentP: dustPurseP,
             buyerSeatReceipt,
             contractHostReceipt,
-          };
+          });
         },
         async doCreateFakeChild(bob) {
           log('++ alice.doCreateFakeChild starting');

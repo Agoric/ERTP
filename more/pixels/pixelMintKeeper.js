@@ -1,3 +1,5 @@
+import harden from '@agoric/harden';
+
 import { makePrivateName } from '../../util/PrivateName';
 import { insist } from '../../util/insist';
 import { getString } from './types/pixel';
@@ -26,7 +28,7 @@ export function makePixelMintKeeper(assay) {
   function makeAssetKeeper() {
     // asset to amount
     const assets = makePrivateName();
-    return {
+    return harden({
       // updateAmount and recordNew are the same as the core
       // mintKeeper, except that we also record the movement of the
       // pixels when they are called.
@@ -44,7 +46,7 @@ export function makePixelMintKeeper(assay) {
       has(asset) {
         return assets.has(asset);
       },
-    };
+    });
   }
 
   const purseKeeper = makeAssetKeeper('purse');
@@ -66,7 +68,7 @@ export function makePixelMintKeeper(assay) {
     );
   }
 
-  const pixelMintKeeper = {
+  const pixelMintKeeper = harden({
     purseKeeper,
     paymentKeeper,
 
@@ -112,6 +114,6 @@ export function makePixelMintKeeper(assay) {
     isPayment(asset) {
       return paymentKeeper.has(asset);
     },
-  };
+  });
   return pixelMintKeeper;
 }
