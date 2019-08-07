@@ -3,16 +3,15 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { insist } from '../util/insist';
-import makePromise from '../util/makePromise';
-import { makePeg } from './issuers';
+import { insist } from '../../util/insist';
+import makePromise from '../../util/makePromise';
+import { makePeg } from '../issuers';
 
 const scooterContract = harden({
   start: (terms, inviteMaker) => {
     const {
       issuers: [...issuerPs],
-      checkinPolicy,
-      checkoutPolicy,
+      sentry: sentryP,
     } = terms;
 
     const indexes = [0, 1];
@@ -146,13 +145,9 @@ This offer sealer is used up`;
           ];
         },
 
-        rejectOffer(offerId) {
+        rejectOffer(offerId) {},
 
-        },
-
-        rearrangeRights() {
-
-        },
+        rearrangeRights() {},
       });
 
       // There's little reason to wrap scooter in an invite. We could
