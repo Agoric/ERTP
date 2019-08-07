@@ -15,6 +15,7 @@ import { makeUniAssayMaker } from './assays';
 import { makeMint, makePeg } from './issuers';
 import { makeBasicMintController } from './mintController';
 import makePromise from '../util/makePromise';
+import { defaultSentry } from './scooter/sentries';
 
 /** Make a reusable host that can reliably install and execute contracts. */
 function makeContractHost(E, evaluate) {
@@ -66,6 +67,7 @@ No invites left`;
       sameStructure,
       mustBeSameStructure,
       makePeg,
+      defaultSentry,
     });
     insist(typeof fn === 'function')`\n
 "${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;

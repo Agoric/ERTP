@@ -4,39 +4,46 @@ import { insist } from '../../util/insist';
 // *********************
 // Checkin policies
 
-export const enterAtWill = harden((offerId, enter) => enter(offerId));
+export const enterAtWill = harden(_offerId => undefined);
 
-export const enterNever = harden((offerId, _enter) => {
+export const cannotEnter = harden(offerId => {
   insist(false)`\
 Cannot enter ${offerId}`;
 });
 
-export const makeEnterSelective = harden(map =>
-  harden((offerId, enter) => (map.get(offerId) || enterNever)(offerId, enter)),
+export const makeEnterSelective = harden((map, fallback = cannotEnter) =>
+  harden(offerId => (map.get(offerId) || fallback)(offerId)),
 );
 
-// TODO async remote timeOracleP, after E becomes safely ambient
-export const makeEnterUntil = harden((timeOracle, deadline) =>
-  timeOracle.before(deadline) ? enterAtWill : enterNever,
+export const makeEnterUntil = harden((E, timeOracleP, deadline) =>
+  harden(offerId =>
+    E(timeOracleP)
+      .now()
+      .then(time => (time < deadline ? enterAtWill : cannotEnter)(offerId)),
+  ),
 );
 
 // *********************
 // Checkout policies
 
-export const leaveAtWill = harden((offerId, leave) => leave(offerId));
+export const leaveAtWill = harden(_offerId => undefined);
 
-export const leaveNever = harden((offerId, _leave) => {
+export const cannotLeave = harden(offerId => {
   insist(false)`\
 Cannot leave ${offerId}`;
 });
 
-export const makeLeaveSelective = harden(map =>
-  harden((offerId, leave) => (map.get(offerId) || leaveNever)(offerId, leave)),
+export const makeLeaveSelective = harden((map, fallback = cannotLeave) =>
+  harden(offerId => (map.get(offerId) || fallback)(offerId)),
 );
 
-// TODO async remote timeOracleP, after E becomes safely ambient
-export const makeLeaveAfter = (timeOracle, deadline) =>
-  timeOracle.after(deadline) ? leaveAtWill : leaveNever;
+export const makeStayUntil = harden((E, timeOracleP, deadline) =>
+  harden(offerId =>
+    E(timeOracleP)
+      .now()
+      .then(time => (time < deadline ? cannotLeave : leaveAtWill)(offerId)),
+  ),
+);
 
 // *********************
 // A sentry has a checkinPolicy and a checkoutPolicy
@@ -48,4 +55,4 @@ export const makeSentry = harden(
 
 export const defaultSentry = makeSentry();
 
-export const hotelCalifornia = makeSentry(enterAtWill, leaveNever);
+export const hotelCalifornia = makeSentry(enterAtWill, cannotLeave);
