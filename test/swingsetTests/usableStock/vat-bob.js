@@ -59,10 +59,14 @@ function makeBobMaker(E, host, log) {
             E(bob).acceptInvite(bobInvitePaymentP),
           ]);
           doneP.then(
-            _res => {
+            async _res => {
               log('++ bob.useEscrowedStock done');
               const cashDividendP = E(savedStocks).claimCashDividends();
-              showPaymentBalance(`bob's cash purse`, myCashPurseP);
+              showPaymentBalance(
+                `bob tried to get cash dividend after transfer complete`,
+                cashDividendP,
+              );
+              await E(savedStocks).vote('yea');
             },
             rej => log('++ bob.useEscrowedStock reject: ', rej),
           );

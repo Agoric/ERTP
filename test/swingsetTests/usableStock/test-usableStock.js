@@ -15,25 +15,20 @@ async function main(withSES, basedir, argv) {
   return controller.dump();
 }
 
-// Alice holds one share of a stock. A stock has two uses - vote() and
-// claimCashDividends() -> cash. Voting and claimingCashDividends can
-// only be called once. There are two different designs possible:
-// 1) the stock cannot be used when it is in escrow, except by the
-//    escrow agent, who may pass on whatever use benefits exist to
-//    whomever they want (for example, they may send the cash
-//    dividends back to alice, or they could keep it, or not claim it
-//    at all, depending on what the escrow code says)
-// 2) the escrow agent could give back a childPayment to Alice, which
-//    she could use while the stock is still in escrow.
+// Alice holds three shares of a stock and bob holds two shares. A
+// stock has two uses - vote() and claimCashDividends() -> cash. The
+// stock cannot be used when it is in escrow, except by the escrow
+// agent, who can pass along access to the use rights while the
+// payment is in escrow through adding a `getUse` method to the seat.
 
-// She wants to be able to put the stock
-// in escrow and still be able to use it. This will not work with our
-// current implementation, where if the stock is escrowed (the escrow
-// agent does a getExclusive), the use rights that alice has a
-// reference to no longer have an underlying asset. We could have an
-// escrow agent that gives a childPayment back, from which Alice can
-// derive a use object that is one level down from what she previously
-// had. She can then call both vote() and claimCashDividends().
+// In this particular exchange, alice puts up cash in exchange for
+// bob's two stocks. Bob wants to still be able to use the stocks while
+// the stocks are in escrow, so he will call vote() and
+// claimCashDividents() after offering the stocks. Alice can use the
+// stocks after she collects her stock winnings from the contract
+// host. Bob can try to use his use object for the stocks, but after
+// the exchange happens, his use object has no authority - it has been
+// transferred to alice when the actual ERTP asset was transferred.
 
 const useEscrowedStock = [
   '=> setup called',
@@ -46,8 +41,11 @@ const useEscrowedStock = [
   'bob\'s cash purse balance {"label":{"issuer":{},"description":"cash"},"quantity":1015}',
   'bob escrow wins: {"label":{"issuer":{},"description":"cash"},"quantity":10} refs: null',
   'alice escrow wins: {"label":{"issuer":{},"description":"Tyrell"},"quantity":[1,2]} refs: null',
+  ' 5 vote(s) have been cast with position nay',
   '++ bob.useEscrowedStock done',
-  'bob\'s cash purse balance {"label":{"issuer":{},"description":"cash"},"quantity":1025}',
+  ' 0 vote(s) have been cast with position yea',
+  'alice\'s cash dividend balance {"label":{"issuer":{},"description":"cash"},"quantity":35}',
+  'bob tried to get cash dividend after transfer complete balance {"label":{"issuer":{},"description":"cash"},"quantity":0}',
 ];
 
 test('usableStock: useEscrowedStock with SES', async t => {
@@ -56,7 +54,7 @@ test('usableStock: useEscrowedStock with SES', async t => {
   t.end();
 });
 
-test.only('usableStock: useEscrowedStock without SES', async t => {
+test('usableStock: useEscrowedStock without SES', async t => {
   const dump = await main(false, 'usableStock', ['useEscrowedStock']);
   t.deepEquals(dump.log, useEscrowedStock);
   t.end();

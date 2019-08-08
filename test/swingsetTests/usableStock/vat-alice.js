@@ -54,12 +54,24 @@ function makeAliceMaker(E, host, log) {
 
           return E.resolve(
             showPaymentBalance('verified invite', verifiedInvitePaymentP),
-          ).then(_ => {
-            const seatP = E(host).redeem(verifiedInvitePaymentP);
-            const cashPaymentP = E(myCashPurseP).withdraw(10);
-            E(seatP).offer(cashPaymentP);
-            return collect(seatP, myStockPurseP, myCashPurseP, 'alice escrow');
-          });
+          )
+            .then(_ => {
+              const seatP = E(host).redeem(verifiedInvitePaymentP);
+              const cashPaymentP = E(myCashPurseP).withdraw(10);
+              E(seatP).offer(cashPaymentP);
+              return collect(
+                seatP,
+                myStockPurseP,
+                myCashPurseP,
+                'alice escrow',
+              );
+            })
+            .then(async _ => {
+              const stocks = await E(myStockPurseP).getUse();
+              E(stocks).vote('nay');
+              const cashDividendP = E(stocks).claimCashDividends();
+              showPaymentBalance(`alice's cash dividend`, cashDividendP);
+            });
         },
       });
       return alice;

@@ -20,7 +20,6 @@ function build(E, log) {
     const cashPerStock = cashIssuer.makeAmount(7);
 
     function makeUseObj(issuer, asset) {
-
       // we allow infinite voting and claiming of dividends in order
       // to easily prove who has the authority to use the use object,
       // but it is very easy to protect against it with a `has` check
