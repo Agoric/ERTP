@@ -2,8 +2,7 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { makeCollect } from '../../core/contractHost';
-import { allComparable } from '../../util/sameStructure';
+import { makeCollect } from '../../../core/contractHost';
 
 function makeAliceMaker(E, host, log) {
   const collect = makeCollect(E, log);
@@ -24,7 +23,7 @@ function makeAliceMaker(E, host, log) {
             currencyAmount: E(myMoneyPurseP).getBalance(),
             productAmount: E(myArtPurseP).getBalance(),
             timerP,
-            deadline: 10,
+            deadline: 12,
           };
           const offerInvitePaymentP = E(auctionInstallationP).spawn(termsP);
           const inviteIssuerP = E(host).getInviteIssuer();
@@ -33,7 +32,8 @@ function makeAliceMaker(E, host, log) {
             'offer',
           );
           const offerSeatP = E(host).redeem(offerSeatPaymentP);
-          const bidderMakerP = E(offerSeatP).offer(myArtPurseP);
+          const artPaymentP = E(myArtPurseP).withdrawAll();
+          const bidderMakerP = E(offerSeatP).offer(artPaymentP);
           E(timerP).tick();
           const doneP = collect(
             offerSeatP,

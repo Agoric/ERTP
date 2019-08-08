@@ -2,12 +2,12 @@
 
 import harden from '@agoric/harden';
 
-import { agencyEscrowSrcs } from '../../core/agencyEscrow';
-import { makeUniAssayMaker } from '../../core/assays';
-import { auctionSrcs } from '../../core/auction';
-import { makeMint } from '../../core/issuers';
-import { makeBasicMintController } from '../../core/mintController';
-import makePromise from '../../util/makePromise';
+import { agencyEscrowSrcs } from '../../../core/agencyEscrow';
+import { makeUniAssayMaker } from '../../../core/assays';
+import { auctionSrcs } from '../../../core/auction';
+import { makeMint } from '../../../core/issuers';
+import { makeBasicMintController } from '../../../core/mintController';
+import makePromise from '../../../util/makePromise';
 
 function build(E, log) {
   function buildManualTimer(startValue = 0) {
@@ -26,8 +26,11 @@ function build(E, log) {
         schedule.get(deadline).push(result.res);
         return result.p;
       },
-      tick() {
+      tick(msg) {
         log(`@@ tick:${ticks} @@`);
+        if (msg) {
+          log(`TICK: ${msg}`);
+        }
         ticks += 1;
         if (schedule.get(ticks)) {
           for (const p of schedule.get(ticks)) {

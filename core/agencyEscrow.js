@@ -16,9 +16,9 @@ const agencyEscrow = {
 
     // We want to give the buyer a promise for the good, and for a refund. The
     // refund will resolve either to all the buyer's deposit, or the portion of
-    // the deposit that wasn't required. The agency will get an invite for a seat
-    // that can ask the amount deposited, and then either cancel or provide an
-    // escrow seat with a specific price lower than the amount.
+    // the deposit that wasn't required. The agency will get an invite for a
+    // seat that can ask the amount deposited, and then either cancel or provide
+    // an escrow seat with a specific price up to the amount.
 
     // Winnings and refund will be resolved if the offer is consummated. If it's
     // cancelled, only refund will be resolved. Winnings will contain the item
@@ -34,10 +34,12 @@ const agencyEscrow = {
     const earnings = makePromise();
     const returnedGoods = makePromise();
     const agencySeat = harden({
-      // The agency cancels losing offers and returns the funds
+      // The agency cancels losing offers to return the funds
       cancel() {
         winnings.reject('no deal');
+        earnings.reject('no deal');
         refund.res(deposit.p);
+        returnedGoods.res(deposit);
       },
       // The agency can accept one offer and collect the buyer's price or less.
       // The buyer will receive their winnings through a trusted escrow.
@@ -54,13 +56,11 @@ const agencyEscrow = {
                     refund.res(winnerOverbid);
                     winnings.res(winningsP);
                   },
-                  () => {
-                    returnedGoods.res(goods);
-                    refund.res(deposit.p);
-                  },
+                  () => agencySeat.cancel(),
                 );
+              earnings.res(deposit);
             },
-            () => refund.res(deposit.p),
+            () => agencySeat.cancel(),
           );
         return E(deposit.p).withdraw(secondPrice, 'seller gains');
       },
