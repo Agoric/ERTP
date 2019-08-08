@@ -83,7 +83,7 @@ interface Assay (Amount (Quantity, Label)) {
    * in rightAmount. If leftAmount doesn't include rightAmout, throw an error.
    */
   without(leftAmount :Amount, rightAmount :Amount) -> (Amount);
-};
+}
 
 /**
  * The label for an amount identifies the issuer, and includes a description of
