@@ -37,12 +37,17 @@ async function main(withSES, basedir, argv) {
 
 const useEscrowedStock = [
   '=> setup called',
-  'starting mintTestAssay',
-  'starting mintTestNumber',
-  'alice balance {"label":{"issuer":{},"description":"quatloos"},"quantity":950}',
-  'payment balance {"label":{"issuer":{},"description":"quatloos"},"quantity":50}',
-  'alice balance {"label":{"issuer":{},"description":"bucks"},"quantity":950}',
-  'payment balance {"label":{"issuer":{},"description":"bucks"},"quantity":50}',
+  '++ bob.useEscrowedStock starting',
+  '++ alice.acceptInvite starting',
+  'alice invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"putUpCash":{"label":{"issuer":{},"description":"cash"},"quantity":10},"putUpStock":{"label":{"issuer":{},"description":"Tyrell"},"quantity":[1,2]}},"seatIdentity":{},"seatDesc":"putUpCash"}}',
+  'verified invite balance {"label":{"issuer":{},"description":"contract host"},"quantity":{"installation":{},"terms":{"putUpCash":{"label":{"issuer":{},"description":"cash"},"quantity":10},"putUpStock":{"label":{"issuer":{},"description":"Tyrell"},"quantity":[1,2]}},"seatIdentity":{},"seatDesc":"putUpCash"}}',
+  ' 2 vote(s) have been cast with position yea',
+  'bob\'s cash dividend balance {"label":{"issuer":{},"description":"cash"},"quantity":14}',
+  'bob\'s cash purse balance {"label":{"issuer":{},"description":"cash"},"quantity":1015}',
+  'bob escrow wins: {"label":{"issuer":{},"description":"cash"},"quantity":10} refs: null',
+  'alice escrow wins: {"label":{"issuer":{},"description":"Tyrell"},"quantity":[1,2]} refs: null',
+  '++ bob.useEscrowedStock done',
+  'bob\'s cash purse balance {"label":{"issuer":{},"description":"cash"},"quantity":1025}',
 ];
 
 test('usableStock: useEscrowedStock with SES', async t => {

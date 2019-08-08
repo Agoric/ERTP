@@ -8,41 +8,79 @@ import { makeCollect } from '../../../core/contractHost';
 function makeBobMaker(E, host, log) {
   const collect = makeCollect(E, log);
 
+  let savedStocks;
+
+  // TODO BUG: All callers should wait until settled before doing
+  // anything that would change the balance before show*Balance* reads
+  // it.
+  function showPaymentBalance(name, paymentP) {
+    return E(paymentP)
+      .getBalance()
+      .then(amount => log(name, ' balance ', amount));
+  }
+
   return harden({
     make(escrowExchangeInstallationP, myCashPurseP, myStockPurseP) {
       const cashIssuerP = E(myCashPurseP).getIssuer();
-      const cashNeededP = E(E(cashIssuerP).getAssay()).make(10);
+      const cashToOfferP = E(E(cashIssuerP).getAssay()).make(10);
 
       const stockIssuerP = E(myStockPurseP).getIssuer();
-      const stockNeededP = E(E(stockIssuerP).getAssay()).make([1, 2]);
+      const stockToOfferP = E(E(stockIssuerP).getAssay()).make([1, 2]);
 
       const bob = harden({
-        useEscrowedStock(alice) {
+        async useEscrowedStock(alice) {
           log('++ bob.useEscrowedStock starting');
-          const terms = harden({ left: cashNeededP, right: stockNeededP });
-          const invitesP = E(escrowExchangeInstallationP).spawn(terms);
-          const aliceInvitePaymentP = invitesP.then(invites => invites.left);
-          const bobInvitePaymentP = invitesP.then(invites => invites.right);
+          const terms = harden({
+            putUpCash: cashToOfferP,
+            putUpStock: stockToOfferP,
+          });
+
+          const escrowConfig = harden({
+            leftSeatName: 'putUpCash',
+            rightSeatName: 'putUpStock',
+            makeCustomLeftSeatSrc: `coreSeat => coreSeat`,
+            makeCustomRightSeatSrc: `(coreSeat, _leftEscrow, rightEscrow) => {
+              return harden({
+                ...coreSeat,
+                getUse() {
+                  return E(rightEscrow).getUse();
+                }
+              });
+            }`,
+          });
+
+          const {
+            putUpCash: aliceInvitePaymentP,
+            putUpStock: bobInvitePaymentP,
+          } = await E(escrowExchangeInstallationP).spawn(terms, escrowConfig);
+
           const doneP = Promise.all([
             E(alice).acceptInvite(aliceInvitePaymentP),
             E(bob).acceptInvite(bobInvitePaymentP),
           ]);
           doneP.then(
-            _res => log('++ bob.useEscrowedStock done'),
+            _res => {
+              log('++ bob.useEscrowedStock done');
+              const cashDividendP = E(savedStocks).claimCashDividends();
+              showPaymentBalance(`bob's cash purse`, myCashPurseP);
+            },
             rej => log('++ bob.useEscrowedStock reject: ', rej),
           );
           return doneP;
         },
 
-        acceptInvite(inviteP) {
+        async acceptInvite(inviteP) {
           const seatP = E(host).redeem(inviteP);
-          const amount = E(stockIssuerP).makeAmount([1, 2]);
+          const amount = await E(stockIssuerP).makeAmount([1, 2]);
           const stockPaymentP = E(myStockPurseP).withdraw(amount);
           E(seatP).offer(stockPaymentP);
-          const stocks = E(seatP).getUse();
-          E(stocks).vote('yea');
-          const cashDividend = E(stocks).claimCashDividend();
-          E(myCashPurseP).depositAll(cashDividend);
+          const stocks = await E(seatP).getUse();
+          await E(stocks).vote('yea');
+          const cashDividendP = E(stocks).claimCashDividends();
+          showPaymentBalance(`bob's cash dividend`, cashDividendP);
+          await E(myCashPurseP).depositAll(cashDividendP);
+          showPaymentBalance(`bob's cash purse`, myCashPurseP);
+          savedStocks = stocks;
           return collect(seatP, myCashPurseP, myStockPurseP, 'bob escrow');
         },
       });

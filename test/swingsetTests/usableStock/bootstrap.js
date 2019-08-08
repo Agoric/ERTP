@@ -5,20 +5,26 @@ import harden from '@agoric/harden';
 import { insist } from '../../../util/insist';
 import { escrowExchangeSrcs } from '../../../core/escrow';
 import { makeUsableStockMaker } from '../../../more/usableStock/usableStockConfig';
+import { makeMint } from '../../../core/issuers';
 
-function build(E) {
-  async function useEscrowedStock(host, mint, aliceMaker, bobMaker) {
+function build(E, log) {
+  async function useEscrowedStock(host, aliceMaker, bobMaker) {
     const escrowExchangeInstallationP = E(host).install(escrowExchangeSrcs);
 
-    const cashMintP = await E(mint).makeMint('cash');
-    const cashIssuerP = await E(cashMintP).getIssuer();
-    const cashAssayP = await E(cashIssuerP).getAssay();
-    const companyCashPurseP = await E(cashMintP).mint(1000, 'companyPurse');
+    const cashMint = makeMint('cash');
+    const cashIssuer = cashMint.getIssuer();
+    const cashAssay = cashIssuer.getAssay();
+    const companyCashPurseP = await E(cashMint).mint(1000, 'companyPurse');
     const votes = new Map();
     const cashDividendsClaimed = new Map();
-    const cashPerStock = 5;
+    const cashPerStock = cashIssuer.makeAmount(7);
 
     function makeUseObj(issuer, asset) {
+
+      // we allow infinite voting and claiming of dividends in order
+      // to easily prove who has the authority to use the use object,
+      // but it is very easy to protect against it with a `has` check
+      // on the maps
       const useObj = harden({
         // change the color of the pixels in the amount after checking
         // that the asset has the authority to do so.
@@ -31,25 +37,20 @@ function build(E) {
           const amount = asset.getBalance();
           const ids = assay.quantity(amount);
           for (const id of ids) {
-            if (!votes.has(id)) {
-              votes.set(id, position);
-            }
+            votes.set(id, position);
           }
+          const count = ids.length;
+          log(` ${count} vote(s) have been cast with position ${position}`);
           return amount;
         },
-        claimCashDividends() {
-          let resultCashAmount;
+        async claimCashDividends() {
           const assay = issuer.getAssay();
-          const amount = assay.getBalance();
+          let resultCashAmount = cashAssay.empty();
+          const amount = asset.getBalance();
           const ids = assay.quantity(amount);
           for (const id of ids) {
-            if (!cashDividendsClaimed.has(id)) {
-              cashDividendsClaimed.set(id, true);
-              resultCashAmount = E(cashAssayP).with(
-                resultCashAmount,
-                cashPerStock,
-              );
-            }
+            cashDividendsClaimed.set(id, true);
+            resultCashAmount = cashAssay.with(resultCashAmount, cashPerStock);
           }
           return E(companyCashPurseP).withdraw(resultCashAmount);
         },
@@ -59,23 +60,27 @@ function build(E) {
 
     const usableStockConfig = makeUsableStockMaker(makeUseObj);
 
-    const stockMintP = await E(mint).makeMint(usableStockConfig, 'Tyrell');
+    const stockMint = makeMint('Tyrell', usableStockConfig);
+    const stockIssuer = stockMint.getIssuer();
 
-    const bobStockPurseP = await E(stockMintP).mint(harden([1, 2]));
-    const aliceStockPurseP = await E(stockMintP).mint(harden([3, 4, 5]));
+    const bobStockAmount = await E(stockIssuer).makeAmount(harden([1, 2]));
+    const bobStockPurse = await E(stockMint).mint(bobStockAmount);
 
-    const aliceCashPurseP = await E(cashMintP).mint(1000);
-    const bobCashPurseP = await E(cashMintP).mint(1001);
+    const aliceStockAmount = await E(stockIssuer).makeAmount(harden([3, 4, 5]));
+    const aliceStockPurse = await E(stockMint).mint(aliceStockAmount);
+
+    const aliceCashPurseP = await E(cashMint).mint(1000);
+    const bobCashPurseP = await E(cashMint).mint(1001);
 
     const aliceP = E(aliceMaker).make(
       escrowExchangeInstallationP,
       aliceCashPurseP,
-      aliceStockPurseP,
+      aliceStockPurse,
     );
     const bobP = E(bobMaker).make(
       escrowExchangeInstallationP,
       bobCashPurseP,
-      bobStockPurseP,
+      bobStockPurse,
     );
     return E(bobP).useEscrowedStock(aliceP);
   }
@@ -88,7 +93,6 @@ function build(E) {
         const bobMaker = await E(vats.bob).makeBobMaker(host);
         return harden({
           host,
-          mint: vats.mint,
           aliceMaker,
           bobMaker,
         });
@@ -96,8 +100,8 @@ function build(E) {
 
       switch (argv[0]) {
         case 'useEscrowedStock': {
-          const { host, mint, aliceMaker, bobMaker } = await makeStartingObjs();
-          return useEscrowedStock(host, mint, aliceMaker, bobMaker);
+          const { host, aliceMaker, bobMaker } = await makeStartingObjs();
+          return useEscrowedStock(host, aliceMaker, bobMaker);
         }
         default: {
           throw new Error(`unrecognized argument value ${argv[0]}`);

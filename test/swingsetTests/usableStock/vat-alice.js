@@ -21,7 +21,7 @@ function makeAliceMaker(E, host, log) {
       const inviteIssuerP = E(host).getInviteIssuer();
 
       const alice = harden({
-        acceptInvite(allegedInvitePaymentP) {
+        async acceptInvite(allegedInvitePaymentP) {
           log('++ alice.acceptInvite starting');
           showPaymentBalance('alice invite', allegedInvitePaymentP);
           const cash10P = E(E(myCashPurseP).getIssuer()).makeAmount(10);
@@ -34,9 +34,13 @@ function makeAliceMaker(E, host, log) {
             .then(allegedInviteAmount => {
               return E.resolve(Promise.all([cash10P, stock1And2P])).then(
                 terms => {
-                  const [left, right] = terms;
+                  const [putUpCash, putUpStock] = terms;
                   return E(escrowExchangeInstallationP)
-                    .checkAmount(allegedInviteAmount, { left, right }, 'left')
+                    .checkAmount(
+                      allegedInviteAmount,
+                      { putUpCash, putUpStock },
+                      'putUpCash',
+                    )
                     .then(() => {
                       return E(inviteIssuerP).getExclusive(
                         allegedInviteAmount,
@@ -54,7 +58,6 @@ function makeAliceMaker(E, host, log) {
             const seatP = E(host).redeem(verifiedInvitePaymentP);
             const cashPaymentP = E(myCashPurseP).withdraw(10);
             E(seatP).offer(cashPaymentP);
-            const useObj = E(seatP).getUse();
             return collect(seatP, myStockPurseP, myCashPurseP, 'alice escrow');
           });
         },

@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
 import { makeCoreMintKeeper } from '../../core/config/coreMintKeeper';
-import { makeNatAssay } from '../../core/config/assays';
+import { makeUsableStockAssay } from './usableStockAssay';
 
 /**
  * `makeUsableStockMaker` exists in order to pass in more parameters
@@ -44,7 +44,7 @@ function makeUsableStockMaker(makeUseObj) {
         });
       },
       makeMintKeeper: makeCoreMintKeeper,
-      makeAssay: makeNatAssay,
+      makeAssay: makeUsableStockAssay,
     });
   }
   return makeUsableStockConfig;

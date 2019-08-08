@@ -3,16 +3,45 @@
 
 import harden from '@agoric/harden';
 import { mustBeSameStructure } from '../util/sameStructure';
+import { insist } from '../util/insist';
 
-// For clarity, the code below internally speaks of a scenario is which Alice is
-// trading some of her money for some of Bob's stock. However, for generality,
-// the API does not expose names like "alice", "bob", "money", or "stock".
-// Rather, Alice and Bob are left and right respectively. Money represents the
-// rights transferred from left to right, and Stock represents the rights
-// transferred from right to left.
 const escrowExchange = harden({
-  start: (terms, inviteMaker) => {
-    const { left: moneyNeeded, right: stockNeeded } = terms;
+  start: async (
+    terms,
+    inviteMaker,
+    evaluate,
+    config = harden({
+      leftSeatName: 'left',
+      rightSeatName: 'right',
+      makeCustomLeftSeatSrc: `coreSeat => coreSeat`,
+      makeCustomRightSeatSrc: `coreSeat => coreSeat`,
+    }),
+  ) => {
+    const {
+      leftSeatName,
+      rightSeatName,
+      makeCustomLeftSeatSrc,
+      makeCustomRightSeatSrc,
+    } = config;
+
+    function evalStrToFn(source) {
+      insist(
+        typeof source === 'string',
+      )`"${source}" must be a string, but was ${typeof source}`;
+      const fn = evaluate(source, { harden, E });
+      insist(
+        typeof fn === 'function',
+      )`"${source}" must be a string for a function, but produced ${typeof fn}`;
+      return fn;
+    }
+
+    const makeCustomLeftSeat = evalStrToFn(makeCustomLeftSeatSrc);
+    const makeCustomRightSeat = evalStrToFn(makeCustomRightSeatSrc);
+
+    const {
+      [leftSeatName]: leftOfferAmount,
+      [rightSeatName]: rightOfferAmount,
+    } = terms;
 
     function makeTransfer(amount, srcPaymentP) {
       const { issuer } = amount.label;
@@ -38,61 +67,67 @@ const escrowExchange = harden({
           return refund.p;
         },
         getUse() {
-          return E(srcPaymentP).getUse()
+          return E(escrowP).getUse();
         },
       });
     }
 
     // Promise wiring
 
-    const moneyPayment = makePromise();
-    const moneyTransfer = makeTransfer(moneyNeeded, moneyPayment.p);
+    const leftOfferPayment = makePromise();
+    const leftEscrow = makeTransfer(leftOfferAmount, leftOfferPayment.p);
 
-    const stockPayment = makePromise();
-    const stockTransfer = makeTransfer(stockNeeded, stockPayment.p);
+    const rightOfferPayment = makePromise();
+    const rightEscrow = makeTransfer(rightOfferAmount, rightOfferPayment.p);
 
     // TODO Use cancellation tokens instead.
-    const aliceCancel = makePromise();
-    const bobCancel = makePromise();
+    const leftCancel = makePromise();
+    const rightCancel = makePromise();
 
     // Set it all in motion optimistically.
 
     const decisionP = Promise.race([
-      Promise.all([moneyTransfer.phase1(), stockTransfer.phase1()]),
-      aliceCancel.p,
-      bobCancel.p,
+      Promise.all([leftEscrow.phase1(), rightEscrow.phase1()]),
+      leftCancel.p,
+      rightCancel.p,
     ]);
     decisionP.then(
       _ => {
-        moneyTransfer.phase2();
-        stockTransfer.phase2();
+        leftEscrow.phase2();
+        rightEscrow.phase2();
       },
       reason => {
-        moneyTransfer.abort(reason);
-        stockTransfer.abort(reason);
+        leftEscrow.abort(reason);
+        rightEscrow.abort(reason);
       },
     );
 
     // Seats
 
-    const aliceSeat = harden({
-      offer: moneyPayment.res,
-      cancel: aliceCancel.reject,
-      getWinnings: stockTransfer.getWinnings,
-      getRefund: moneyTransfer.getRefund,
+    const coreLeftSeat = harden({
+      offer: leftOfferPayment.res,
+      cancel: leftCancel.reject,
+      getWinnings: rightEscrow.getWinnings,
+      getRefund: leftEscrow.getRefund,
     });
 
-    const bobSeat = harden({
-      offer: stockPayment.res,
-      cancel: bobCancel.reject,
-      getWinnings: moneyTransfer.getWinnings,
-      getRefund: stockTransfer.getRefund,
-      getUse: stockTransfer.getUse,
+    const coreRightSeat = harden({
+      offer: rightOfferPayment.res,
+      cancel: rightCancel.reject,
+      getWinnings: leftEscrow.getWinnings,
+      getRefund: rightEscrow.getRefund,
     });
+
+    const leftSeat = makeCustomLeftSeat(coreLeftSeat, leftEscrow, rightEscrow);
+    const rightSeat = makeCustomRightSeat(
+      coreRightSeat,
+      leftEscrow,
+      rightEscrow,
+    );
 
     return harden({
-      left: inviteMaker.make('left', aliceSeat),
-      right: inviteMaker.make('right', bobSeat),
+      [leftSeatName]: inviteMaker.make(leftSeatName, leftSeat),
+      [rightSeatName]: inviteMaker.make(rightSeatName, rightSeat),
     });
   },
 
