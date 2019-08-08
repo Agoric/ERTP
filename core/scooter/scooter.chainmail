@@ -1,0 +1,133 @@
+/**
+ * OfferId
+ *
+ * Uniquely identifies a placed or to-be-placed offer.  Just a unique
+ * unforgeable identity, which is therefore an interface.
+ */
+interface OfferId {}
+
+/**
+ * OfferStatus
+ */
+struct OfferStatus {
+    offerId :OfferId;
+    offeredSide :Nat;
+    offeredAmount :Amount;
+    neededSide :Nat;
+    neededAmount :Amount;
+
+    // Fields above are stable. They are always the same for a given affer.
+    // Fields below are variable. They vary from one turn to another.
+    
+    offerState :String;
+    balances :List(Amount);
+}
+
+/**
+ * OfferUpdate
+ *   OfferEvict
+ *   OfferUpdateBalances
+ */
+struct OfferUpdate {
+    offerId :OfferId;
+}
+
+struct OfferEvict extends (OfferUpdate) {
+    leftState :String;
+}
+
+struct OfferUpdateBalances extends (OfferUpdate) {
+    newBalances :List(Amount);
+}
+
+/**
+ * OfferHandle
+ */
+interface OfferHandle {
+
+    /**
+     */
+    getStatus() -> (OfferStatus);
+
+    /**
+     */
+    checkout() -> (Promise(void));
+
+    /**
+     */
+    getExitPayments() -> (Promise(List(Payment)));
+}
+
+/**
+ * OfferPlacer
+ */
+interface OfferPlacer {
+
+    /**
+     */
+    placeOneOffer(offerPaymentP :Payment,
+                  neededAmount :Amount) -> (Promise(OfferHandle));
+}
+
+/**
+ * Scooter
+ */
+interface Scooter {
+
+    /**
+     */
+    inviteToPlaceOffer(offeredSide :Nat) -> ([Invite(OfferPlacer), OfferId]);
+
+    /**
+     */
+    liveOfferIds() -> (List(OfferId));
+
+    /**
+     */
+    getOfferStatus(offerId :OfferId) -> (OfferStatus);
+
+    /**
+     */
+    getAllOfferStatuses() -> (List(OfferStatus));
+
+    /**
+     */
+    evictOffer(offerId :OfferId, leftState :String) -> (void);
+
+    /**
+     */
+    rearrangeRights(offerUpdates :List(OfferUpdate)) -> (void);
+}
+
+/**
+ * Sentry
+ */
+interface Sentry {
+
+    /**
+     */
+    checkinPolicy(offerId :OfferId) -> (Eventual(void));
+
+    /**
+     */
+    checkoutPolicy(offerId :OfferId) -> (Eventual(void));
+}
+    
+/**
+ * ScooterTerms
+ */
+struct ScooterTerms {
+    issuers :List(Eventual(Issuer));
+    sentry :Eventual(Sentry);
+}
+
+/**
+ * ScooterContract
+ */
+interface ScooterContract extends Contract {
+
+    /**
+     */
+    start(terms :ScooterTerms,
+          inviteMaker :InviteMaker) -> (Promise(Invite(Scooter)));
+}

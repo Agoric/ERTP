@@ -185,7 +185,8 @@ This offer placer is used up`;
 
         // The governing contract can always evict any offer at
         // will. The sentry's checkout policy only affects when a
-        // player can choose to leave.
+        // player can choose to leave, not when the governing contract
+        // can choose to evict.
         evictOffer(offerId, leftState = 'evicted') {
           offerPool.get(offerId).leave(leftState);
         },
