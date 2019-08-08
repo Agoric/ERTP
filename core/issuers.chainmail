@@ -34,12 +34,7 @@ interface Issuer (Amount (Quantity)) {
    */
   getExclusiveAll(src :Payment, name :String = 'a payment') -> (Payment);
 
-  /**
-   * Burn amount of the rights from src. If the rights are fungible, this
-   * directly removes the rights from the payment, while if the rights are
-   * non-fungible, this ensures that no purse or payment has access to those
-   * rights.
-   */
+  /** Burn amount of the rights from src. */
   burn(amount :Amount, src :Payment) -> (Amount);
 
   /** Burn all of the rights from src. */
