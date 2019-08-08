@@ -37,6 +37,9 @@ const escrowExchange = harden({
         getRefund() {
           return refund.p;
         },
+        getUse() {
+          return E(srcPaymentP).getUse()
+        },
       });
     }
 
@@ -84,6 +87,7 @@ const escrowExchange = harden({
       cancel: bobCancel.reject,
       getWinnings: moneyTransfer.getWinnings,
       getRefund: stockTransfer.getRefund,
+      getUse: stockTransfer.getUse,
     });
 
     return harden({
