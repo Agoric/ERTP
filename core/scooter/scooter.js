@@ -40,7 +40,8 @@ side must be 0 or 1: ${side}`;
       const offerPool = new Map();
 
       // scooter is held by the governing contract, and so must not
-      // reveal anything the governing contract shouldn't get.
+      // provide access to anything the governing contract shouldn't
+      // get.
       const scooter = harden({
         // Makes an invitation that the governing contract can give to
         // a player, that the player can use to place one offer into
@@ -177,18 +178,22 @@ This offer placer is used up`;
           return offerPool.get(offerId).getStatus();
         },
 
-        getAllOfferStati() {
+        getAllOfferStatuses() {
           // Arrays are pass-by-copy. Maps do not yet support pass-by-copy
           return harden(scooter.liveOfferIds().map(scooter.getOfferStatus));
         },
 
         // The governing contract can always evict any offer at
-        // will. The sentry's policies constrain what players can do.
+        // will. The sentry's checkout policy only affects when a
+        // player can choose to leave.
         evictOffer(offerId, leftState = 'evicted') {
           offerPool.get(offerId).leave(leftState);
         },
 
-        rearrangeRights() {},
+        rearrangeRights([...newBalances]) {
+          const offerStatuses = scooter.getAllOfferStatuses();
+          validateRearrangement(offerStatuses, newBalances);
+        },
       });
 
       // There's little reason to wrap scooter in an invite. We could
