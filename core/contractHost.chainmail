@@ -52,7 +52,7 @@ interface Installation {
    * Create a new InviteMaker, then call the Contract's start() method and
    * return its results. The results are often a collection of seat invitations
    * for the seats in the contract, but see coveredCall for an exception.
-   *
+   */
   spawn(terms :Terms) -> (invites :Object);
 
  /**

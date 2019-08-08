@@ -16,7 +16,7 @@ struct Amount (Quantity, Label) {
  * represents the rights at issue. All Amounts made by the same Assay have the
  * same label.
  */
-struct Quantity extends (Comparable) {
+struct Quantity /* extends (Comparable) */ {
 }
 
 /**
@@ -97,7 +97,7 @@ struct Label {
 }
 
 /** Human-readable description of a kind of rights. */
-struct Description extends (Comparable) {
+struct Description /* extends (Comparable) */ {
 }
 
 /**
