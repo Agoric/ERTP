@@ -124,7 +124,7 @@ struct ScooterTerms {
 /**
  * ScooterContract
  */
-interface ScooterContract extends Contract {
+interface ScooterContract extends (Contract) {
 
     /**
      */
