@@ -144,6 +144,9 @@ Internal: Should not be exit payments until exiting`;
                       localPurse.getBalance(),
                     );
                   } else {
+                    // TODO BUG this should remain the balances on
+                    // exit. It should not change as these payment
+                    // objects change.
                     balances = exitPayments.map(payment =>
                       payment.getBalance(),
                     );
