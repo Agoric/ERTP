@@ -65,6 +65,7 @@ No invites left`;
       // more general approach to providing useful helpers.
       sameStructure,
       mustBeSameStructure,
+      insist,
     });
     insist(typeof fn === 'function')`\n
 "${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;
@@ -111,7 +112,7 @@ No invites left`;
       // it enables us to use the installation in descriptions rather than the
       // source code itself. The check... methods must be evaluated on install,
       // since they become properties of the installation.
-      function spawn(termsP) {
+      function spawn(termsP, configSrcs) {
         return E.resolve(allComparable(termsP)).then(terms => {
           const inviteMaker = harden({
             // Used by the contract to make invites for credibly
@@ -143,7 +144,7 @@ No invites left`;
             },
             redeem,
           });
-          return startFn(terms, inviteMaker);
+          return startFn(terms, inviteMaker, evaluate, configSrcs);
         });
       }
 
