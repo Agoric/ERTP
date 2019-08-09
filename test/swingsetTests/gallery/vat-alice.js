@@ -84,8 +84,16 @@ function makeAliceMaker(E, log, contractHost) {
           // keep the original ERTP object and use right obj
 
           const childPayment = await E(pixelPaymentP).getChildPayment();
+          const childPayment2 = await E(pixelPaymentP).getChildPayment();
 
           const result = await E(bob).receiveChildPayment(childPayment);
+
+          // check that Alice's childPayment and childPayment2 are
+          // both the same thing and both are empty.
+
+          showPaymentBalance('childPayment', childPayment);
+          showPaymentBalance('childPayment2', childPayment2);
+
           const bobsRawPixel = result.quantity[0];
           insist(
             bobsRawPixel.x === rawPixel.x && bobsRawPixel.y === rawPixel.y,

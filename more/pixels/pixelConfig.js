@@ -62,6 +62,7 @@ function makePixelConfigMaker(
 
     return harden({
       makeCustomPayment(superPayment, issuer) {
+        let childPayment;
         return harden({
           ...superPayment,
           // This creates a new use object on every call. Please see
@@ -73,12 +74,15 @@ function makePixelConfigMaker(
           // Mint a new payment from the child mint with the same
           // quantity as the original payment
           getChildPayment() {
-            const childAmount = getChildAmount(
-              issuer,
-              superPayment.getBalance(),
-            );
-            const childPurse = childMint.mint(childAmount);
-            return childPurse.withdrawAll();
+            if (childPayment === undefined) {
+              const childAmount = getChildAmount(
+                issuer,
+                superPayment.getBalance(),
+              );
+              const childPurse = childMint.mint(childAmount);
+              childPayment = childPurse.withdrawAll();
+            }
+            return childPayment;
           },
           // Remove the amount of this payment from the purses and
           // payments of the childMint. Removes recursively down the
@@ -95,6 +99,7 @@ function makePixelConfigMaker(
         });
       },
       makeCustomPurse(superPurse, issuer) {
+        let childPurse;
         return harden({
           ...superPurse,
           // This creates a new use object on every call. Please see
@@ -106,8 +111,14 @@ function makePixelConfigMaker(
           // Mint a new purse from the child mint with the same
           // quantity as the original purse
           getChildPurse() {
-            const childAmount = getChildAmount(issuer, superPurse.getBalance());
-            return childMint.mint(childAmount);
+            if (childPurse === undefined) {
+              const childAmount = getChildAmount(
+                issuer,
+                superPurse.getBalance(),
+              );
+              childPurse = childMint.mint(childAmount);
+            }
+            return childPurse;
           },
           // Remove the amount of this purse from the purses and
           // payments of the childMint. Removes recursively down the
