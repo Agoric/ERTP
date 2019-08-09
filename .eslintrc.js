@@ -16,6 +16,7 @@ module.exports = {
     'no-restricted-syntax': ['off', 'ForOfStatement'],
     'no-unused-expressions': 'off',
     'no-loop-func': 'off',
+    'no-inner-declarations': 'off',
     'import/prefer-default-export': 'off', // contrary to Agoric standard
   },
 };

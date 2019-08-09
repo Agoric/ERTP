@@ -7,6 +7,7 @@ import { makePrivateName } from '../util/PrivateName';
 import { allSettled } from '../util/allSettled';
 import { insist } from '../util/insist';
 import {
+  mustBeComparable,
   allComparable,
   mustBeSameStructure,
   sameStructure,
@@ -62,8 +63,9 @@ No invites left`;
       console,
       E,
       makePromise,
-      // TODO: sameStructure is used in one check...() function. Figure out a
-      // more general approach to providing useful helpers.
+      // TODO: Figure out a more general approach to providing useful
+      // helpers.
+      mustBeComparable,
       sameStructure,
       mustBeSameStructure,
       makePeg,

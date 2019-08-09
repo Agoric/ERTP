@@ -2,11 +2,14 @@
 
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
+// For external documentation, see scooter.chainmail
+
 import harden from '@agoric/harden';
 import { insist } from '../../util/insist';
 import makePromise from '../../util/makePromise';
 import { makePeg } from '../issuers';
 import { defaultSentry } from './sentries';
+import { mustBeComparable } from '../../util/sameStructure';
 
 const scooterContract = harden({
   start: (terms, inviteMaker) => {
@@ -15,14 +18,22 @@ const scooterContract = harden({
       sentry: sentryP = Promise.resolve(defaultSentry),
     } = terms;
 
-    const indexes = [0, 1];
-    insist(issuerPs.length === indexes.length)`\
+    insist(issuerPs.length === 2)`\
 Must be exactly two issuers: ${terms.issuers}`;
+    const indexes = Object.keys(issuerPs);
 
     function otherSide(side) {
       insist(side === 0 || side === 1)`\
 side must be 0 or 1: ${side}`;
       return 1 - side;
+    }
+
+    // Compare amounts this way, rather than sameStructure, since
+    // amounts are not necessarily in a canonical representation.
+    function sameAmount(assay, amount1, amount2) {
+      return (
+        assay.includes(amount1, amount2) && assay.includes(amount2, amount1)
+      );
     }
 
     // Currently, we omit the optional args to makePeg, so currently
@@ -34,42 +45,56 @@ side must be 0 or 1: ${side}`;
       const localIssuers = pegs.map(peg => peg.getLocalIssuer());
       const localAssays = localIssuers.map(issuer => issuer.getAssay());
 
-      // Maps from an offerId to an internalOffer.
-      // Note: offerPool is an iterable map that holds everything strongly. It
-      // is specific to this scooter.
-      const offerPool = new Map();
+      // Validate that each slice adds up to the same total erights.
+      function validateConserved(statuses, statusUpdates) {
+        for (const i of indexes) {
+          const localAssay = localAssays[i];
+          function totalAmount(offerStatuses) {
+            function reduceAmount(amountSoFar, offerStatus) {
+              return localAssay.with(amountSoFar, offerStatus.balances[i]);
+            }
+            return offerStatuses.reduce(reduceAmount, localAssay.empty());
+          }
+          const oldTotal = totalAmount(i, statuses);
+          const newTotal = totalAmount(i, statusUpdates);
+          insist(sameAmount(localAssay, oldTotal, newTotal))`\
+Total amount[${i}] not conserved:, ${oldTotal} vs ${newTotal}`;
+        }
+      }
 
-      // scooter is held by the governing contract, and so must not
-      // provide access to anything the governing contract shouldn't
-      // get.
+      // ********** The mutable state of a scooter instance ************
+
+      // To rearrange erights, we first drain all local purses into
+      // this pot, and then refill them all from this pot.  This
+      // should only be non-empty in the midst of a call to
+      // scooter.updateOffers.
+      const potOfPurses = localIssuers.map(issuer => issuer.makeEmptyPurse());
+
+      // From OfferId to InternalOffer. See below for the mutable
+      // state of each placed offer.
+      const offerPool = new WeakMap();
+
+      // ****** End of the mutable state of a scooter instance ********
+
+      function validatePotEmpty() {
+        for (const i of indexes) {
+          insist(localAssays[i].isEmpty(potOfPurses[i]))`\
+Internal: pot of purses not fully drained: ${i}`;
+        }
+      }
+
       const scooter = harden({
-        // Makes an invitation that the governing contract can give to
-        // a player, that the player can use to place one offer into
-        // the offerPool, to offer at most some amount of the
-        // offeredSide's erights in exchange for at least some amount
-        // of the (opposite) neededSide's erights. Returns a pair of
-        // this invite and the offerId for identifying this offer,
-        // should it ever be placed.
         inviteToPlaceOffer(offeredSide) {
           const neededSide = otherSide(offeredSide);
 
-          // The offerId is a token initially shared only by scooter,
-          // the governing contract inviting a player to place an
-          // offer, and the player who places that offer.
-          //
-          // Why don't we use seatIdentity as the offerId? Although
-          // the invite's seatIdentity is unique to an invite, it is
-          // also exposed to all that have held that invitation right.
           const offerId = harden({});
-          let enabled = true;
+          let offerPlacerEnabled = true;
 
-          // The seat obtained by redeeming an invitation to place an
-          // offer.
           const offerPlacer = harden({
             placeOneOffer(offeredPaymentP, neededAmount) {
-              insist(enabled)`\
+              insist(offerPlacerEnabled)`\
 This offer placer is used up`;
-              enabled = false;
+              offerPlacerEnabled = false;
 
               const escrowedPaymentP = pegs[offeredSide].retainAll(
                 offeredPaymentP,
@@ -77,43 +102,72 @@ This offer placer is used up`;
               return Promise.resolve(escrowedPaymentP).then(escrowedPayment => {
                 neededAmount = localAssays[neededSide].coerce(neededAmount);
 
-                let offerState = 'initializing';
+                // ********** The mutable state of a placed offer ************
+
+                const offerState = 'placed';
 
                 const localPurses = localIssuers.map(issuer =>
                   issuer.makeEmptyPurse(),
                 );
+
+                let exitPayments;
+                const exitPaymentsPR = makePromise();
+
+                // ******* End of the mutable state of a placed offer *********
+
                 const offeredAmount = localPurses[offeredSide].depositAllNow(
                   escrowedPayment,
                 );
-                const exitPaymentsPR = makePromise();
 
                 const offerDescription = harden({
-                  offerId,
                   offeredSide,
                   offeredAmount,
                   neededSide,
                   neededAmount,
                 });
+                const describe = harden(() => offerDescription);
 
-                const getStatus = harden(() =>
-                  harden({
-                    ...offerDescription,
-                    offerState,
-                    balances: localPurses.map(localPurse =>
+                function getCurrentStatus() {
+                  const isInPool = offerPool.has(offerId);
+                  let balances;
+                  if (isInPool) {
+                    insist(exitPayments === undefined)`\
+Internal: Should not be exit payments until exiting`;
+                    balances = localPurses.map(localPurse =>
                       localPurse.getBalance(),
-                    ),
-                  }),
-                );
+                    );
+                  } else {
+                    balances = exitPayments.map(payment =>
+                      payment.getBalance(),
+                    );
+                  }
+                  return harden({
+                    offerState,
+                    balances,
+                    isInPool,
+                  });
+                }
 
-                // These objects must remain fully encapsulated with
-                // scooter. The must not be exposed to either the
+                // These InternalOffers must remain fully encapsulated
+                // within scooter. The must not be exposed to either the
                 // governing contract nor the players.
                 const internalOffer = harden({
-                  getStatus,
+                  describe,
+                  getCurrentStatus,
 
-                  leave(leftState) {
-                    offerState = leftState;
-                    const exitPayments = indexes.map(i =>
+                  validateUpdate(statusUpdate) {},
+
+                  drainERights() {
+                    for (const i of indexes) {
+                      const payment = localPurses[i].withdrawAll();
+                      potOfPurses[i].depositAll(payment);
+                    }
+                  },
+
+                  updateStatus(statusUpdate) {},
+
+                  removeFromPool() {
+                    exitPayments = indexes.map(i =>
                       pegs[i].redeemAll(localPurses[i].withdrawAll()),
                     );
                     exitPaymentsPR.res(exitPayments);
@@ -125,31 +179,20 @@ This offer placer is used up`;
                 // talk to the governing contract about this offer
                 // using only offerHandle.getStatus().offerId
                 const offerHandle = harden({
-                  getStatus,
+                  describe,
+                  getCurrentStatus,
 
-                  checkout() {
-                    offerState = 'checking out';
-                    return E(sentryP)
-                      .checkoutPolicy(offerId)
-                      .then(_ => internalOffer.leave('checked out'));
-                  },
                   getExitPayments() {
                     return exitPaymentsPR.p;
+                  },
+
+                  requestExit() {
+                    return E(sentryP).noticeOfferExitRequested(offerId);
                   },
                 });
 
                 offerPool.set(offerId, internalOffer);
-                offerState = 'checking in';
-                E(sentryP)
-                  .checkinPolicy(offerId)
-                  .then(
-                    _ => {
-                      offerState = 'checked in';
-                    },
-                    reason => {
-                      internalOffer.leave(`refused: ${reason.message}`);
-                    },
-                  );
+                E(sentryP).noticeOfferEntered(offerId);
                 return offerHandle;
               });
             },
@@ -167,39 +210,58 @@ This offer placer is used up`;
           ];
         },
 
-        // ************ other governing contract methods *********
+        // ************ other scooter methods *********
 
-        liveOfferIds() {
-          // Arrays are pass-by-copy. Sets do not yet support pass-by-copy
-          return Array.from(offerPool.keys());
+        describeOffers([...offerIds]) {
+          return offerIds.map(id => offerPool.get(id).describe());
         },
 
-        getOfferStatus(offerId) {
-          return offerPool.get(offerId).getStatus();
+        getOfferStatuses([...offerIds]) {
+          return offerIds.map(id => offerPool.get(id).getCurrentStatus());
         },
 
-        getAllOfferStatuses() {
-          // Arrays are pass-by-copy. Maps do not yet support pass-by-copy
-          return harden(scooter.liveOfferIds().map(scooter.getOfferStatus));
-        },
+        updateOffers([...offerIds], [...statusUpdates]) {
+          const remainingIds = [];
+          mustBeComparable(statusUpdates);
+          const statuses = scooter.getOfferStatuses(offerIds);
 
-        // The governing contract can always evict any offer at
-        // will. The sentry's checkout policy only affects when a
-        // player can choose to leave, not when the governing contract
-        // can choose to evict.
-        evictOffer(offerId, leftState = 'evicted') {
-          offerPool.get(offerId).leave(leftState);
-        },
+          // phase 0 validate the common pot is empty
+          validatePotEmpty();
 
-        rearrangeRights([...newBalances]) {
-          const offerStatuses = scooter.getAllOfferStatuses();
-          validateRearrangement(offerStatuses, newBalances);
+          // phase 1 validate erights totals remain the same
+          validateConserved(statuses, statusUpdates);
+
+          // phase 2 validate each update individually
+          //    * the update must satisfy offer safety
+          for (const k of Object.keys(offerIds)) {
+            offerPool.get(offerIds[k]).validateUpdate(statusUpdates[k]);
+          }
+
+          // phase 3 drain all erights into a common pot
+          for (const id of offerIds) {
+            offerPool.get(id).drainERights();
+          }
+
+          // phase 4 update each to match its statusUpdate
+          //    * refill from the common pot
+          //    * set the state
+          //    * if exiting, process removal
+          //    * remember who remains
+          for (const k of Object.keys(offerIds)) {
+            const id = offerIds[k];
+            if (offerPool.get(id).updateStatus(statusUpdates[k])) {
+              remainingIds.push(id);
+            }
+          }
+
+          // phase 5 validate the common pot is empty again
+          validatePotEmpty();
+
+          // phase 6 governing contract should also remember who remains
+          return harden(remainingIds);
         },
       });
-
-      // There's little reason to wrap scooter in an invite. We could
-      // just return it directly to the governing contract.
-      return inviteMaker.make('scooter', scooter);
+      return scooter;
     });
   },
 });
