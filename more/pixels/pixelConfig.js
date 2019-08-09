@@ -9,7 +9,7 @@ import { makePixelListAssayMaker } from './pixelAssays';
  * @param  {function} makeUseObj creates a "use object", which has all
  * of the non-ERTP methods for assets that are designed to be used.
  * For instance, a pixel can be colored. The use object is associated
- * with an underlying asset that provides the authority to use it. 
+ * with an underlying asset that provides the authority to use it.
  * @param  {number} canvasSize=10 the size of the gallery in pixel
  * squares across and down
  * @param  {issuer} parentIssuer the `parentIssuer` is used when
