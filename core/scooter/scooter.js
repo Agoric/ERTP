@@ -117,7 +117,7 @@ This offer placer is used up`;
 
                 let offerState = 'placed';
 
-                let exitPayments;
+                let exitBalances;
                 const exitPaymentsPR = makePromise();
 
                 // ******* End of the mutable state of a placed offer *********
@@ -138,18 +138,13 @@ This offer placer is used up`;
                   const isInPool = offerPool.has(offerId);
                   let balances;
                   if (isInPool) {
-                    insist(exitPayments === undefined)`\
-Internal: Should not be exit payments until exiting`;
+                    insist(exitBalances === undefined)`\
+Internal: There should not be exit balances until exiting`;
                     balances = localPurses.map(localPurse =>
                       localPurse.getBalance(),
                     );
                   } else {
-                    // TODO BUG this should remain the balances on
-                    // exit. It should not change as these payment
-                    // objects change.
-                    balances = exitPayments.map(payment =>
-                      payment.getBalance(),
-                    );
+                    balances = exitBalances;
                   }
                   return harden({
                     balances,
@@ -201,11 +196,12 @@ Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
                     if (statusUpdate.isInPool) {
                       return true;
                     }
-                    exitPayments = indexes.map(i =>
+                    const exitPaymentPs = indexes.map(i =>
                       pegs[i].redeemAll(localPurses[i].withdrawAll()),
                     );
-                    exitPaymentsPR.res(exitPayments);
+                    exitPaymentsPR.res(exitPaymentPs);
                     offerPool.delete(offerId);
+                    exitBalances = statusUpdate.balances;
                     return false;
                   },
                 });
