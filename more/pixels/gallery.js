@@ -104,6 +104,8 @@ export function makeGallery(
       // change the color of the pixels in the amount after checking
       // that the asset has the authority to do so.
       changeColor(amount, newColor) {
+        // TODO: allow empty amounts to be used without throwing
+        // an error, but because there is no authority, nothing happens.
         insistNonEmptyAmount(issuer, amount);
         insistAssetHasAmount(issuer, asset, amount);
         insistColor(newColor);
