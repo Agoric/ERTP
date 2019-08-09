@@ -12,14 +12,18 @@ import { makePixelListAssayMaker } from './pixelAssays';
  * with an underlying asset that provides the authority to use it.
  * @param  {number} canvasSize=10 the size of the gallery in pixel
  * squares across and down
- * @param  {issuer} parentIssuer the `parentIssuer` is used when
+ * @param  {issuer} parentIssuer (optional) the `parentIssuer` is used when
  * creating a revocable childPayment or childPurse, as in the
  * landowner/tenant/subtenant pattern. In that pattern, the owner
  * holds assets associated with the parent issuer, the tenant holds
  * assets associated with the child issuer, the subtenant holds assets
  * associated with the grandchild issuer, and so forth.
  */
-function makePixelConfigMaker(makeUseObj, canvasSize = 10, parentIssuer) {
+function makePixelConfigMaker(
+  makeUseObj,
+  canvasSize = 10,
+  parentIssuer = undefined,
+) {
   function makePixelConfig(makeMint, description) {
     // The childIssuer/childMint are lazily created to avoid going
     // infinitely far down the chain of issuers on creation. The
