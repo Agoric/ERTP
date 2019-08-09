@@ -34,8 +34,8 @@ Description must be truthy: ${description}`;
 
   // assetSrc is a purse or payment. Return a fresh payment.  One internal
   // function used for both cases, since they are so similar.
-  function takePayment(assetSrc, srcKeeper, paymentAmount, unsafePaymentName) {
-    const paymentName = `${unsafePaymentName}`;
+  function takePayment(assetSrc, srcKeeper, paymentAmount, name) {
+    name = `${name}`;
     paymentAmount = assay.coerce(paymentAmount);
     const oldSrcAmount = srcKeeper.getAmount(assetSrc);
     const newSrcAmount = assay.without(oldSrcAmount, paymentAmount);
@@ -48,7 +48,7 @@ Description must be truthy: ${description}`;
         return paymentKeeper.getAmount(payment);
       },
       getName() {
-        return paymentName;
+        return name;
       },
     });
 
