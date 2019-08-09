@@ -43,7 +43,7 @@ function makeBobMaker(E, host, log) {
               return harden({
                 ...coreSeat,
                 getUse() {
-                  return E(rightEscrow).getUse();
+                  return E(E(rightEscrow).phase1()).getUse();
                 }
               });
             }`,

@@ -6,7 +6,13 @@ import { mustBeSameStructure } from '../util/sameStructure';
 import { insist } from '../util/insist';
 
 const escrowExchange = harden({
-  start: async (
+  // config is used for two customizations: 1) customization the names
+  // of the left and right seat, and 2) customizing the methods on the
+  // seats. For instance, in the case of an escrowed payment that has
+  // an associated use object, `makeCustomLeftSeatSrc` could be a
+  // stringified function that adds a `getUse` method to the seat to
+  // retrieve the use object for the escrowed payment.
+  start: (
     terms,
     inviteMaker,
     evaluate,
@@ -65,9 +71,6 @@ const escrowExchange = harden({
         },
         getRefund() {
           return refund.p;
-        },
-        getUse() {
-          return E(escrowP).getUse();
         },
       });
     }
@@ -146,9 +149,9 @@ const escrowExchange = harden({
   // Check the left or right side, and return the other. Useful when this is a
   // trade of goods for an invite, for example.
   checkPartialAmount: (installation, allegedInvite, expectedTerms, seat) => {
-    const allegedSeat = allegedInvite.quantity.terms;
+    const allegedSeats = allegedInvite.quantity.terms;
     mustBeSameStructure(
-      allegedSeat[seat],
+      allegedSeats[seat],
       expectedTerms,
       'Escrow checkPartialAmount seat',
     );
@@ -159,7 +162,11 @@ const escrowExchange = harden({
       'escrow checkPartialAmount installation',
     );
 
-    return seat === 'left' ? allegedSeat.right : allegedSeat.left;
+    const seatNames = Object.keys(allegedSeats);
+
+    return seat === seatNames[0]
+      ? allegedSeats[seatNames[1]]
+      : allegedSeats[seatNames[0]];
   },
 });
 
