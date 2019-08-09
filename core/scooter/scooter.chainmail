@@ -131,7 +131,7 @@ interface OfferPlacer {
                   neededAmount :Amount) -> (Promise(OfferHandle));
 }
 
-// ********* Visible to the governing contract *************
+// ********* Visible only to Scooter and the governing contract ***********
 
 /**
  * OfferId
