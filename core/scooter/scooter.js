@@ -90,6 +90,14 @@ Internal: pot of purses not fully drained: ${i}`;
           let offerPlacerEnabled = true;
 
           const offerPlacer = harden({
+            getOfferedSide() {
+              return offeredSide;
+            },
+
+            getNeededSide() {
+              return neededSide;
+            },
+
             placeOneOffer(offeredPaymentP, neededAmount) {
               insist(offerPlacerEnabled)`\
 This offer placer is used up`;
