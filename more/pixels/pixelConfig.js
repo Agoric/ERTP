@@ -183,7 +183,7 @@ function makePixelConfigMaker(
             if (childIssuer === undefined) {
               return false;
             }
-            if (childIssuer === superIssuer) {
+            if (childIssuer === allegedDescendant) {
               return true;
             }
             return childIssuer.isDescendantIssuer(allegedDescendant);
