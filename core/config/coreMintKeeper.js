@@ -8,19 +8,19 @@ export function makeCoreMintKeeper() {
   // of the payments (paymentKeeper) and their respective amounts.
   function makeAssetKeeper() {
     // asset to amount
-    const assets = makePrivateName();
+    const amounts = makePrivateName();
     return harden({
       updateAmount(asset, newAmount) {
-        assets.set(asset, newAmount);
+        amounts.set(asset, newAmount);
       },
       recordNew(asset, initialAmount) {
-        assets.init(asset, initialAmount);
+        amounts.init(asset, initialAmount);
       },
       getAmount(asset) {
-        return assets.get(asset);
+        return amounts.get(asset);
       },
       has(asset) {
-        return assets.has(asset);
+        return amounts.has(asset);
       },
     });
   }

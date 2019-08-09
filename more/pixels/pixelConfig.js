@@ -5,7 +5,7 @@ import { makePixelListAssayMaker } from './pixelAssays';
 
 /**
  * `makePixelConfigMaker` exists in order to pass in more parameters
-// than makePixelConfig allows.
+ * than makePixelConfig allows.
  * @param  {function} makeUseObj creates a "use object", which has all
  * of the non-ERTP methods for assets that are designed to be used.
  * For instance, a pixel can be colored. The use object is associated

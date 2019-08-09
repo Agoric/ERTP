@@ -27,24 +27,24 @@ export function makePixelMintKeeper(assay) {
 
   function makeAssetKeeper() {
     // asset to amount
-    const assets = makePrivateName();
+    const amounts = makePrivateName();
     return harden({
       // updateAmount and recordNew are the same as the core
       // mintKeeper, except that we also record the movement of the
       // pixels when they are called.
       updateAmount(asset, newAmount) {
-        assets.set(asset, newAmount);
+        amounts.set(asset, newAmount);
         recordPixelsAsAsset(newAmount, asset);
       },
       recordNew(asset, initialAmount) {
-        assets.init(asset, initialAmount);
+        amounts.init(asset, initialAmount);
         recordPixelsAsAsset(initialAmount, asset);
       },
       getAmount(asset) {
-        return assets.get(asset);
+        return amounts.get(asset);
       },
       has(asset) {
-        return assets.has(asset);
+        return amounts.has(asset);
       },
     });
   }
