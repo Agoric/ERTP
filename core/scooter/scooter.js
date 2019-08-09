@@ -8,14 +8,13 @@ import harden from '@agoric/harden';
 import { insist } from '../../util/insist';
 import makePromise from '../../util/makePromise';
 import { makePeg } from '../issuers';
-import { defaultSentry } from './sentries';
 import { mustBeComparable } from '../../util/sameStructure';
 
 const scooterContract = harden({
   start: (terms, inviteMaker) => {
     const {
       issuers: [...issuerPs],
-      sentry: sentryP = Promise.resolve(defaultSentry),
+      sentry: sentryP,
     } = terms;
 
     insist(issuerPs.length === 2)`\
@@ -104,11 +103,11 @@ This offer placer is used up`;
 
                 // ********** The mutable state of a placed offer ************
 
-                const offerState = 'placed';
-
                 const localPurses = localIssuers.map(issuer =>
                   issuer.makeEmptyPurse(),
                 );
+
+                let offerState = 'placed';
 
                 let exitPayments;
                 const exitPaymentsPR = makePromise();
@@ -142,8 +141,8 @@ Internal: Should not be exit payments until exiting`;
                     );
                   }
                   return harden({
-                    offerState,
                     balances,
+                    offerState,
                     isInPool,
                   });
                 }
@@ -155,7 +154,22 @@ Internal: Should not be exit payments until exiting`;
                   describe,
                   getCurrentStatus,
 
-                  validateUpdate(statusUpdate) {},
+                  validateUpdate(statusUpdate) {
+                    const offeredAssay = localAssays[offeredSide];
+                    const offeredBalance = statusUpdate.balances[offeredSide];
+                    const refundOk = offeredAssay.includes(
+                      offeredBalance,
+                      offeredAmount,
+                    );
+                    const neededAssay = localAssays[neededSide];
+                    const neededBalance = statusUpdate.balances[neededSide];
+                    const winningsOk = neededAssay.includes(
+                      neededBalance,
+                      neededAmount,
+                    );
+                    insist(refundOk || winningsOk)`\
+Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
+                  },
 
                   drainERights() {
                     for (const i of indexes) {
@@ -164,14 +178,24 @@ Internal: Should not be exit payments until exiting`;
                     }
                   },
 
-                  updateStatus(statusUpdate) {},
+                  // Return whether this one remains
+                  updateStatus(statusUpdate) {
+                    for (const i of indexes) {
+                      const amount = statusUpdate.balances[i];
+                      const payment = potOfPurses[i].withdraw(amount);
+                      potOfPurses[i].depositAll(payment);
+                    }
+                    offerState = statusUpdate.offerState;
 
-                  removeFromPool() {
+                    if (statusUpdate.isInPool) {
+                      return true;
+                    }
                     exitPayments = indexes.map(i =>
                       pegs[i].redeemAll(localPurses[i].withdrawAll()),
                     );
                     exitPaymentsPR.res(exitPayments);
                     offerPool.delete(offerId);
+                    return false;
                   },
                 });
 

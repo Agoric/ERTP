@@ -17,6 +17,7 @@ module.exports = {
     'no-unused-expressions': 'off',
     'no-loop-func': 'off',
     'no-inner-declarations': 'off',
+    'prefer-destructuring': 'off',
     'import/prefer-default-export': 'off', // contrary to Agoric standard
   },
 };
