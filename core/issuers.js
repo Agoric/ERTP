@@ -30,7 +30,7 @@ Description must be truthy: ${description}`;
     makeCustomMint,
     makeMintKeeper,
     makeAssay,
-  } = makeConfig(makeMint, description);
+  } = makeConfig();
 
   // assetSrc is a purse or payment. Return a fresh payment.  One internal
   // function used for both cases, since they are so similar.

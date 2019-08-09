@@ -2,6 +2,7 @@ import harden from '@agoric/harden';
 
 import { makePixelMintKeeper } from './pixelMintKeeper';
 import { makePixelListAssayMaker } from './pixelAssays';
+import { makeMint } from '../../core/issuers';
 
 /**
  * `makePixelConfigMaker` exists in order to pass in more parameters
@@ -24,7 +25,7 @@ function makePixelConfigMaker(
   canvasSize = 10,
   parentIssuer = undefined,
 ) {
-  function makePixelConfig(makeMint, description) {
+  function makePixelConfig() {
     // The childIssuer/childMint are lazily created to avoid going
     // infinitely far down the chain of issuers on creation. The
     // childIssuer assets are revocable by the current issuer (the
@@ -43,6 +44,7 @@ function makePixelConfigMaker(
           canvasSize,
           issuer,
         );
+        const { description } = issuer.getLabel();
         childMint = makeMint(description, makePixelConfigChild);
         childIssuer = childMint.getIssuer();
       }
