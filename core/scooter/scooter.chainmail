@@ -1,5 +1,5 @@
 // Scooter, The Smart Contract for Object-oriented, Offer-safe,
-// Transactional ERights
+// Trade of ERights
 
 // ********* Visible to players of a contract *************
 
@@ -17,15 +17,15 @@ struct OfferDescription {
     neededSide :Nat;
     /** Offering at most this amount... */
     offeredAmount :Amount;
-    /** ... in exchange for at least this amount */
+    /** ...in exchange for at least this amount */
     neededAmount :Amount;
 }
 
 /**
  * OfferStatus
  *
- * A snapshot of the status of an offer. The governing contract also
- * uses OfferStatus to request a change to the status of an offer.
+ * A snapshot of the status of an offer. The driver also uses
+ * OfferStatus to request a change to the status of an offer.
  *
  * Should grant no authority beyond access to Issuers.
  */
@@ -33,7 +33,7 @@ struct OfferStatus {
 
     /**
      * Initially 'placed'. After that, as arbitrary string set by the
-     * governing contract.
+     * driver.
      */
     offerState :String;
 
@@ -53,7 +53,11 @@ struct OfferStatus {
 
     /**
      * Is this offer still in the Scooter pool, or has it already
-     * exited? If it has exited, the offerState should indicate why.
+     * exited? If it has exited, the offerState should indicate
+     * why. When the driver requests a new status with this set to
+     * false, it is requesting that this offer be ejected from the
+     * pool, while paying out the exit balances stated in this same
+     * status request.
      */
     isInPool :Boolean;
 }
@@ -84,12 +88,11 @@ interface OfferHandle {
     getExitPayments() -> (Promise(List(Payment)));
 
     /**
-     * Notify the governing contract's sentry that this offer wishes
-     * to collect its exit payments and leave the pool. It is up to
-     * the governing contract's sentry how to react to this
-     * request. Thus, even for simple exit behaviors, like
-     * exit-at-will, the governing contract can update its own state
-     * before honoring the request.
+     * Notify the driver's sentry that this offer wishes to collect
+     * its exit payments and leave the pool. It is up to the sentry
+     * how to react to this request. Thus, even for simple exit
+     * behaviors, like exit-at-will, the driver can update its own
+     * state before honoring the request.
      *
      * Return a promise for an arbitrary string returned by
      * sentry.noticeExitRequested.
@@ -98,14 +101,14 @@ interface OfferHandle {
 }
 
 /**
- * OfferPlacer
+ * OfferSeat
  *
- * The invitation to place an offer is redeemed with an OfferPlacer,
- * which then must be used to actually place the offer. Thus, the
- * player, having validated the invite, knows that it is sharing
+ * The invitation to place an offer is redeemed for an OfferSeat,
+ * which is used to actually place the offer. Thus, the player, having
+ * validated the invite is to a scooter, knows that it is sharing
  * direct access to the actual erights only with scooter itself.
  */
-interface OfferPlacer {
+interface OfferSeat {
 
     getOfferedSide() :Nat;
     getNeededSide() :Nat;
@@ -115,29 +118,29 @@ interface OfferPlacer {
      * offeredPayment in exchange for at least the neededAmount.
      * Scooter will first escrow those erights, and only then fulfill
      * the returned promise for the OfferHandle. It will then also
-     * notify the governing contract's sentry of the new offer.
+     * notify the driver's sentry of the new offer.
      *
-     * Until the governing contract's sentry.noticeOfferEntry receives
-     * the notification, it can safely treat a placed offer that it
-     * has not yet been notified of identically to an invited offer
-     * that has not yet been placed. Thus, it can update its own state
-     * before taking further action on these entry notifications.
+     * Until the driver's sentry.noticeOfferEntry receives the
+     * notification, it does not know the offerId of this offer, and
+     * so is insentitive to whether the offer has yet been
+     * placed. Thus, the driver can update its own state before taking
+     * further action on these entry notifications.
      *
      * The sentry can thus effectively refuse entry to the new offer
-     * by removing it from the pool rather than updating its own
-     * state.
+     * by ejecting it from the pool rather than updating its own state
+     * to include the offer.
      */
-    placeOneOffer(offerPayment :Eventual(Payment),
+    placeOneOffer(offerPayment :Presence(Payment),
                   neededAmount :Amount) -> (Promise(OfferHandle));
 }
 
-// ********* Visible only to Scooter and the governing contract ***********
+// ********* Visible only to Scooter and the Driver ***********
 
 /**
  * OfferId
  *
- * How Scooter and the governing contract refer to offers placed, or
- * to be placed, into this scooter pool.
+ * How Scooter and the driver refer to offers placed into this scooter
+ * pool.
  */
 interface OfferId {}
 
@@ -148,22 +151,23 @@ interface OfferId {}
  * erights, that enforces offer safety, i.e., that the terms of the
  * offers will be honored. 
  *
- * Only the governing contract should have direct access to its
- * scooter instance. A scooter is completely passive. It is driven
- * only by the governing contract's calls to scooter.updateOffers.
+ * Only the driver should have direct access to its scooter
+ * instance. A scooter is completely passive. It is driven only by the
+ * driver's calls to scooter.updateOffers.
  */
 interface Scooter {
 
     /**
      * Make an invitation to place one offer, offering the erights
-     * described by ScooterTerms.issuers[offeredSide].
+     * described by ScooterTerms.issuers[offeredSide]. Once this offer
+     * is placed, the sentry callback is notified.
      *
-     * Returns a pair of the invitation itself and the OfferId that
-     * will identify the to-be-placed offer. The OfferId enables the
-     * governing contract to know which entry notifications correspond
-     * to which invitation.
+     * Returns the invitation payment to be redeemed for an OfferSeat
+     * to use to place an offer.
      */
-    inviteToPlaceOffer(offeredSide :Nat) -> (Invite(OfferPlacer), OfferId);
+    inviteToPlaceOffer(sentry :Presence(Sentry),
+                       offeredSide :Nat,
+                       neededSide :Nat) -> Invite(OfferSeat);
 
     /**
      * Given a list of OfferIds, return a corresponding list of
@@ -173,20 +177,20 @@ interface Scooter {
 
     /**
      * Given a list of OfferIds, return a corresponding list of
-     * OfferStatuses. Error if any offer is not in the pool. This is
-     * an atomic snapshot.
+     * OfferStatuses as an atomic snapshot. Error if any offer is not
+     * in the pool.
      */
     getOfferStatuses(offerIds :List(OfferId)) -> (List(OfferStatus));
 
     /**
      * First, validate that offerUpdates is a valid update to the
      * offer statuses. If so, then atomically update these
-     * statuses. For each status updated with isInPool: false, pay its
-     * updated final balance as its exit payments and then remove it
-     * from the pool.
+     * statuses. For each status updated with {isInPool: false}, pay
+     * its updated final balance as its exit payments and then eject
+     * it from the pool.
      *
-     * Returns the remaining live OfferIds, i.e., omitting those who
-     * exited.
+     * As a convenience, updateOffers returns the remaining live
+     * OfferIds, i.e., omitting those who exited.
      */
     updateOffers(offerIds :List(OfferId),
                  offerUpdates :List(OfferStatus)) -> (List(OfferId));
@@ -195,26 +199,39 @@ interface Scooter {
 /**
  * Sentry
  *
- * The callback interface provided by the governing contract, to
- * notify it of new entrants and requests to exit.
+ * The callback interface provided by the driver, for scooter to
+ * notify of a newly placed offer and of a request to exit.
  */
 interface Sentry {
 
     /**
+     * This is how the driver is notified that an offer has been
+     * placed in the pool. The offerId uniquely names this
+     * offer. Without it, scooter is insensitive to the presence of
+     * this offer.
      */
-    noticeOfferEntered(offerId :OfferId) -> (oneway);
+    noticeOfferEntered(offerId :OfferId,
+                       offerDescription :OfferDescription,
+                       initialStatus :OfferStatus) -> (oneway);
 
     /**
+     * This method's behavior expresses the cancellation policy for
+     * exiting the pool. An exit-at-will policy would update the
+     * driver's bookkeeping and ask scooter to eject the offer. A no
+     * exit before deadline policy would reject these offers before
+     * the deadline and then honor them after the deadline.
      */
     noticeOfferExitRequested(offerId :OfferId) -> (String);
 }
 
 /**
  * ScooterTerms
+ *
+ * The `issuers` is a list of at least two Issuers, for bringing about
+ * trades of the erights issued by these issuers.
  */
 struct ScooterTerms {
-    issuers :List(Eventual(Issuer));
-    sentry :Eventual(Sentry);
+    issuers :List(Presence(Issuer));
 }
 
 /**
@@ -223,7 +240,7 @@ struct ScooterTerms {
 interface ScooterContract extends (Contract) {
 
     /**
+     * 
      */
-    start(terms :ScooterTerms,
-          inviteMaker :InviteMaker) -> (Promise(Invite(Scooter)));
+    start(terms :ScooterTerms, inviteMaker :InviteMaker) -> (Promise(Scooter));
 }

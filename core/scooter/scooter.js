@@ -14,26 +14,11 @@ const scooterContract = harden({
   start: (terms, inviteMaker) => {
     const {
       issuers: [...issuerPs],
-      sentry: sentryP,
     } = terms;
 
-    insist(issuerPs.length === 2)`\
-Must be exactly two issuers: ${terms.issuers}`;
-    const indexes = Object.keys(issuerPs);
-
-    function otherSide(side) {
-      insist(side === 0 || side === 1)`\
-side must be 0 or 1: ${side}`;
-      return 1 - side;
-    }
-
-    // Compare amounts this way, rather than sameStructure, since
-    // amounts are not necessarily in a canonical representation.
-    function sameAmount(assay, amount1, amount2) {
-      return (
-        assay.includes(amount1, amount2) && assay.includes(amount2, amount1)
-      );
-    }
+    insist(issuerPs.length >= 2)`\
+Must be at least two issuers: ${terms.issuers}`;
+    const sides = Object.keys(issuerPs);
 
     // Currently, we omit the optional args to makePeg, so currently
     // scooter is only compatible with simple default Nat
@@ -46,18 +31,18 @@ side must be 0 or 1: ${side}`;
 
       // Validate that each slice adds up to the same total erights.
       function validateConserved(statuses, statusUpdates) {
-        for (const i of indexes) {
-          const localAssay = localAssays[i];
+        for (const side of sides) {
+          const localAssay = localAssays[side];
           function totalAmount(offerStatuses) {
             function reduceAmount(amountSoFar, offerStatus) {
-              return localAssay.with(amountSoFar, offerStatus.balances[i]);
+              return localAssay.with(amountSoFar, offerStatus.balances[side]);
             }
             return offerStatuses.reduce(reduceAmount, localAssay.empty());
           }
-          const oldTotal = totalAmount(i, statuses);
-          const newTotal = totalAmount(i, statusUpdates);
-          insist(sameAmount(localAssay, oldTotal, newTotal))`\
-Total amount[${i}] not conserved:, ${oldTotal} vs ${newTotal}`;
+          const oldTotal = totalAmount(side, statuses);
+          const newTotal = totalAmount(side, statusUpdates);
+          insist(localAssay.equals(oldTotal, newTotal))`\
+Total amount[${side}] not conserved:, ${oldTotal} vs ${newTotal}`;
         }
       }
 
@@ -76,20 +61,20 @@ Total amount[${i}] not conserved:, ${oldTotal} vs ${newTotal}`;
       // ****** End of the mutable state of a scooter instance ********
 
       function validatePotEmpty() {
-        for (const i of indexes) {
-          insist(localAssays[i].isEmpty(potOfPurses[i]))`\
-Internal: pot of purses not fully drained: ${i}`;
+        for (const side of sides) {
+          insist(localAssays[side].isEmpty(potOfPurses[side]))`\
+Internal: pot of purses not fully drained: ${side}`;
         }
       }
 
       const scooter = harden({
-        inviteToPlaceOffer(offeredSide) {
-          const neededSide = otherSide(offeredSide);
-
+        // Create an invite for obtaining an offer seat for placing an
+        // offer.
+        inviteToPlaceOffer(sentryP, offeredSide, neededSide) {
           const offerId = harden({});
-          let offerPlacerEnabled = true;
+          let offerSeatEnabled = true;
 
-          const offerPlacer = harden({
+          const offerSeat = harden({
             getOfferedSide() {
               return offeredSide;
             },
@@ -99,9 +84,9 @@ Internal: pot of purses not fully drained: ${i}`;
             },
 
             placeOneOffer(offeredPaymentP, neededAmount) {
-              insist(offerPlacerEnabled)`\
-This offer placer is used up`;
-              offerPlacerEnabled = false;
+              insist(offerSeatEnabled)`\
+This offer seat is used up`;
+              offerSeatEnabled = false;
 
               const escrowedPaymentP = pegs[offeredSide].retainAll(
                 offeredPaymentP,
@@ -122,7 +107,7 @@ This offer placer is used up`;
 
                 // ******* End of the mutable state of a placed offer *********
 
-                const offeredAmount = localPurses[offeredSide].depositAllNow(
+                const offeredAmount = localPurses[offeredSide].depositAll(
                   escrowedPayment,
                 );
 
@@ -154,8 +139,8 @@ Internal: There should not be exit balances until exiting`;
                 }
 
                 // These InternalOffers must remain fully encapsulated
-                // within scooter. The must not be exposed to either the
-                // governing contract nor the players.
+                // within scooter. The must not be exposed to either
+                // the driver nor the players.
                 const internalOffer = harden({
                   describe,
                   getCurrentStatus,
@@ -178,26 +163,26 @@ Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
                   },
 
                   drainERights() {
-                    for (const i of indexes) {
-                      const payment = localPurses[i].withdrawAll();
-                      potOfPurses[i].depositAll(payment);
+                    for (const side of sides) {
+                      const payment = localPurses[side].withdrawAll();
+                      potOfPurses[side].depositAll(payment);
                     }
                   },
 
                   // Return whether this one remains
                   updateStatus(statusUpdate) {
-                    for (const i of indexes) {
-                      const amount = statusUpdate.balances[i];
-                      const payment = potOfPurses[i].withdraw(amount);
-                      potOfPurses[i].depositAll(payment);
+                    for (const side of sides) {
+                      const amount = statusUpdate.balances[side];
+                      const payment = potOfPurses[side].withdraw(amount);
+                      localPurses[side].depositAll(payment);
                     }
                     offerState = statusUpdate.offerState;
 
                     if (statusUpdate.isInPool) {
                       return true;
                     }
-                    const exitPaymentPs = indexes.map(i =>
-                      pegs[i].redeemAll(localPurses[i].withdrawAll()),
+                    const exitPaymentPs = sides.map(side =>
+                      pegs[side].redeemAll(localPurses[side].withdrawAll()),
                     );
                     exitPaymentsPR.res(exitPaymentPs);
                     offerPool.delete(offerId);
@@ -206,9 +191,8 @@ Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
                   },
                 });
 
-                // This is returned to the player. The player should
-                // talk to the governing contract about this offer
-                // using only offerHandle.getStatus().offerId
+                // This is returned to the player, for operating the
+                // offer.
                 const offerHandle = harden({
                   describe,
                   getCurrentStatus,
@@ -223,22 +207,22 @@ Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
                 });
 
                 offerPool.set(offerId, internalOffer);
-                E(sentryP).noticeOfferEntered(offerId);
+                E(sentryP).noticeOfferEntered(
+                  offerId,
+                  offerDescription,
+                  getCurrentStatus(),
+                );
                 return offerHandle;
               });
             },
           });
 
           // By wrapping it in an invite, the player knows that, if
-          // redeemed, no one else has access to this offerPlacer
-          // other than the player and scooter itself. Thus, it can
-          // transfer rights using the offerPlacer without giving the
-          // governining contract access to those rights, relying only
-          // on scooter to enforce offer safety.
-          return [
-            inviteMaker.make(['offer sealer', offeredSide], offerPlacer),
-            offerId,
-          ];
+          // redeemed, no one else has access to this offerSeat Thus,
+          // it can trade erights using the offerSeat without giving
+          // the driver access to those erights, relying only on
+          // scooter to enforce offer safety.
+          return inviteMaker.make(['offer seat', offeredSide], offerSeat);
         },
 
         // ************ other scooter methods *********
@@ -264,8 +248,8 @@ Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
 
           // phase 2 validate each update individually
           //    * the update must satisfy offer safety
-          for (const k of Object.keys(offerIds)) {
-            offerPool.get(offerIds[k]).validateUpdate(statusUpdates[k]);
+          for (const [k, id] of Object.entries(offerIds)) {
+            offerPool.get(id).validateUpdate(statusUpdates[k]);
           }
 
           // phase 3 drain all erights into a common pot
@@ -278,8 +262,7 @@ Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
           //    * set the state
           //    * if exiting, process removal
           //    * remember who remains
-          for (const k of Object.keys(offerIds)) {
-            const id = offerIds[k];
+          for (const [k, id] of Object.entries(offerIds)) {
             if (offerPool.get(id).updateStatus(statusUpdates[k])) {
               remainingIds.push(id);
             }
@@ -288,7 +271,7 @@ Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
           // phase 5 validate the common pot is empty again
           validatePotEmpty();
 
-          // phase 6 governing contract should also remember who remains
+          // phase 6 the driver should also remember who remains
           return harden(remainingIds);
         },
       });
