@@ -16,6 +16,14 @@ import { makeUniAssayMaker } from './assays';
 import { makeMint, makePeg } from './issuers';
 import { makeBasicMintController } from './mintController';
 import makePromise from '../util/makePromise';
+// The scooterUtils are a worse special case than most. Really must
+// integrate modules into contractHost.
+import {
+  isOfferSafe,
+  areOffersSafe,
+  offerTotals,
+  areAmountsConserved,
+} from './scooter/scooterUtils';
 
 /** Make a reusable host that can reliably install and execute contracts. */
 function makeContractHost(E, evaluate) {
@@ -63,11 +71,16 @@ No invites left`;
       E,
       makePromise,
       // TODO: Figure out a more general approach to providing useful
-      // helpers.
+      // helpers. We need to integrate module linkage support into
+      // contractHost.
       mustBeComparable,
       sameStructure,
       mustBeSameStructure,
       makePeg,
+      isOfferSafe,
+      areOffersSafe,
+      offerTotals,
+      areAmountsConserved,
     });
     insist(typeof fn === 'function')`\n
 "${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;

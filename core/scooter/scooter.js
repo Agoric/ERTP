@@ -9,6 +9,7 @@ import { insist } from '../../util/insist';
 import makePromise from '../../util/makePromise';
 import { makePeg } from '../issuers';
 import { mustBeComparable } from '../../util/sameStructure';
+import { isOfferSafe, areAmountsConserved } from './scooterUtils';
 
 const scooterContract = harden({
   start: (terms, inviteMaker) => {
@@ -31,19 +32,8 @@ Must be at least two issuers: ${terms.issuers}`;
 
       // Validate that each slice adds up to the same total erights.
       function validateConserved(statuses, statusUpdates) {
-        for (const side of sides) {
-          const localAssay = localAssays[side];
-          function totalAmount(offerStatuses) {
-            function reduceAmount(amountSoFar, offerStatus) {
-              return localAssay.with(amountSoFar, offerStatus.balances[side]);
-            }
-            return offerStatuses.reduce(reduceAmount, localAssay.empty());
-          }
-          const oldTotal = totalAmount(side, statuses);
-          const newTotal = totalAmount(side, statusUpdates);
-          insist(localAssay.equals(oldTotal, newTotal))`\
-Total amount[${side}] not conserved:, ${oldTotal} vs ${newTotal}`;
-        }
+        insist(areAmountsConserved(localAssays, statuses, statusUpdates))`\
+Proposed rearrangement would not conserve erights: ${statusUpdates}`;
       }
 
       // ********** The mutable state of a scooter instance ************
@@ -146,19 +136,9 @@ Internal: There should not be exit balances until exiting`;
                   getCurrentStatus,
 
                   validateUpdate(statusUpdate) {
-                    const offeredAssay = localAssays[offeredSide];
-                    const offeredBalance = statusUpdate.balances[offeredSide];
-                    const refundOk = offeredAssay.includes(
-                      offeredBalance,
-                      offeredAmount,
-                    );
-                    const neededAssay = localAssays[neededSide];
-                    const neededBalance = statusUpdate.balances[neededSide];
-                    const winningsOk = neededAssay.includes(
-                      neededBalance,
-                      neededAmount,
-                    );
-                    insist(refundOk || winningsOk)`\
+                    insist(
+                      isOfferSafe(localAssays, offerDescription, statusUpdate),
+                    )`\
 Offer safety would be violated: ${offerDescription} vs ${statusUpdate}`;
                   },
 
