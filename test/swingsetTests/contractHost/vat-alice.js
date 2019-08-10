@@ -49,7 +49,7 @@ function makeAliceMaker(E, host, log) {
                 return E(escrowExchangeInstallationP)
                   .checkAmount(allegedInviteAmount, { left, right }, 'left')
                   .then(() => {
-                    return E(inviteIssuerP).claim(
+                    return E(inviteIssuerP).claimExactly(
                       allegedInviteAmount,
                       allegedInvitePaymentP,
                       'verified invite',
@@ -97,7 +97,7 @@ function makeAliceMaker(E, host, log) {
                 return E(coveredCallInstallationP)
                   .checkAmount(allegedInviteAmount, terms)
                   .then(_ => {
-                    return E(inviteIssuerP).claim(
+                    return E(inviteIssuerP).claimExactly(
                       allegedInviteAmount,
                       allegedInvitePaymentP,
                       'verified invite',
