@@ -69,6 +69,11 @@ Must be exactly two issuers: ${terms.issuers}`;
             if (isShutdown) {
               shutdown('already shut down');
             } else if (offerIds.length === 2) {
+              // TODO Only the body of this else-if condition is
+              // really specific to the concept of escrow
+              // exchange. Can we factor the rest out, perhaps into
+              // scooterUtils, into something more easily reusable?
+
               const newStatuses = [
                 { ...statuses[0], balances: statuses[1].balances },
                 { ...statuses[1], balances: statuses[0].balances },
