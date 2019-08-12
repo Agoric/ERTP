@@ -120,9 +120,12 @@ Description must be truthy: ${description}`;
   // additional methods
   const issuer = makeCustomIssuer(coreIssuer);
 
-  const label = harden({ issuer, description });
-
+  // This module only suggests a label to makeAssay. But the actual
+  // label is what makeAssay says it is.
+  let label = harden({ issuer, description });
   const assay = makeAssay(label);
+  label = assay.getLabel();
+  
   const mintKeeper = makeMintKeeper(assay);
   const { purseKeeper, paymentKeeper } = mintKeeper;
 
