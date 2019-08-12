@@ -34,7 +34,7 @@ Must be exactly two issuers: ${terms.issuers}`;
 
       // TODO The scooter API pushes us into this columnar
       // representation. Should we instead have a row-oriented
-      // representation? Should the scotter API be more row oriented?
+      // representation? Should the scooter API be more row oriented?
       let offerIds = harden([]);
       let descriptions = harden([]);
       let statuses = harden([]);
