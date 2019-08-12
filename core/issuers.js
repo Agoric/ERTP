@@ -125,7 +125,7 @@ Description must be truthy: ${description}`;
   let label = harden({ issuer, description });
   const assay = makeAssay(label);
   label = assay.getLabel();
-  
+
   const mintKeeper = makeMintKeeper(assay);
   const { purseKeeper, paymentKeeper } = mintKeeper;
 
