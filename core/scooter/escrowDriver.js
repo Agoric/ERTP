@@ -17,9 +17,7 @@ const escrowExchange = harden({
     } = terms;
 
     const issuerPs = neededAmounts.map(amount => amount.label.issuer);
-    // TODO how do we local assays?
-    const assays = issuerPs.map(issuerP => natAssay);
-    const scooterP = E(scooterInstallationP).spawn({ issuerPs });
+    const scooterP = E(scooterInstallationP).spawn(harden({ issuerPs }));
 
     const offerIds = [];
     const descriptions = [];
