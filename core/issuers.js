@@ -31,24 +31,6 @@ Description must be truthy: ${description}`;
     makeMintKeeper,
     makeAssay,
   } = makeConfig();
-  // The payment object is created in multiple functions (takePayment,
-  // split, combine), so we extract its particulars here and call
-  // this. The payment's amount is recorded in Keeper/keeper, and
-  // not known to the payment.
-  function makePayment(name) {
-    const payment = harden({
-      getIssuer() {
-        return issuer;
-      },
-      getBalance() {
-        return paymentKeeper.getAmount(payment);
-      },
-      getName() {
-        return name;
-      },
-    });
-    return payment;
-  }
 
   // Methods like depositExactly() pass in an amount which is supposed
   // to be equal to the balance of the payment. These methods
@@ -120,7 +102,17 @@ Description must be truthy: ${description}`;
         return assay.with(soFar, paymentKeeper.getAmount(payment));
       }, assay.empty());
 
-      const combinedPayment = makePayment(name);
+      const combinedPayment = harden({
+        getIssuer() {
+          return issuer;
+        },
+        getBalance() {
+          return paymentKeeper.getAmount(combinedPayment);
+        },
+        getName() {
+          return name;
+        },
+      });
 
       // ///////////////// commit point //////////////////
       // All queries above passed with no side effects.
