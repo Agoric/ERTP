@@ -72,7 +72,7 @@ Must be exactly two issuers: ${terms.issuers}`;
               // TODO Only the body of this else-if condition is
               // really specific to the concept of escrow
               // exchange. Can we factor the rest out, perhaps into
-              // scooterUtils, into something more easily reusable?
+              // scooterUtils.js, into something more easily reusable?
 
               const newStatuses = [
                 { ...statuses[0], balances: statuses[1].balances },
@@ -86,10 +86,30 @@ Must be exactly two issuers: ${terms.issuers}`;
               }
             }
           },
+
+          // TODO By this behavior, and the unconditional and finite
+          // behavior of shutdown, this contract allows
+          // exit-at-will. But how do we enable fred to verify this
+          // without reasoning about code? The answer to this may
+          // depend on how we factor common boilerplate out into
+          // scooterUtils.js
           noticeOfferExitRequested(_offerId) {
             shutdown('trade cancelled');
           },
         });
+        // TODO This uses the inviteMaker of scooter, rather than our
+        // own _inviteMaker parameter. This enables fred to easily
+        // verify that offer safety is protected, but not what the
+        // contract driver is. This is obviously inadequate.
+        //
+        // OTOH, if we just used our own _inviteMaker, then fred would
+        // know what the driver is, and see that it has
+        // scooterInstallation in its terms. But how could fred verify
+        // offer safety as well without reasoning about code?
+        //
+        // If we do wrapped invites, fred could reason about both, but
+        // only at the cost of redeeming the outer wrapping
+        // invite. This is bad as well.
         return E(scooterP).inviteToPlaceOffer(sentry, offeredSide, neededSide);
       }
       return harden([makeInvite(0, 1), makeInvite(1, 0)]);
