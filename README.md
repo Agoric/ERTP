@@ -106,10 +106,9 @@ concepts:
   which is really cool!
 
 * __Presences__: Presences are our name for the local object that
-  stands in for the remote object. So when we say `obj!foo()` and
-  intend to send a message to a remote object, `obj`
-  is a presence because it represents a remote object that the message
-  `foo` will be passed to.
+  stands in for the remote object. If `obj` is a presence of a remote
+  object, we can send messages to the remote object by using
+  "!" on `obj`, as in the above example. 
 
 ## More ERTP resources
 
