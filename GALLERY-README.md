@@ -37,7 +37,7 @@ it uses object capabilities to enforce access control. Instead of
 having to prove ownership of a corresponding private key, in the world
 of object capabilities, if your program has a reference to an object,
 it can call methods on that object. If it doesn't have a reference, it
-can't. For more on object capabilities, see here. For more on ERTP,
+can't. For more on object capabilities, see [here](http://habitatchronicles.com/2017/05/what-are-capabilities/). For more on ERTP,
 see a quick tutorial [here](README.md) and the ERTP interface descriptions
 [here](core/issuers.chainmail) and [here](core/assays.chainmail) and [here](core/contractHost.chainmail). 
 
