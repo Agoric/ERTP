@@ -50,9 +50,9 @@ alice.receivePayment(paymentForAlice);
 This may seem strange, but ERTP is built on top of [an
 infrastructure](https://github.com/Agoric/SwingSet) in which
 everything is an object. In this example, we have a reference to the
-object `alice`, and can call her `receivePayment` method to send her a
-payment. Alice's methods are entirely up to her, and are not part of
-ERTP.
+object `alice`, and can call her `receivePayment` to ask her to
+receive this payment. Alice's methods are entirely up to her, and are
+not part of ERTP.
 
 ## Security Properties
 
@@ -96,11 +96,14 @@ concepts:
   infrastructure](https://github.com/Agoric/SwingSet) creates the vats
   and makes communication between vats possible. 
 
-* __E() and infix bang (!)__: With our Swingset infrastructure, we can
+* __E() and infix bang (!)__: Instead of `obj.foo()`, we can write
+  `E(obj).foo()` or the syntactic sugar, `obj!foo()` and get a promise
+  for the result.
+
+With our Swingset infrastructure, we can
   talk to objects in another vat as if they were local, which is
   really cool! In order to do so, we need something more than the
-  "dot" syntax. So instead of `obj.foo()`, we either do `E(obj).foo()` or
-  the syntactic sugar, `obj!foo()`.
+  "dot" syntax. So 
 
 * __Presences__: Presences are our name for the local object that
   stands in for the remote object. So when we say `obj!foo()`, `obj`
