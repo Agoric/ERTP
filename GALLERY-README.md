@@ -62,26 +62,11 @@ might in turn, lease it to a subtenant. Anyone higher in the hierarchy
 can take away access from anyone lower in the hierarchy, and give it
 to someone else. 
 
-## Creating Pixels
+## Using Pixels
 
 ERTP provides a `makeMint` function that takes in a configuration
 function. The pixel demo configuration implements the hierarchical
 rights and allows us to add additional methods to purses and payments.
-
-The configuration function passed to `makeMint` has a slot for an
-assayMaker function. An assay describes how amounts of a particular
-thing are added and subtracted from each other, among other things.
-The assay is used, for example, when payments are deposited in purses,
-and we must calculate what the new balance of the purse is. It should
-be the balance of the payment added to the old balance of the purse,
-but it is often not as simple as literal addition. This addition may
-be literal addition for amounts that are integers (or more
-specifically, positive, natural numbers), but in the pixel demo case,
-the pixel assay uses the combining of arrays containing pixels for
-"addition". For instance, if a payment containing the pixel [{ x: 2,
-y:2 }] is deposited in a purse already containing [{ x: 1, y: 1}] the
-new balance is an array of both: [{ x: 1, y: 1}, { x: 2,
-y:2 }].
 
 To be able to color a pixel, the user must first get a "use object"
 from a purse or payment that contains pixels:
