@@ -99,15 +99,15 @@ concepts:
 
 * __E() and infix bang (!)__: Instead of `obj.foo()`, we can write
   `E(obj).foo()` or the syntactic sugar, `obj!foo()` and get a promise
-  for the result.
-
-With our Swingset infrastructure, we can
-  talk to objects in another vat as if they were local, which is
-  really cool! In order to do so, we need something more than the
-  "dot" syntax. So 
+  for the result. The syntax means "deliver the message foo() to the
+  actual object asynchronously, in its own turn, wherever and whenever
+  it is, even if it is local." Using E or !, you can talk
+  asynchronously to local and remote objects in exactly the same way,
+  which is really cool!
 
 * __Presences__: Presences are our name for the local object that
-  stands in for the remote object. So when we say `obj!foo()`, `obj`
+  stands in for the remote object. So when we say `obj!foo()` and
+  intend to send a message to a remote object, `obj`
   is a presence because it represents a remote object that the message
   `foo` will be passed to.
 
