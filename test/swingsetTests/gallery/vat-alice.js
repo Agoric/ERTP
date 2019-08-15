@@ -370,13 +370,6 @@ function makeAliceMaker(E, log, contractHost) {
         },
         async doGetAllPixels() {
           log('++ alice.doGetAllPixels starting');
-          // No errors with this
-          // const pixels = [];
-          // for (let i = 0; i < 100; i += 1) {
-          //   const pixelPaymentP = E(gallery).tapFaucet();
-          //   pixels.push(pixelPaymentP);
-          //   showPaymentBalance('pixel from faucet', pixelPaymentP);
-          // }
 
           const { pixelIssuer } = await E(gallery).getIssuers();
           const purse = await E(pixelIssuer).makeEmptyPurse();
