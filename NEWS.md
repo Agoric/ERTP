@@ -12,10 +12,10 @@ Core ERTP:
 * Added `equals` as an assay method
 
 Pixel Demo:
-* Created a new kind of rights for the pixel demo, in which rights are
-  hierarchical and can be revoked by anyone higher in the hierarchy.
-  This follows the pattern of owner, tenant, and subtenant
-  relationships in real property. 
+* Created a new representation of hierarchical rights for the pixel
+  demo, which allows holders of higher-level rights to revoke rights
+  held further down. This follows the pattern of owner, tenant, and
+  subtenant relationships in real property. 
 * Made the gallery in the pixel demo use a long-lived contract host
   rather than creating a new contract host for each contract
 
