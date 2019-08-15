@@ -37,7 +37,7 @@ function makePixelConfigMaker(
 
     // Lazily creates the childMint if it doesn't already
     // exist
-    function getOrMakeChildMint(issuer) {
+    function prepareChildMint(issuer) {
       if (childMint === undefined) {
         const makePixelConfigChild = makePixelConfigMaker(
           makeUseObj,
@@ -48,7 +48,6 @@ function makePixelConfigMaker(
         childMint = makeMint(description, makePixelConfigChild);
         childIssuer = childMint.getIssuer();
       }
-      return childMint;
     }
 
     // This method is used in the creation of childPayments and
@@ -75,7 +74,7 @@ function makePixelConfigMaker(
           // payment from the child mint with the same quantity as the
           // original payment
           claimChild() {
-            getOrMakeChildMint(issuer);
+            prepareChildMint(issuer);
             const childAmount = getChildAmount(
               issuer,
               superPayment.getBalance(),
@@ -102,7 +101,7 @@ function makePixelConfigMaker(
           // from the child mint with the same quantity as the
           // original purse
           claimChild() {
-            getOrMakeChildMint(issuer);
+            prepareChildMint(issuer);
             const childAmount = getChildAmount(issuer, superPurse.getBalance());
             // Remove the amount of this payment from the purses and
             // payments of the childMint. Removes recursively down the
@@ -142,7 +141,7 @@ function makePixelConfigMaker(
           },
           // The child issuer is one level down in the chain of issuers.
           getChildIssuer() {
-            getOrMakeChildMint(superIssuer);
+            prepareChildMint(superIssuer);
             return childIssuer;
           },
           // Returns true if the alleged descendant issuer is either a
