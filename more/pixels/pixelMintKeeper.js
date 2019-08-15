@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import { makePrivateName } from '../../util/PrivateName';
-import { insist } from '../../util/insist';
 import { getString } from './types/pixel';
 
 // This custom mintKeeper does the usual recordings of new
@@ -77,36 +76,27 @@ export function makePixelMintKeeper(assay) {
     // that it is currently in. Destroy is outside of an assetKeeper
     // because it could affect purses *or* payments
     destroy(amount) {
-      // amount must only contain a pixelList of length 1 for now
       const pixelList = assay.quantity(amount);
-      insist(
-        pixelList.length === 1,
-      )`amount must contain a pixelList of length 1 for now`;
+      pixelList.forEach(pixel => {
+        const strPixel = getString(pixel);
+        if (pixelToAsset.has(strPixel)) {
+          const asset = pixelToAsset.get(strPixel);
+          amount = assay.coerce(amount);
 
-      const pixel = pixelList[0];
-      const strPixel = getString(pixel);
-      insist(
-        pixelToAsset.has(strPixel),
-      )`pixel ${strPixel} could not be found to be destroyed`;
-      const asset = pixelToAsset.get(strPixel);
-      // amount is guaranteed to be there
-      amount = assay.coerce(amount);
+          const keeper = getKeeper(asset);
+          const originalAmount = keeper.getAmount(asset);
+          const newAmount = assay.without(originalAmount, amount);
 
-      const keeper = getKeeper(asset);
-      const originalAmount = keeper.getAmount(asset);
-      const newAmount = assay.without(originalAmount, amount);
+          // ///////////////// commit point //////////////////
+          // All queries above passed with no side effects.
+          // During side effects below, any early exits should be made into
+          // fatal turn aborts.
+          keeper.updateAmount(asset, newAmount);
 
-      // ///////////////// commit point //////////////////
-      // All queries above passed with no side effects.
-      // During side effects below, any early exits should be made into
-      // fatal turn aborts.
-      keeper.updateAmount(asset, newAmount);
-      // Reset the mappings from everything in the amount to the purse
-      // or payment that holds them.
-      recordPixelsAsAsset(newAmount, asset);
-
-      // delete pixel from pixelToAsset
-      pixelToAsset.delete(pixel);
+          // delete pixel from pixelToAsset
+          pixelToAsset.delete(pixel);
+        }
+      });
     },
     isPurse(asset) {
       return purseKeeper.has(asset);

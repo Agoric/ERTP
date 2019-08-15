@@ -17,7 +17,7 @@ test('tapFaucet', t => {
   t.end();
 });
 
-test.only('get all pixels repeatedly', async t => {
+test('get all pixels repeatedly', async t => {
   const { userFacet: gallery } = makeGallery();
   const { pixelIssuer } = await gallery.getIssuers();
   const pixelAssay = pixelIssuer.getAssay();
@@ -63,6 +63,7 @@ test('get all pixels and use them', async t => {
 
   t.throws(() => bundles[0].changeColorAll('blue'));
   t.doesNotThrow(() => bundles[1].changeColorAll('blue'));
+  t.doesNotThrow(() => bundles[bundles.length - 1].changeColorAll('blue'));
   t.end();
 });
 
