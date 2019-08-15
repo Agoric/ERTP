@@ -381,7 +381,9 @@ function makeAliceMaker(E, log, contractHost) {
           const { pixelIssuer } = await E(gallery).getIssuers();
           const purse = await E(pixelIssuer).makeEmptyPurse();
           for (let i = 0; i < 100; i += 1) {
+            // eslint-disable-next-line no-await-in-loop
             const pixelPayment = await E(gallery).tapFaucet();
+            // eslint-disable-next-line no-await-in-loop
             await E(purse).depositAll(pixelPayment);
           }
           showPaymentBalance('purse', purse);
@@ -391,6 +393,7 @@ function makeAliceMaker(E, log, contractHost) {
           // we have successfully obtained all the pixels from the gallery
 
           for (let i = 0; i < 10; i += 1) {
+            // eslint-disable-next-line no-await-in-loop
             const pixelPayment = await E(gallery).tapFaucet();
             showPaymentBalance('payment', pixelPayment);
           }
