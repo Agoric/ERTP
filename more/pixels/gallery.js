@@ -101,9 +101,11 @@ export function makeGallery(
 
   function makeUseObj(issuer, asset) {
     const useObj = harden({
-      // change the color of the pixels in the amount after checking
+      // change the color of the pixels in optAmount after checking
       // that the asset has the authority to do so.
-      changeColor(amount, newColor) {
+      // if optAmount is falsey, use the entire balance of the asset
+      setColor(newColor, optAmount) {
+        const amount = optAmount || asset.getBalance();
         // TODO: allow empty amounts to be used without throwing
         // an error, but because there is no authority, nothing happens.
         insistNonEmptyAmount(issuer, amount);
@@ -113,10 +115,13 @@ export function makeGallery(
         setPixelListState(pixelList, newColor);
         return amount;
       },
-      // Call changeColor, just with the entire balance of the
-      // underlying asset.
+      // Deprecated wrapper for setColor.
+      changeColor(amount, newColor) {
+        return useObj.setColor(newColor, amount);
+      },
+      // Deprecated wrapper for setColor.
       changeColorAll(newColor) {
-        return useObj.changeColor(asset.getBalance(), newColor);
+        return useObj.setColor(newColor);
       },
       // A helper function for getting a literal list of pixels from
       // the asset. For example, [ { x:0, y:0 } ]

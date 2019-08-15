@@ -41,7 +41,7 @@ const expectedAliceChangesColorLog = [
   'starting aliceChangesColor',
   'alice is made',
   'starting testAliceChangesColor',
-  '++ alice.doChangeColor starting',
+  '++ alice.doSetColor starting',
   'tapped Faucet',
   'current color #000000',
   'pixel index is 100 of 100',

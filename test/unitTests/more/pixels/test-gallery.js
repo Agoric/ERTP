@@ -39,7 +39,7 @@ test('the user changes the color of a pixel', async t => {
   const pixels = payment.getUse();
   const rawPixels = pixels.getRawPixels();
   const rawPixel = rawPixels[0];
-  pixels.changeColorAll('#000000');
+  pixels.setColor('#000000');
   t.equal(userFacet.getPixelColor(rawPixel.x, rawPixel.y), '#000000');
   t.end();
 });

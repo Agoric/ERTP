@@ -83,7 +83,7 @@ with coloring the pixels in the underlying purse or payment) that can
 be called. To color, the user does:
 
 ```js
-E(useObj).changeColorAll('#000000');
+E(useObj).setColor('#000000');
 ```
 
 with the hex color of their choice. 

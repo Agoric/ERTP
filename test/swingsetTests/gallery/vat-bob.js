@@ -29,7 +29,7 @@ function makeBobMaker(E, log) {
           const useObj = await E(newPayment).getUse();
 
           // bob actually changes the color to light purple
-          const amountP = await E(useObj).changeColorAll('#B695C0');
+          const amountP = await E(useObj).setColor('#B695C0');
 
           storedERTPAsset = newPayment;
           storedPixels = useObj;
@@ -37,13 +37,13 @@ function makeBobMaker(E, log) {
         },
         async tryToColorPixels() {
           // bob tries to change the color to light purple
-          const amountP = await E(storedPixels).changeColorAll('#B695C0');
+          const amountP = await E(storedPixels).setColor('#B695C0');
           return amountP;
         },
         async tryToColorERTP() {
           // bob tries to change the color to light purple
           const pixels = await E(storedERTPAsset).getUse();
-          const amountP = await E(pixels).changeColorAll('#B695C0');
+          const amountP = await E(pixels).setColor('#B695C0');
           return amountP;
         },
         async buyFromCorkBoard(handoffSvc, dustPurseP) {
@@ -66,7 +66,7 @@ function makeBobMaker(E, log) {
 
           // bob tries to change the color to light purple
           E(useObj)
-            .changeColorAll('#B695C0')
+            .setColor('#B695C0')
             .then(
               amountP => {
                 E(gallery)

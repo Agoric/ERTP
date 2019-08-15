@@ -59,11 +59,11 @@ function makeAliceMaker(E, log, contractHost) {
           const pixelPaymentP = E(gallery).tapFaucet();
           showPaymentBalance('pixel from faucet', pixelPaymentP);
         },
-        async doChangeColor() {
-          log('++ alice.doChangeColor starting');
+        async doSetColor() {
+          log('++ alice.doSetColor starting');
           const pixelPaymentP = E(gallery).tapFaucet();
           const pixels = E(pixelPaymentP).getUse();
-          const changedAmount = await E(pixels).changeColorAll('#000000');
+          const changedAmount = await E(pixels).setColor('#000000');
           log('tapped Faucet');
           return changedAmount;
         },
@@ -108,7 +108,7 @@ function makeAliceMaker(E, log, contractHost) {
 
           // alice takes the right back
           await E(pixelPaymentP).revokeChildren();
-          await E(pixels).changeColorAll(
+          await E(pixels).setColor(
             '#9FBF95', // a light green
           );
 
@@ -156,10 +156,10 @@ function makeAliceMaker(E, log, contractHost) {
         },
         async checkAfterRevoked() {
           log('++ alice.checkAfterRevoked starting');
-          // changeColor throws an Error with an empty payment
+          // setColor throws an Error with an empty payment
           // check transferRight is empty
           E(storedUseObj)
-            .changeColorAll(
+            .setColor(
               '#9FBF95', // a light green
             )
             .then(
@@ -248,11 +248,11 @@ function makeAliceMaker(E, log, contractHost) {
           // create a fake childMint controlled entirely by Alice
           function makeUseObj(issuer, asset) {
             const useObj = harden({
-              changeColor(amount, _newColor) {
+              setColor(_newColor, amount) {
+                if (!amount) {
+                  return asset.getBalance();
+                }
                 return amount;
-              },
-              changeColorAll(newColor) {
-                return useObj.changeColor(asset.getBalance(), newColor);
               },
               getRawPixels() {
                 const assay = issuer.getAssay();
