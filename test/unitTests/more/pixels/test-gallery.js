@@ -40,6 +40,30 @@ test.only('get all pixels repeatedly', async t => {
     const pixelPayment = await gallery.tapFaucet();
     t.notDeepEqual(pixelAssay.quantity(pixelPayment.getBalance()), []);
   }
+  t.end();
+});
+
+test('get all pixels and use them', async t => {
+  const { userFacet: gallery } = makeGallery();
+  const bundles = [];
+  for (let i = 0; i < 100; i += 1) {
+    const pixelPayment = gallery.tapFaucet();
+    const useObj = pixelPayment.getUse();
+    bundles.push(useObj);
+  }
+  bundles.forEach(b => b.changeColorAll('red'));
+
+  t.deepEquals(bundles[0].getRawPixels(), [{ x: 1, y: 4 }]);
+
+  const pixelPayment = gallery.tapFaucet();
+  const useObj = pixelPayment.getUse();
+  bundles.push(useObj);
+
+  t.deepEquals(bundles[0].getRawPixels(), []);
+
+  t.throws(() => bundles[0].changeColorAll('blue'));
+  t.doesNotThrow(() => bundles[1].changeColorAll('blue'));
+  t.end();
 });
 
 test('get exclusive pixel payment from faucet', t => {
