@@ -80,6 +80,8 @@ Description must be truthy: ${description}`;
     return payment;
   }
 
+  // takePaymentAndKill works like takePayment, but it kills the
+  // oldPayment (assetSrc) rather than reducing its balance.
   function takePaymentAndKill(oldPayment, name) {
     name = `${name}`;
     const paymentAmount = paymentKeeper.getAmount(oldPayment);
