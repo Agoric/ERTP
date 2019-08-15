@@ -116,7 +116,24 @@ test('depositExactly goodAmount', async t => {
     const payment = await purse.withdraw(7);
     await targetPurse.depositExactly(7, payment);
     t.deepEqual(targetPurse.getBalance(), issuer.makeAmount(7));
-    t.deepEqual(payment.getBalance(), issuer.makeAmount(0));
+    t.throws(() => payment.getBalance());
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('depositAll goodAmount', async t => {
+  try {
+    const mint = makeMint('fungible');
+    const issuer = mint.getIssuer();
+    const purse = mint.mint(1000);
+    const targetPurse = issuer.makeEmptyPurse();
+    const payment = await purse.withdraw(7);
+    await targetPurse.depositAll(payment);
+    t.deepEqual(targetPurse.getBalance(), issuer.makeAmount(7));
+    t.throws(() => payment.getBalance());
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -153,7 +170,22 @@ test('burnExactly goodAmount', async t => {
     const purse = mint.mint(1000);
     const payment = await purse.withdraw(7);
     await issuer.burnExactly(7, payment);
-    t.deepEqual(payment.getBalance(), issuer.makeAmount(0));
+    t.throws(() => payment.getBalance());
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('burnAll goodAmount', async t => {
+  try {
+    const mint = makeMint('fungible');
+    const issuer = mint.getIssuer();
+    const purse = mint.mint(1000);
+    const payment = await purse.withdraw(7);
+    await issuer.burnAll(payment);
+    t.throws(() => payment.getBalance());
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -190,7 +222,23 @@ test('claimExactly goodAmount', async t => {
     const purse = mint.mint(1000);
     const payment = await purse.withdraw(7);
     const newPayment = await issuer.claimExactly(7, payment);
-    t.deepEqual(payment.getBalance(), issuer.makeAmount(0));
+    t.throws(() => payment.getBalance());
+    t.deepEqual(newPayment.getBalance(), issuer.makeAmount(7));
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('claimAll goodAmount', async t => {
+  try {
+    const mint = makeMint('fungible');
+    const issuer = mint.getIssuer();
+    const purse = mint.mint(1000);
+    const payment = await purse.withdraw(7);
+    const newPayment = await issuer.claimAll(payment);
+    t.throws(() => payment.getBalance());
     t.deepEqual(newPayment.getBalance(), issuer.makeAmount(7));
   } catch (e) {
     t.assert(false, e);

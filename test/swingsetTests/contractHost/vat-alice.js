@@ -14,7 +14,8 @@ function makeAliceMaker(E, host, log) {
   function showPaymentBalance(name, paymentP) {
     return E(paymentP)
       .getBalance()
-      .then(amount => log(name, ' balance ', amount));
+      .then(amount => log(name, ' balance ', amount))
+      .catch(err => console.log(err));
   }
 
   return harden({

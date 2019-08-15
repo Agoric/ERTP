@@ -80,6 +80,36 @@ Description must be truthy: ${description}`;
     return payment;
   }
 
+  function takePaymentAndKill(oldPayment, name) {
+    name = `${name}`;
+    const paymentAmount = paymentKeeper.getAmount(oldPayment);
+
+    const corePayment = harden({
+      getIssuer() {
+        return issuer;
+      },
+      getBalance() {
+        return paymentKeeper.getAmount(payment);
+      },
+      getName() {
+        return name;
+      },
+    });
+
+    // makeCustomPayment is defined in the passed-in configuration and
+    // allows for the customization of the payment, including adding
+    // additional methods
+    const payment = makeCustomPayment(corePayment, issuer);
+
+    // ///////////////// commit point //////////////////
+    // All queries above passed with no side effects.
+    // During side effects below, any early exits should be made into
+    // fatal turn aborts.
+    paymentKeeper.recordNew(payment, paymentAmount);
+    paymentKeeper.remove(oldPayment);
+    return payment;
+  }
+
   const coreIssuer = harden({
     getLabel() {
       return assay.getLabel();
@@ -160,24 +190,16 @@ Description must be truthy: ${description}`;
 
     claimExactly(amount, srcPaymentP, name) {
       return Promise.resolve(srcPaymentP).then(srcPayment => {
-        const paymentAmount = insistAmountEqualsPaymentBalance(
-          amount,
-          srcPayment,
-        );
+        insistAmountEqualsPaymentBalance(amount, srcPayment);
         name = name !== undefined ? name : srcPayment.getName(); // use old name
-        return takePayment(srcPayment, paymentKeeper, paymentAmount, name);
+        return takePaymentAndKill(srcPayment, name);
       });
     },
 
     claimAll(srcPaymentP, name) {
       return Promise.resolve(srcPaymentP).then(srcPayment => {
         name = name !== undefined ? name : srcPayment.getName(); // use old name
-        return takePayment(
-          srcPayment,
-          paymentKeeper,
-          paymentKeeper.getAmount(srcPayment),
-          name,
-        );
+        return takePaymentAndKill(srcPayment, name);
       });
     },
 
@@ -211,13 +233,12 @@ Description must be truthy: ${description}`;
     const paymentAmount = paymentKeeper.getAmount(payment);
     // Also checks that the union is representable
     const newPurseAmount = assay.with(oldPurseAmount, paymentAmount);
-    const newPaymentAmount = assay.empty();
 
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
     // During side effects below, any early exits should be made into
     // fatal turn aborts.
-    paymentKeeper.updateAmount(payment, newPaymentAmount);
+    paymentKeeper.remove(payment);
     purseKeeper.updateAmount(purse, newPurseAmount);
 
     return paymentAmount;
