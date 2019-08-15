@@ -83,23 +83,21 @@ Description must be truthy: ${description}`;
       return mint.mint(assay.empty(), name); // mint and issuer call each other
     },
 
-    claim(amount, srcPaymentP, name) {
-      return Promise.resolve(srcPaymentP).then(srcPayment => {
-        name = name !== undefined ? name : srcPayment.getName(); // use old name
-        return takePayment(srcPayment, paymentKeeper, amount, name);
-      });
+    claim(amount, srcPaymentR, name) {
+      const srcPayment = Promise.antiResolve(srcPaymentR);
+      name = name !== undefined ? name : srcPayment.getName(); // use old name
+      return takePayment(srcPayment, paymentKeeper, amount, name);
     },
 
-    claimAll(srcPaymentP, name) {
-      return Promise.resolve(srcPaymentP).then(srcPayment => {
-        name = name !== undefined ? name : srcPayment.getName(); // use old name
-        return takePayment(
-          srcPayment,
-          paymentKeeper,
-          paymentKeeper.getAmount(srcPayment),
-          name,
-        );
-      });
+    claimAll(srcPaymentR, name) {
+      const srcPayment = Promise.antiResolve(srcPaymentR);
+      name = name !== undefined ? name : srcPayment.getName(); // use old name
+      return takePayment(
+        srcPayment,
+        paymentKeeper,
+        paymentKeeper.getAmount(srcPayment),
+        name,
+      );
     },
 
     burn(amount, srcPaymentP) {
@@ -162,19 +160,17 @@ Description must be truthy: ${description}`;
         getBalance() {
           return purseKeeper.getAmount(purse);
         },
-        deposit(amount, srcPaymentP) {
-          return Promise.resolve(srcPaymentP).then(srcPayment => {
-            return depositInto(purse, amount, srcPayment);
-          });
+        deposit(amount, srcPaymentR) {
+          const srcPayment = Promise.antiResolve(srcPaymentR);
+          return depositInto(purse, amount, srcPayment);
         },
-        depositAll(srcPaymentP) {
-          return Promise.resolve(srcPaymentP).then(srcPayment => {
-            return depositInto(
-              purse,
-              paymentKeeper.getAmount(srcPayment),
-              srcPayment,
-            );
-          });
+        depositAll(srcPaymentR) {
+          const srcPayment = Promise.antiResolve(srcPaymentR);
+          return depositInto(
+            purse,
+            paymentKeeper.getAmount(srcPayment),
+            srcPayment,
+          );
         },
         withdraw(amount, paymentName = 'a withdrawal payment') {
           return takePayment(purse, purseKeeper, amount, paymentName);
