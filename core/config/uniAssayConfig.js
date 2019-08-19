@@ -2,7 +2,7 @@ import harden from '@agoric/harden';
 
 import { noCustomization } from './noCustomization';
 import { makeCoreMintKeeper } from './coreMintKeeper';
-import { makeUniAssayMaker } from './assays';
+import { makeUniAssayMaker } from './uniAssay';
 
 // This UniAssay config is used to create invites and similar assets.
 // It does not customize the purses, payments, mints, or issuers, and
