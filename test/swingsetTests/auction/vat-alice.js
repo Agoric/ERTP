@@ -42,10 +42,8 @@ function makeAliceMaker(E, host, log) {
             'auction earnings',
           );
           E.resolve(doneP).then(
-            ([wins, refunds]) =>
-              log(
-                `*** Alice sold her painting. ** ${wins.getBalance()}, ${refunds.getBalance()}`,
-              ),
+            ([wins, _refunds]) =>
+              log(`*** Alice sold her painting for ${wins.quantity}. **`),
             rej => log(`**** Alice's painting didn't sell. ** ${rej}`),
           );
 

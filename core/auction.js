@@ -38,13 +38,10 @@ const auction = {
 
     // If bidder is undefined, cancel all Bids, otherwise cancel all but bidder.
     function cancelExcept(bidder) {
-      E(timerP).tick(`cancelLosers  ${agencySeatsP.size}`);
       for (const [key] of agencySeatsP) {
         if (bidder === undefined || key !== bidder) {
           E(timerP).tick(`Loser: ${key}`);
           E(agencySeatsP.get(key)).cancel('not a winner');
-        } else {
-          E(timerP).tick(`not cancelling winner: ${key}`);
         }
       }
     }
@@ -72,13 +69,11 @@ const auction = {
           timerP,
         );
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
-        // sellerRefund.res(E(bestBidder).getRefund());
         sellerRefund.res(null);
-        E.resolve(paidAmountP).then(paidAmount =>
-          E(timerP).tick(`closed Auction at ${paidAmount.quantity}`),
-        );
-
-        auctionComplete.res(secondPrice);
+        E.resolve(paidAmountP).then(paidAmount => {
+          auctionComplete.res(paidAmount.quantity);
+          return E(timerP).tick(`closed Auction at ${paidAmount.quantity}`);
+        });
       });
 
     function addNewBid(paymentP, buyerSeatP, agencySeatP) {

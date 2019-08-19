@@ -29,13 +29,12 @@ const agencyEscrow = {
     // Deposit contains buyer's payment, which goes to seller or is returned.
     const deposit = makePromise();
 
-    // Seats
-
     // This promise will hold the seller's proceeds. It is ignored when this is
-    // not the winner's agency. When it is for the winner, the promise is
-    // resolved for the seller.
+    // not the winner's agency. When this seat corresponds to the auction's
+    // winner the seller receives funds here.
     const earnings = makePromise();
-    const sellerRefund = makePromise();
+
+    // Seats
 
     const agencySeat = harden({
       // The agency cancels losing offers to return the funds
@@ -82,9 +81,6 @@ const agencyEscrow = {
             earnings.res(proceedsPaymentP);
             winnings.res(wonGoodsPaymentP);
             buyerRefund.res(overbidPaymentP);
-            E(timerP).tick(
-              `goods: ${wonGoodsPaymentP.getBalance()}, proceeds: ${proceedsPaymentP.getBalance()}, overbid: ${overbidPaymentP.getBalance()}`,
-            );
             return E(earnings.p).getBalance();
           },
           rej => {
@@ -95,9 +91,6 @@ const agencyEscrow = {
       },
       getWinnings() {
         return earnings.p;
-      },
-      getRefund() {
-        return sellerRefund.p;
       },
     });
 

@@ -44,14 +44,6 @@ function build(E, log) {
     });
   }
 
-  function showPurseBalances(name, purseP) {
-    return Promise.all([
-      E(purseP)
-        .getBalance()
-        .then(amount => log(name, ' balance ', amount)),
-    ]);
-  }
-
   // Alice will offer something and two bidders will compete for it.
   function auctionTestTwoBidders(host, aliceMakerP, bidderMakerP) {
     const fakeTimer = buildManualTimer();
@@ -102,16 +94,7 @@ function build(E, log) {
     return Promise.all([aliceP, bobP]).then(_ => {
       const doneP = E(aliceP).createAuctionAndInviteBidders(bobP, barbP);
       E.resolve(doneP).then(
-        price => {
-          log(`++ auctionP done: ${price}`);
-          showPurseBalances('alice $', aliceMoneyPurse);
-          showPurseBalances('alice Art', aliceArtPurse);
-          showPurseBalances('bidder1 Art', bobArtPurse);
-          showPurseBalances('bidder1 $', bobMoneyPurse);
-          showPurseBalances('bidder2 $', barbMoneyPurse);
-          showPurseBalances('bidder2 Art', barbArtPurse);
-          log('++ DONE');
-        },
+        price => log(`++ auction done: ${price}`),
         rej => log('++ auctionP failed', rej),
       );
       return doneP;
