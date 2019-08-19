@@ -23,7 +23,7 @@ function makeAliceMaker(E, host, log) {
             currencyAmount: E(myMoneyPurseP).getBalance(),
             productAmount: E(myArtPurseP).getBalance(),
             timerP,
-            deadline: 12,
+            deadline: 22,
           };
           const offerInvitePaymentP = E(auctionInstallationP).spawn(termsP);
           const inviteIssuerP = E(host).getInviteIssuer();
@@ -34,23 +34,26 @@ function makeAliceMaker(E, host, log) {
           const offerSeatP = E(host).redeem(offerSeatPaymentP);
           const artPaymentP = E(myArtPurseP).withdrawAll();
           const bidderMakerP = E(offerSeatP).offer(artPaymentP);
-          E(timerP).tick();
+          E(timerP).tick('art deposit');
           const doneP = collect(
             offerSeatP,
             myMoneyPurseP,
             myArtPurseP,
             'auction earnings',
           );
-          E(doneP).then(
-            () => log('*** Alice sold her painting. **'),
-            () => log("**** Alice's painting didn't sell. **"),
+          E.resolve(doneP).then(
+            ([wins, refunds]) =>
+              log(
+                `*** Alice sold her painting. ** ${wins.getBalance()}, ${refunds.getBalance()}`,
+              ),
+            rej => log(`**** Alice's painting didn't sell. ** ${rej}`),
           );
-          E(timerP).tick();
 
-          biddersP.forEach(bidder => {
-            E(timerP).tick();
+          biddersP.map(bidder => {
+            E(timerP).tick('bidder offer');
             return E(bidder).offerSeat(E(bidderMakerP).newBidderSeat(), termsP);
           });
+          return E(offerSeatP).getCompletion();
         },
       });
       return alice;

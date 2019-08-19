@@ -20,55 +20,84 @@ const agencyEscrow = {
     // seat that can ask the amount deposited, and then either cancel or provide
     // an escrow seat with a specific price up to the amount.
 
-    // Winnings and refund will be resolved if the offer is consummated. If it's
-    // cancelled, only refund will be resolved. Winnings will contain the item
-    // or nothing. Refund contains currency or nothing.
+    // Buyer's winnings and refund will be resolved if the offer is consummated.
+    // If it's cancelled, only refund will be resolved. Winnings will contain
+    // the item or nothing. Refund contains currency or nothing.
     const winnings = makePromise();
-    const refund = makePromise();
-    // Deposit contains currency.
+    const buyerRefund = makePromise();
+
+    // Deposit contains buyer's payment, which goes to seller or is returned.
     const deposit = makePromise();
 
     // Seats
 
-    // These promises are ignored except when this is the winner's agency
+    // This promise will hold the seller's proceeds. It is ignored when this is
+    // not the winner's agency. When it is for the winner, the promise is
+    // resolved for the seller.
     const earnings = makePromise();
-    const returnedGoods = makePromise();
+    const sellerRefund = makePromise();
+
     const agencySeat = harden({
       // The agency cancels losing offers to return the funds
-      cancel() {
-        winnings.reject('no deal');
-        earnings.reject('no deal');
-        refund.res(deposit.p);
-        returnedGoods.res(deposit);
+      cancel(label = '') {
+        winnings.reject(`no deal W:${label}`);
+        earnings.reject(`no deal E:${label}`);
+        buyerRefund.res(deposit.p);
       },
       // The agency can accept one offer and collect the buyer's price or less.
       // The buyer will receive their winnings through a trusted escrow.
-      consummateDeal(bestPrice, secondPrice, goods) {
-        const { issuer } = goodsAmount.label;
-        E(issuer)
-          .getExclusiveAll(goods, 'winnings')
-          .then(
-            winningsP => {
-              E(deposit.p)
-                .withdraw(bestPrice - secondPrice)
-                .then(
-                  winnerOverbid => {
-                    refund.res(winnerOverbid);
-                    winnings.res(winningsP);
-                  },
-                  () => agencySeat.cancel(),
-                );
-              earnings.res(deposit);
-            },
-            () => agencySeat.cancel(),
+      consummateDeal(bestPrice, secondPrice, goodsPayment, timerP) {
+        const { issuer: goodsIssuer } = goodsAmount.label;
+        E(timerP).tick('consummate');
+
+        const wonGoodsPayment = E(goodsIssuer).getExclusiveAll(
+          goodsPayment,
+          'wins',
+        );
+        const { issuer: currencyIssuer } = currencyAmount.label;
+        const overbidP = E(currencyIssuer)
+          .makeAmount(bestPrice - secondPrice)
+          .then(overbidAmount =>
+            E(currencyIssuer).getExclusive(overbidAmount, deposit.p, 'overbid'),
           );
-        return E(deposit.p).withdraw(secondPrice, 'seller gains');
+        const proceedsP = E(currencyIssuer)
+          .makeAmount(secondPrice)
+          .then(secondPriceAmount =>
+            E(currencyIssuer).getExclusive(
+              secondPriceAmount,
+              deposit.p,
+              'seller gains',
+            ),
+          );
+        return E.resolve(
+          Promise.all([wonGoodsPayment, proceedsP, overbidP]),
+        ).then(
+          outPurses => {
+            const [
+              wonGoodsPaymentP,
+              proceedsPaymentP,
+              overbidPaymentP,
+            ] = outPurses;
+            E(timerP).tick('assigning purses');
+            earnings.res(proceedsPaymentP);
+            winnings.res(wonGoodsPaymentP);
+            buyerRefund.res(overbidPaymentP);
+            E(timerP).tick(
+              `goods: ${wonGoodsPaymentP.getBalance()}, proceeds: ${proceedsPaymentP.getBalance()}, overbid: ${overbidPaymentP.getBalance()}`,
+            );
+            return E(earnings.p).getBalance();
+          },
+          rej => {
+            E(timerP).tick(`cancel agency: unable to get goods: ${rej}`);
+            return agencySeat.cancel("couldn't get goods");
+          },
+        );
       },
       getWinnings() {
         return earnings.p;
       },
       getRefund() {
-        return returnedGoods.p;
+        return sellerRefund.p;
       },
     });
 
@@ -77,7 +106,7 @@ const agencyEscrow = {
       // or traded for the desired goods.
       offer(currencyOffer) {
         const { issuer } = currencyAmount.label;
-        const escrowedBidP = E(issuer).getExclusiveAll(currencyOffer, 'escrow');
+        const escrowedBidP = E(issuer).getExclusiveAll(currencyOffer);
         deposit.res(escrowedBidP);
       },
       // a promise for a purse for the goods.
@@ -86,7 +115,7 @@ const agencyEscrow = {
       },
       // a promise for a purse for any returned funds.
       getRefund() {
-        return refund.p;
+        return buyerRefund.p;
       },
     });
 

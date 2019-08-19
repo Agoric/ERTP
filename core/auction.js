@@ -34,10 +34,17 @@ const auction = {
     let bestBidder;
     const currencyIssuer = currencyAmount.label.issuer;
 
-    function cancelLosers() {
-      for (const bidderSeat of agencySeatsP.keys()) {
-        if (bidderSeat !== bestBidder) {
-          E(agencySeatsP[bidderSeat]).cancel();
+    const auctionComplete = makePromise();
+
+    // If bidder is undefined, cancel all Bids, otherwise cancel all but bidder.
+    function cancelExcept(bidder) {
+      E(timerP).tick(`cancelLosers  ${agencySeatsP.size}`);
+      for (const [key] of agencySeatsP) {
+        if (bidder === undefined || key !== bidder) {
+          E(timerP).tick(`Loser: ${key}`);
+          E(agencySeatsP.get(key)).cancel('not a winner');
+        } else {
+          E(timerP).tick(`not cancelling winner: ${key}`);
         }
       }
     }
@@ -47,45 +54,55 @@ const auction = {
       .then(() => {
         // hold auction:
         if (bidderSeatCount < minBidCount || secondPrice < minPrice) {
-          for (const bidderSeat of agencySeatsP.keys()) {
-            E(agencySeatsP[bidderSeat]).cancel();
-          }
+          E(timerP).tick(`Cancelling: not enough bids`);
+          cancelExcept();
           sellerRefund.res(escrowedGoods.p);
-        } else {
-          cancelLosers();
-          const bestBidAgencySeatP = agencySeatsP.get(bestBidder);
-          E(timerP).tick(
-            `bestBids ${bestPrice}, ${secondPrice}, ${bidderSeatCount}, ${bidsReceived}`,
-          );
-          E(timerP).tick(bestBidAgencySeatP);
-          E(timerP).tick(bestPrice);
-          E(bestBidAgencySeatP).consummateDeal(
-            bestPrice,
-            secondPrice,
-            escrowedGoods.p,
-          );
-          sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
-          sellerRefund.res(E(bestBidAgencySeatP).getRefund());
+          auctionComplete.reject('too few bids');
+          return;
         }
+        cancelExcept(bestBidder);
+        const bestBidAgencySeatP = agencySeatsP.get(bestBidder);
+        E(timerP).tick(
+          `bestBids ${bestPrice}, ${secondPrice}, ${bidderSeatCount}, ${bidsReceived}`,
+        );
+        const paidAmountP = E(bestBidAgencySeatP).consummateDeal(
+          bestPrice,
+          secondPrice,
+          escrowedGoods.p,
+          timerP,
+        );
+        sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
+        // sellerRefund.res(E(bestBidder).getRefund());
+        sellerRefund.res(null);
+        E.resolve(paidAmountP).then(paidAmount =>
+          E(timerP).tick(`closed Auction at ${paidAmount.quantity}`),
+        );
+
+        auctionComplete.res(secondPrice);
       });
 
-    function addNewBid(payment, buyerSeatP, agencySeatP) {
-      E(timerP).tick();
+    function addNewBid(paymentP, buyerSeatP, agencySeatP) {
+      E(timerP).tick('AUCTION: add bid');
       return E(currencyIssuer)
-        .getExclusiveAll(payment, 'bid')
-        .then(currencyPayment => {
-          const amount = currencyPayment.getBalance();
-          // E(buyerSeatP).offer(currencyPayment);
-          bidsReceived += 1;
-          E(timerP).tick(`amount bid ${amount}`);
-          if (amount > bestPrice) {
-            bestBidder = buyerSeatP;
-            [bestPrice, secondPrice] = [amount, bestPrice];
-          } else if (amount > secondPrice) {
-            secondPrice = amount;
-          }
-          agencySeatsP.put(buyerSeatP, agencySeatP);
-          E(timerP).tick();
+        .getExclusiveAll(paymentP)
+        .then(currencyPaymentP => {
+          E(timerP).tick(`AddNewBid`);
+          E(currencyPaymentP)
+            .getBalance()
+            .then(amount => {
+              const { quantity } = amount;
+              E(buyerSeatP).offer(currencyPaymentP);
+              bidsReceived += 1;
+              E(timerP).tick(`amount bid ${quantity}`);
+              if (quantity > bestPrice) {
+                bestBidder = buyerSeatP;
+                [bestPrice, secondPrice] = [quantity, bestPrice];
+              } else if (quantity > secondPrice) {
+                secondPrice = quantity;
+              }
+              agencySeatsP.set(buyerSeatP, agencySeatP);
+              E(timerP).tick('added bidder');
+            });
         });
     }
 
@@ -95,7 +112,7 @@ const auction = {
       // taken unless they get the goods.
       newBidderSeat() {
         const seatsP = E(agencyEscrowInstallationP).spawn(escrowTerms);
-        E(timerP).tick();
+        E(timerP).tick('newBidderSeat');
         const agencySeatP = seatsP.then(pair =>
           inviteMaker.redeem(pair.agency),
         );
@@ -103,8 +120,8 @@ const auction = {
 
         bidderSeatCount += 1;
         const bidderSeat = harden({
-          offer(payment) {
-            return addNewBid(payment, buyerSeatP, agencySeatP);
+          offer(paymentP) {
+            return addNewBid(paymentP, buyerSeatP, agencySeatP);
           },
           getWinnings() {
             return E(buyerSeatP).getWinnings();
@@ -114,6 +131,7 @@ const auction = {
           },
         });
         const bidderId = `bidder${bidderSeatCount}`;
+        E(timerP).tick('returning new Bidder Invite');
         return inviteMaker.make(bidderId, bidderSeat, `invite for ${bidderId}`);
       },
     });
@@ -124,13 +142,13 @@ const auction = {
     // out auction seats in response to the offer().
     const sellerSeat = harden({
       offer(productPayment) {
-        E(timerP).tick();
+        E(timerP).tick('seller`s offer');
         const pIssuer = productAmount.label.issuer;
         return E(pIssuer)
           .getExclusive(productAmount, productPayment, 'consignment')
-          .then(prePayment => {
-            escrowedGoods.res(prePayment);
-            E(timerP).tick();
+          .then(consignment => {
+            escrowedGoods.res(consignment);
+            E(timerP).tick('consignment');
             return bidderMaker;
           });
       },
@@ -139,6 +157,9 @@ const auction = {
       },
       getRefund() {
         return sellerRefund.p;
+      },
+      getCompletion() {
+        return auctionComplete.p;
       },
       // Can the seller cancel? Not currently.
     });

@@ -29,11 +29,11 @@ function makeBidderMaker(E, host, log) {
 
           // TODO: validate terms.
 
-          E(timerP).tick();
+          E(timerP).tick(`BIDDER: seat `);
           return collect(
             bidderSeatP,
-            myMoneyPurseP,
             myArtPurseP,
+            myMoneyPurseP,
             'auction earnings',
           );
         },
