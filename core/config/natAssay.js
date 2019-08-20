@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
 import natLogic from './natLogic';
-import { makeAssay } from './assay';
+import { makeAssayMaker } from './assay';
 
 // This assays.js module treats labels as black boxes. It is not aware
 // of issuers, and so can handle labels whose issuers are merely
@@ -21,9 +21,8 @@ import { makeAssay } from './assay';
 // kind of amount is a labeled natural number describing a quantity of
 // fungible erights. The label describes what kinds of rights these
 // are. This is a form of labeled unit, as in unit typing.
-function makeNatAssay(label) {
-  return makeAssay(label, natLogic);
-}
+const makeNatAssay = makeAssayMaker(natLogic);
+
 harden(makeNatAssay);
 
 export { makeNatAssay };

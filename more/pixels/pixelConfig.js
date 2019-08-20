@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
 import { makePixelMintKeeper } from './pixelMintKeeper';
-import { makePixelListAssayMaker } from './pixelAssays';
+import { makePixelAssayMaker } from './pixelAssay';
 import { makeMint } from '../../core/issuers';
 
 /**
@@ -33,7 +33,7 @@ function makePixelConfigMaker(
     let childIssuer;
     let childMint;
 
-    const makePixelAssay = makePixelListAssayMaker(canvasSize);
+    const makePixelAssay = makePixelAssayMaker(canvasSize);
 
     // Lazily creates the childMint if it doesn't already
     // exist
