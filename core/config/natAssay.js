@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
 import natLogic from './natLogic';
-import { makeAssayMaker } from './assay';
+import { makeAssayMaker } from '../assay';
 
 // This assays.js module treats labels as black boxes. It is not aware
 // of issuers, and so can handle labels whose issuers are merely

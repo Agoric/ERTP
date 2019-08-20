@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
 import { makeUniLogic } from './uniLogic';
-import { makeAssayMaker } from './assay';
+import { makeAssayMaker } from '../assay';
 
 // A uniAssay makes uni amounts, which are either empty or have unique
 // descriptions. The quantity must either be null, in which case it is
