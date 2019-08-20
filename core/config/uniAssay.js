@@ -1,6 +1,6 @@
 import harden from '@agoric/harden';
 
-import { makeUniLogic } from './uniLogic';
+import { makeUniStrategy } from './uniStrategy';
 import { makeAssayMaker } from '../assay';
 
 // A uniAssay makes uni amounts, which are either empty or have unique
@@ -10,8 +10,8 @@ import { makeAssayMaker } from '../assay';
 // quantity. Combining two uni amounts with different truthy
 // quantities fails, as they represent non-combinable rights.
 function makeUniAssayMaker(descriptionCoercer = d => d) {
-  const uniLogic = makeUniLogic(descriptionCoercer);
-  return makeAssayMaker(uniLogic);
+  const uniStrategy = makeUniStrategy(descriptionCoercer);
+  return makeAssayMaker(uniStrategy);
 }
 harden(makeUniAssayMaker);
 

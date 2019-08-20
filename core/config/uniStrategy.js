@@ -7,9 +7,9 @@ import {
   mustBeComparable,
 } from '../../util/sameStructure';
 
-const makeUniLogic = descriptionCoercer => {
-  const uniLogic = harden({
-    insistType: optDescription => {
+const makeUniStrategy = descriptionCoercer => {
+  const uniStrategy = harden({
+    insistKind: optDescription => {
       if (optDescription === null) {
         return null;
       }
@@ -31,7 +31,7 @@ const makeUniLogic = descriptionCoercer => {
       return sameStructure(whole, part);
     },
     equals: (left, right) =>
-      uniLogic.includes(left, right) && uniLogic.includes(right, left),
+      uniStrategy.includes(left, right) && uniStrategy.includes(right, left),
     with: (left, right) => {
       if (left === null) {
         return right;
@@ -64,12 +64,12 @@ const makeUniLogic = descriptionCoercer => {
         part,
         'Cannot subtract different uni descriptions',
       );
-      return uniLogic.empty();
+      return uniStrategy.empty();
     },
   });
-  return uniLogic;
+  return uniStrategy;
 };
 
-harden(makeUniLogic);
+harden(makeUniStrategy);
 
-export { makeUniLogic };
+export { makeUniStrategy };

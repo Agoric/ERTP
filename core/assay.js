@@ -7,7 +7,7 @@ import { mustBeSameStructure, mustBeComparable } from '../util/sameStructure';
 // of issuers, and so can handle labels whose issuers are merely
 // presences of remote issuers.
 
-// `makeAssayMaker` takes in a 'logic' object which defines set
+// `makeAssayMaker` takes in a 'strategy' object which defines set
 // operations for a particular kind of assay. For instance, for the
 // natAssay, these operations are arithmetic.
 
@@ -21,7 +21,7 @@ import { mustBeSameStructure, mustBeComparable } from '../util/sameStructure';
 // passed. Rather, we expect each vat that needs to operate on amounts
 // will have its own local assay to do so.
 
-function makeAssayMaker(logic) {
+function makeAssayMaker(strategy) {
   function makeAssay(label) {
     mustBeComparable(label);
 
@@ -33,12 +33,16 @@ function makeAssayMaker(logic) {
         return label;
       },
 
+      getStrategy() {
+        return strategy;
+      },
+
       // Given the raw quantity that this kind of amount would label, return
       // an amount so labeling that quantity.
       make(allegedQuantity) {
         const amount = harden({
           label,
-          quantity: logic.insistType(allegedQuantity),
+          quantity: strategy.insistKind(allegedQuantity),
         });
         brand.add(amount);
         return amount;
@@ -79,11 +83,11 @@ function makeAssayMaker(logic) {
 
       // Represents the empty set of erights, i.e., no erights
       empty() {
-        return assay.make(logic.empty());
+        return assay.make(strategy.empty());
       },
 
       isEmpty(amount) {
-        return logic.isEmpty(assay.quantity(amount));
+        return strategy.isEmpty(assay.quantity(amount));
       },
 
       // Set inclusion of erights.
@@ -92,13 +96,13 @@ function makeAssayMaker(logic) {
       includes(leftAmount, rightAmount) {
         const leftQuantity = assay.quantity(leftAmount);
         const rightQuantity = assay.quantity(rightAmount);
-        return logic.includes(leftQuantity, rightQuantity);
+        return strategy.includes(leftQuantity, rightQuantity);
       },
 
       equals(leftAmount, rightAmount) {
         const leftQuantity = assay.quantity(leftAmount);
         const rightQuantity = assay.quantity(rightAmount);
-        return logic.equals(leftQuantity, rightQuantity);
+        return strategy.equals(leftQuantity, rightQuantity);
       },
 
       // Set union of erights.
@@ -107,7 +111,7 @@ function makeAssayMaker(logic) {
       with(leftAmount, rightAmount) {
         const leftQuantity = assay.quantity(leftAmount);
         const rightQuantity = assay.quantity(rightAmount);
-        return assay.make(logic.with(leftQuantity, rightQuantity));
+        return assay.make(strategy.with(leftQuantity, rightQuantity));
       },
 
       // Covering set subtraction of erights.
@@ -117,7 +121,7 @@ function makeAssayMaker(logic) {
       without(leftAmount, rightAmount) {
         const leftQuantity = assay.quantity(leftAmount);
         const rightQuantity = assay.quantity(rightAmount);
-        return assay.make(logic.without(leftQuantity, rightQuantity));
+        return assay.make(strategy.without(leftQuantity, rightQuantity));
       },
     });
     return assay;

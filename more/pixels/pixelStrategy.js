@@ -7,9 +7,9 @@ import {
   withoutPixelList,
 } from './types/pixelList';
 
-const makePixelLogic = canvasSize => {
-  const pixelLogic = harden({
-    insistType: pixelList => {
+const makePixelStrategy = canvasSize => {
+  const pixelStrategy = harden({
+    insistKind: pixelList => {
       insistPixelList(pixelList, canvasSize);
       return harden(pixelList);
     },
@@ -17,13 +17,14 @@ const makePixelLogic = canvasSize => {
     isEmpty: pixelList => pixelList.length === 0,
     includes: (whole, part) => includesPixelList(whole, part),
     equals: (left, right) =>
-      pixelLogic.includes(left, right) && pixelLogic.includes(right, left),
+      pixelStrategy.includes(left, right) &&
+      pixelStrategy.includes(right, left),
     with: (left, right) => harden(withPixelList(left, right)),
     without: (whole, part) => harden(withoutPixelList(whole, part)),
   });
-  return pixelLogic;
+  return pixelStrategy;
 };
 
-harden(makePixelLogic);
+harden(makePixelStrategy);
 
-export { makePixelLogic };
+export { makePixelStrategy };

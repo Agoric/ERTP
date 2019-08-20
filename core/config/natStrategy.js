@@ -1,8 +1,8 @@
 import Nat from '@agoric/nat';
 import harden from '@agoric/harden';
 
-const natLogic = harden({
-  insistType: Nat,
+const natStrategy = harden({
+  insistKind: Nat,
   empty: _ => 0,
   isEmpty: nat => nat === 0,
   includes: (whole, part) => whole >= part,
@@ -11,4 +11,4 @@ const natLogic = harden({
   without: (whole, part) => Nat(whole - part),
 });
 
-export default natLogic;
+export default natStrategy;

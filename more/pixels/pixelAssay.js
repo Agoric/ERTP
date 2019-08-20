@@ -1,6 +1,6 @@
 import harden from '@agoric/harden';
 
-import { makePixelLogic } from './pixelLogic';
+import { makePixelStrategy } from './pixelStrategy';
 import { makeAssayMaker } from '../../core/assay';
 
 // A pixelList is a naive collection of pixels in the form:
@@ -9,8 +9,8 @@ import { makeAssayMaker } from '../../core/assay';
 // do for now
 
 function makePixelAssayMaker(canvasSize) {
-  const pixelLogic = makePixelLogic(canvasSize);
-  return makeAssayMaker(pixelLogic);
+  const pixelStrategy = makePixelStrategy(canvasSize);
+  return makeAssayMaker(pixelStrategy);
 }
 harden(makePixelAssayMaker);
 
