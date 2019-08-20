@@ -15,7 +15,7 @@ const makeUniStrategy = descriptionCoercer => {
       }
       insist(
         !!optDescription,
-      )`Uni optDescription must be either null or truthy ${optDescription}`;
+      )`Uni optDescription must be either null or truthy: ${optDescription}`;
       mustBeComparable(optDescription);
       const description = descriptionCoercer(optDescription);
       insist(!!description)`Uni description must be truthy ${description}`;

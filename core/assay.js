@@ -25,7 +25,7 @@ function makeAssayMaker(strategy) {
   function makeAssay(label) {
     mustBeComparable(label);
 
-    // memoize well formedness check of amounts
+    // The brand represents recognition of the amount as authorized.
     const brand = new WeakSet();
 
     const assay = harden({
@@ -66,8 +66,8 @@ function makeAssayMaker(strategy) {
           return allegedAmount;
         }
         if (!Object.prototype.hasOwnProperty.call(allegedAmount, 'quantity')) {
-          // this is not an amount, let's see if it's a quantity
-          // Will throw on inappropriate quantity
+          // This is not an amount. Let's see if it's a quantity. Will
+          // throw on inappropriate quantity.
           return assay.make(allegedAmount);
         }
         const { label: allegedLabel, quantity } = allegedAmount;
@@ -106,8 +106,7 @@ function makeAssayMaker(strategy) {
       },
 
       // Set union of erights.
-      // Describe all the erights described by `leftAmount` and those
-      // described by `rightAmount`.
+      // Combine the amounts described by 'leftAmount' and 'rightAmount'.
       with(leftAmount, rightAmount) {
         const leftQuantity = assay.quantity(leftAmount);
         const rightQuantity = assay.quantity(rightAmount);
@@ -116,8 +115,7 @@ function makeAssayMaker(strategy) {
 
       // Covering set subtraction of erights.
       // If leftAmount does not include rightAmount, error.
-      // Describe the erights described by `leftAmount` and not described
-      // by `rightAmount`.
+      // Return the amount included in 'leftAmount' but not included in 'rightAmount'.
       without(leftAmount, rightAmount) {
         const leftQuantity = assay.quantity(leftAmount);
         const rightQuantity = assay.quantity(rightAmount);
