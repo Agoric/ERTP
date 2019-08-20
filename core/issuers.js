@@ -97,11 +97,12 @@ Description must be truthy: ${description}`;
         return name;
       },
     });
-
-    // makeCustomPayment is defined in the passed-in configuration and
-    // allows for the customization of the payment, including adding
-    // additional methods
-    const payment = makeCustomPayment(corePayment, issuer);
+    // makePaymentTrait is defined in the passed-in configuration and adds
+    // additional methods to corePayment
+    const payment = harden({
+      ...makePaymentTrait(corePayment, issuer),
+      ...corePayment,
+    });
 
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
