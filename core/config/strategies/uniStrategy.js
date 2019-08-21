@@ -1,13 +1,19 @@
 import harden from '@agoric/harden';
 
-import { insist } from '../../util/insist';
+import { insist } from '../../../util/insist';
 import {
   sameStructure,
   mustBeSameStructure,
   mustBeComparable,
-} from '../../util/sameStructure';
+} from '../../../util/sameStructure';
 
-const makeUniStrategy = descriptionCoercer => {
+// A uniAssay makes uni amounts, which are either empty or have unique
+// descriptions. The quantity must either be null, in which case it is
+// empty, or be some truthy comparable value, in which case it
+// represents a single unique unit described by that truthy
+// quantity. Combining two uni amounts with different truthy
+// quantities fails, as they represent non-combinable rights.
+const makeUniStrategy = (descriptionCoercer = d => d) => {
   const uniStrategy = harden({
     insistKind: optDescription => {
       if (optDescription === null) {

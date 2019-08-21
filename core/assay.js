@@ -21,111 +21,108 @@ import { mustBeSameStructure, mustBeComparable } from '../util/sameStructure';
 // passed. Rather, we expect each vat that needs to operate on amounts
 // will have its own local assay to do so.
 
-function makeAssayMaker(strategy) {
-  function makeAssay(label) {
-    mustBeComparable(label);
+function makeAssay(label, strategy) {
+  mustBeComparable(label);
 
-    // The brand represents recognition of the amount as authorized.
-    const brand = new WeakSet();
+  // The brand represents recognition of the amount as authorized.
+  const brand = new WeakSet();
 
-    const assay = harden({
-      getLabel() {
-        return label;
-      },
+  const assay = harden({
+    getLabel() {
+      return label;
+    },
 
-      getStrategy() {
-        return strategy;
-      },
+    getStrategy() {
+      return strategy;
+    },
 
-      // Given the raw quantity that this kind of amount would label, return
-      // an amount so labeling that quantity.
-      make(allegedQuantity) {
-        const amount = harden({
-          label,
-          quantity: strategy.insistKind(allegedQuantity),
-        });
-        brand.add(amount);
-        return amount;
-      },
+    // Given the raw quantity that this kind of amount would label, return
+    // an amount so labeling that quantity.
+    make(allegedQuantity) {
+      const amount = harden({
+        label,
+        quantity: strategy.insistKind(allegedQuantity),
+      });
+      brand.add(amount);
+      return amount;
+    },
 
-      // Is this an amount object made by this assay? If so, return
-      // it. Otherwise error.
-      vouch(amount) {
-        insist(brand.has(amount))`\
+    // Is this an amount object made by this assay? If so, return
+    // it. Otherwise error.
+    vouch(amount) {
+      insist(brand.has(amount))`\
   Unrecognized amount: ${amount}`;
-        return amount;
-      },
+      return amount;
+    },
 
-      // Is this like an amount object made by this assay, such as one
-      // received by pass-by-copy from an otherwise-identical remote
-      // amount? On success, return an amount object made by this
-      // assay. Otherwise error.
-      //
-      coerce(allegedAmount) {
-        if (brand.has(allegedAmount)) {
-          return allegedAmount;
-        }
-        if (!Object.prototype.hasOwnProperty.call(allegedAmount, 'quantity')) {
-          // This is not an amount. Let's see if it's a quantity. Will
-          // throw on inappropriate quantity.
-          return assay.make(allegedAmount);
-        }
-        const { label: allegedLabel, quantity } = allegedAmount;
-        mustBeSameStructure(label, allegedLabel, 'Unrecognized label');
-        // Will throw on inappropriate quantity
-        return assay.make(quantity);
-      },
+    // Is this like an amount object made by this assay, such as one
+    // received by pass-by-copy from an otherwise-identical remote
+    // amount? On success, return an amount object made by this
+    // assay. Otherwise error.
+    //
+    coerce(allegedAmount) {
+      if (brand.has(allegedAmount)) {
+        return allegedAmount;
+      }
+      if (!Object.prototype.hasOwnProperty.call(allegedAmount, 'quantity')) {
+        // This is not an amount. Let's see if it's a quantity. Will
+        // throw on inappropriate quantity.
+        return assay.make(allegedAmount);
+      }
+      const { label: allegedLabel, quantity } = allegedAmount;
+      mustBeSameStructure(label, allegedLabel, 'Unrecognized label');
+      // Will throw on inappropriate quantity
+      return assay.make(quantity);
+    },
 
-      // Return the raw quantity that this amount labels.
-      quantity(amount) {
-        return assay.vouch(amount).quantity;
-      },
+    // Return the raw quantity that this amount labels.
+    quantity(amount) {
+      return assay.vouch(amount).quantity;
+    },
 
-      // Represents the empty set of erights, i.e., no erights
-      empty() {
-        return assay.make(strategy.empty());
-      },
+    // Represents the empty set of erights, i.e., no erights
+    empty() {
+      return assay.make(strategy.empty());
+    },
 
-      isEmpty(amount) {
-        return strategy.isEmpty(assay.quantity(amount));
-      },
+    isEmpty(amount) {
+      return strategy.isEmpty(assay.quantity(amount));
+    },
 
-      // Set inclusion of erights.
-      // Does the set of erights described by `leftAmount` include all
-      // the erights described by `rightAmount`?
-      includes(leftAmount, rightAmount) {
-        const leftQuantity = assay.quantity(leftAmount);
-        const rightQuantity = assay.quantity(rightAmount);
-        return strategy.includes(leftQuantity, rightQuantity);
-      },
+    // Set inclusion of erights.
+    // Does the set of erights described by `leftAmount` include all
+    // the erights described by `rightAmount`?
+    includes(leftAmount, rightAmount) {
+      const leftQuantity = assay.quantity(leftAmount);
+      const rightQuantity = assay.quantity(rightAmount);
+      return strategy.includes(leftQuantity, rightQuantity);
+    },
 
-      equals(leftAmount, rightAmount) {
-        const leftQuantity = assay.quantity(leftAmount);
-        const rightQuantity = assay.quantity(rightAmount);
-        return strategy.equals(leftQuantity, rightQuantity);
-      },
+    equals(leftAmount, rightAmount) {
+      const leftQuantity = assay.quantity(leftAmount);
+      const rightQuantity = assay.quantity(rightAmount);
+      return strategy.equals(leftQuantity, rightQuantity);
+    },
 
-      // Set union of erights.
-      // Combine the amounts described by 'leftAmount' and 'rightAmount'.
-      with(leftAmount, rightAmount) {
-        const leftQuantity = assay.quantity(leftAmount);
-        const rightQuantity = assay.quantity(rightAmount);
-        return assay.make(strategy.with(leftQuantity, rightQuantity));
-      },
+    // Set union of erights.
+    // Combine the amounts described by 'leftAmount' and 'rightAmount'.
+    with(leftAmount, rightAmount) {
+      const leftQuantity = assay.quantity(leftAmount);
+      const rightQuantity = assay.quantity(rightAmount);
+      return assay.make(strategy.with(leftQuantity, rightQuantity));
+    },
 
-      // Covering set subtraction of erights.
-      // If leftAmount does not include rightAmount, error.
-      // Return the amount included in 'leftAmount' but not included in 'rightAmount'.
-      without(leftAmount, rightAmount) {
-        const leftQuantity = assay.quantity(leftAmount);
-        const rightQuantity = assay.quantity(rightAmount);
-        return assay.make(strategy.without(leftQuantity, rightQuantity));
-      },
-    });
-    return assay;
-  }
-  return harden(makeAssay);
+    // Covering set subtraction of erights.
+    // If leftAmount does not include rightAmount, error.
+    // Return the amount included in 'leftAmount' but not included in 'rightAmount'.
+    without(leftAmount, rightAmount) {
+      const leftQuantity = assay.quantity(leftAmount);
+      const rightQuantity = assay.quantity(rightAmount);
+      return assay.make(strategy.without(leftQuantity, rightQuantity));
+    },
+  });
+  return assay;
 }
-harden(makeAssayMaker);
+harden(makeAssay);
 
-export { makeAssayMaker };
+export { makeAssay };

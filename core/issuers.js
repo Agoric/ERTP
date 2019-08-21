@@ -5,6 +5,7 @@ import harden from '@agoric/harden';
 
 import { insist } from '../util/insist';
 import { makeBasicFungibleConfig } from './config/basicFungibleConfig';
+import { makeAssay } from './assay';
 
 /**
  * makeMint takes in a string description as well as a function to
@@ -29,7 +30,7 @@ Description must be truthy: ${description}`;
     makePurseTrait,
     makeMintTrait,
     makeMintKeeper,
-    makeAssay,
+    strategy,
   } = makeConfig();
 
   // Methods like depositExactly() pass in an amount which is supposed
@@ -230,7 +231,7 @@ Description must be truthy: ${description}`;
 
   const label = harden({ issuer, description });
 
-  const assay = makeAssay(label);
+  const assay = makeAssay(label, strategy);
   const mintKeeper = makeMintKeeper(assay);
   const { purseKeeper, paymentKeeper } = mintKeeper;
 
