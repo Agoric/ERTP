@@ -10,13 +10,15 @@ import { mustBeSameStructure } from '../util/sameStructure';
 // refund of the difference between their bid and the second highest. The lower
 // bids will get their money back.
 const auction = {
-  start: (terms, inviteMaker, minBidCount = 0, minPrice = 0) => {
+  start: (terms, inviteMaker) => {
     const {
       agencyEscrowInstallationP,
       currencyAmount,
       productAmount,
       timerP,
       deadline,
+      minBidCount,
+      minPrice,
     } = terms;
 
     E(timerP).tick();
@@ -27,12 +29,13 @@ const auction = {
 
     // map from bidderSeats to corresponding agencySeats we can close with.
     const agencySeatsP = new Map();
+    let bestBidderP;
     let bidderSeatCount = 0;
     let bidsReceived = 0;
-    let secondPrice = 0;
     let bestPrice = 0;
-    let bestBidder;
+    let secondPrice = 0;
     const currencyIssuer = currencyAmount.label.issuer;
+    const productIssuer = productAmount.label.issuer;
 
     const auctionComplete = makePromise();
 
@@ -40,8 +43,7 @@ const auction = {
     function cancelExcept(bidder) {
       for (const [key] of agencySeatsP) {
         if (bidder === undefined || key !== bidder) {
-          E(timerP).tick(`Loser: ${key}`);
-          E(agencySeatsP.get(key)).cancel('not a winner');
+          E(key).cancel();
         }
       }
     }
@@ -57,8 +59,8 @@ const auction = {
           auctionComplete.reject('too few bids');
           return;
         }
-        cancelExcept(bestBidder);
-        const bestBidAgencySeatP = agencySeatsP.get(bestBidder);
+        cancelExcept(bestBidderP);
+        const bestBidAgencySeatP = agencySeatsP.get(bestBidderP);
         E(timerP).tick(
           `bestBids ${bestPrice}, ${secondPrice}, ${bidderSeatCount}, ${bidsReceived}`,
         );
@@ -69,7 +71,9 @@ const auction = {
           timerP,
         );
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
-        sellerRefund.res(null);
+        sellerRefund.res(
+          E(E(productIssuer).makeEmptyPurse()).withdrawAll('empty'),
+        );
         E.resolve(paidAmountP).then(paidAmount => {
           auctionComplete.res(paidAmount.quantity);
           return E(timerP).tick(`closed Auction at ${paidAmount.quantity}`);
@@ -77,20 +81,18 @@ const auction = {
       });
 
     function addNewBid(paymentP, buyerSeatP, agencySeatP) {
-      E(timerP).tick('AUCTION: add bid');
       return E(currencyIssuer)
-        .getExclusiveAll(paymentP)
+        .claimAll(paymentP)
         .then(currencyPaymentP => {
-          E(timerP).tick(`AddNewBid`);
           E(currencyPaymentP)
             .getBalance()
             .then(amount => {
               const { quantity } = amount;
-              E(buyerSeatP).offer(currencyPaymentP);
+              E(buyerSeatP).offer(currencyPaymentP, escrowTerms);
               bidsReceived += 1;
               E(timerP).tick(`amount bid ${quantity}`);
               if (quantity > bestPrice) {
-                bestBidder = buyerSeatP;
+                bestBidderP = buyerSeatP;
                 [bestPrice, secondPrice] = [quantity, bestPrice];
               } else if (quantity > secondPrice) {
                 secondPrice = quantity;
@@ -103,15 +105,13 @@ const auction = {
 
     const bidderMaker = harden({
       // Each call on newBidderSeat() will return a bidderSeat invite, which
-      // allows the holder to make offers and ensures that the money won't be
-      // taken unless they get the goods.
+      // allows the holder to make offers and ensures that the money will be
+      // returned unless they get the goods.
       newBidderSeat() {
-        const seatsP = E(agencyEscrowInstallationP).spawn(escrowTerms);
         E(timerP).tick('newBidderSeat');
-        const agencySeatP = seatsP.then(pair =>
-          inviteMaker.redeem(pair.agency),
-        );
-        const buyerSeatP = seatsP.then(pair => inviteMaker.redeem(pair.buyer));
+        const seats = E(agencyEscrowInstallationP).spawn(escrowTerms);
+        const agencySeatP = seats.then(pair => inviteMaker.redeem(pair.agency));
+        const buyerSeatP = seats.then(pair => inviteMaker.redeem(pair.buyer));
 
         bidderSeatCount += 1;
         const bidderSeat = harden({
@@ -124,9 +124,10 @@ const auction = {
           getRefund() {
             return E(buyerSeatP).getRefund();
           },
+          // Can the bidder cancel? Not currently.
         });
         const bidderId = `bidder${bidderSeatCount}`;
-        E(timerP).tick('returning new Bidder Invite');
+        E(timerP).tick(`returning new Bidder Invite: ${bidderId}`);
         return inviteMaker.make(bidderId, bidderSeat, `invite for ${bidderId}`);
       },
     });
@@ -134,13 +135,12 @@ const auction = {
     // If the second-best price is above the reserve, and the minimum number of
     // bidders was met, then the highest bidder will get the goods, and the
     // seller will be paid the second price. The seller gets the ability to hand
-    // out auction seats in response to the offer().
+    // out auction seats in response to the offer.
     const sellerSeat = harden({
       offer(productPayment) {
         E(timerP).tick('seller`s offer');
-        const pIssuer = productAmount.label.issuer;
-        return E(pIssuer)
-          .getExclusive(productAmount, productPayment, 'consignment')
+        return E(productAmount.label.issuer)
+          .claim(productAmount, productPayment, 'consignment')
           .then(consignment => {
             escrowedGoods.res(consignment);
             E(timerP).tick('consignment');

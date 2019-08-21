@@ -18,16 +18,18 @@ function makeAliceMaker(E, host, log) {
       const alice = harden({
         createAuctionAndInviteBidders(...biddersP) {
           log('++ alice.createAuctionAndInviteBidders starting');
-          const termsP = {
+          const termsP = harden({
             agencyEscrowInstallationP,
             currencyAmount: E(myMoneyPurseP).getBalance(),
             productAmount: E(myArtPurseP).getBalance(),
             timerP,
-            deadline: 22,
-          };
+            deadline: 15,
+            minBidCount: 2,
+            minPrice: 0,
+          });
           const offerInvitePaymentP = E(auctionInstallationP).spawn(termsP);
           const inviteIssuerP = E(host).getInviteIssuer();
-          const offerSeatPaymentP = E(inviteIssuerP).getExclusiveAll(
+          const offerSeatPaymentP = E(inviteIssuerP).claimAll(
             offerInvitePaymentP,
             'offer',
           );

@@ -3,11 +3,10 @@
 import harden from '@agoric/harden';
 
 import { agencyEscrowSrcs } from '../../../core/agencyEscrow';
-import { makeUniAssayMaker } from '../../../core/assays';
 import { auctionSrcs } from '../../../core/auction';
 import { makeMint } from '../../../core/issuers';
-import { makeBasicMintController } from '../../../core/mintController';
 import makePromise from '../../../util/makePromise';
+import { makeUniAssayConfigMaker } from '../../../core/config/uniAssayConfig';
 
 function build(E, log) {
   function buildManualTimer(startValue = 0) {
@@ -27,10 +26,7 @@ function build(E, log) {
         return result.p;
       },
       tick(msg) {
-        log(`@@ tick:${ticks} @@`);
-        if (msg) {
-          log(`TICK: ${msg}`);
-        }
+        log(`@@ tick:${ticks}${msg ? `: ${msg}` : ''} @@`);
         ticks += 1;
         if (schedule.get(ticks)) {
           for (const p of schedule.get(ticks)) {
@@ -56,11 +52,8 @@ function build(E, log) {
     const bobMoneyPurse = moneyMint.mint(1000, 'bob funds');
     const barbMoneyPurse = moneyMint.mint(900, 'barb funds');
 
-    const artMint = makeMint(
-      'Christies Art Auctions',
-      makeBasicMintController,
-      makeUniAssayMaker(),
-    );
+    const makeUniAssayConfig = makeUniAssayConfigMaker();
+    const artMint = makeMint('Christies Art Auctions', makeUniAssayConfig);
     const aliceArtPurse = artMint.mint(
       artMint.getIssuer().makeAmount('Salvator Mundi'),
       'alice portfolio',
@@ -83,6 +76,7 @@ function build(E, log) {
       fakeTimer,
       bobMoneyPurse,
       bobArtPurse,
+      'bidder1',
     );
     const barbP = E(bidderMakerP).makeBidder(
       agencyEscrowInstallationP,
@@ -90,6 +84,7 @@ function build(E, log) {
       fakeTimer,
       barbMoneyPurse,
       barbArtPurse,
+      'bidder2',
     );
     return Promise.all([aliceP, bobP]).then(_ => {
       const doneP = E(aliceP).createAuctionAndInviteBidders(bobP, barbP);
