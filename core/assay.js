@@ -39,9 +39,10 @@ function makeAssay(label, strategy) {
     // Given the raw quantity that this kind of amount would label, return
     // an amount so labeling that quantity.
     make(allegedQuantity) {
+      strategy.insistKind(allegedQuantity);
       const amount = harden({
         label,
-        quantity: strategy.insistKind(allegedQuantity),
+        quantity: allegedQuantity,
       });
       brand.add(amount);
       return amount;
