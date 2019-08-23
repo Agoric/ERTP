@@ -2,7 +2,7 @@ import harden from '@agoric/harden';
 
 import { noCustomization } from './noCustomization';
 import { makeCoreMintKeeper } from './coreMintKeeper';
-import natStrategy from './strategies/natStrategy';
+import { natStrategy } from './strategies/natStrategy';
 
 // Fungible tokens (our default for mints) do not customize
 // payments, purses, etc. They use the "basic" mintKeeper (the place

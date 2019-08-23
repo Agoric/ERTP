@@ -21,4 +21,4 @@ const natStrategy = harden({
   without: (whole, part) => Nat(whole - part),
 });
 
-export default natStrategy;
+export { natStrategy };
