@@ -13,34 +13,26 @@ import harden from '@agoric/harden';
 // would import or define some functions, then call
 //
 //   const mgr = importManager();
-//   mgr.addImport('usefulFn', export1);
-//   mgr.addImport('helpfulFn', export2);
-//   return mgr.lock();
+//   return mgr.addExports(
+//     {
+//        'usefulFn', export1,
+//        'helpfulFn', export2,
+//      });
 //
 // then it could pass strings like 'usefulFn' to clients, who could import the
 // manager above, then call
 //
 // const genericFn = importer.lookupImport(name);
+//
 function importManager() {
-  const entries = new Map();
+  const entries = {};
 
   return harden({
-    addImport(name, referent) {
-      if (entries.has(name)) {
-        throw new Error(`Name "${name}" already has an entry.`);
+    addExports(obj) {
+      for (const name of Object.getOwnPropertyNames(obj)) {
+        entries[name] = obj[name];
       }
-      entries.set(name, referent);
-    },
-
-    lock() {
-      return harden({
-        lookupImport(name) {
-          if (!entries.has(name)) {
-            throw new Error(`There is no entry for "${name}".`);
-          }
-          return entries.get(name);
-        },
-      });
+      return harden(entries);
     },
   });
 }

@@ -2,27 +2,42 @@
 
 import { test } from 'tape-promise/tape';
 import { makeGoodImportManager } from './goodImports';
-import { makeBadImportManager } from './badImports';
 
-test('import integer', t => {
+test('import num is not empty', t => {
   const importer = makeGoodImportManager();
-  t.equals(37, importer.lookupImport('a'));
+  const name = 'numIsEmpty';
+  const emptyFn = importer[name];
+  t.notOk(emptyFn(30));
   t.end();
 });
 
-test('import function', t => {
+test('import num is empty', t => {
   const importer = makeGoodImportManager();
-  t.equals(40, importer.lookupImport('b')(20));
+  const name = 'numIsEmpty';
+  const emptyFn = importer[name];
+  t.assert(emptyFn(0));
+  t.end();
+});
+
+test('import listIsEmpty (false)', t => {
+  const importer = makeGoodImportManager();
+  const op = 'listIsEmpty';
+  t.notok(importer[op]([20]));
+  t.end();
+});
+
+test('import listIsEmpty (true)', t => {
+  const importer = makeGoodImportManager();
+  const op = 'listIsEmpty';
+  t.assert(importer[op]([]));
   t.end();
 });
 
 test('import not found', t => {
   const importer = makeGoodImportManager();
-  t.throws(() => importer.lookupImport('c'), 'There is no entry for "c".');
-  t.end();
-});
-
-test('duplicate import', t => {
-  t.throws(() => makeBadImportManager(), '"a" already has an entry.');
+  t.throws(
+    () => importer.lookupImport('emptyPixel'),
+    'There is no entry for "c".',
+  );
   t.end();
 });
