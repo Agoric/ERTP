@@ -44,9 +44,7 @@ const makePixelStrategy = (canvasSize = 10) => {
       return combinedList;
     },
     without: (whole, part) => {
-      insist(
-        pixelStrategy.includes(whole, part),
-      )`leftPixelList is not in rightPixelList`;
+      insist(pixelStrategy.includes(whole, part))`part is not in whole`;
       const wholeMinusPart = [];
       for (const wholePixel of whole) {
         if (!includesPixel(part, wholePixel)) {
