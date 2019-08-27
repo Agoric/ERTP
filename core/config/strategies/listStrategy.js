@@ -3,25 +3,31 @@ import { passStyleOf } from '@agoric/marshal';
 
 import { insist } from '../../../util/insist';
 
-const makeListStrategy = (insistElementKind, isEqual) => {
+// This list strategy follows the Strategy interface defined in
+// issuers.chainmail.
+const makeListStrategy = (insistElementKind, isElementEqual) => {
   function includesElement(list, element) {
     for (const e of list) {
-      if (isEqual(element, e)) {
+      if (isElementEqual(element, e)) {
         return true;
       }
     }
     return false;
   }
+
   const listStrategy = harden({
     insistKind: list => {
-      insist(passStyleOf(harden(list)) === 'copyArray')`list must be an array`;
+      insist(passStyleOf(list) === 'copyArray')`list must be an array`;
       for (const element of list) {
         insistElementKind(element);
       }
       return harden(list);
     },
     empty: _ => harden([]),
-    isEmpty: list => list.length === 0,
+    isEmpty: list => {
+      insist(passStyleOf(list) === 'copyArray')`list must be an array`;
+      return list.length === 0;
+    },
     includes: (whole, part) => {
       for (const partElement of part) {
         if (!includesElement(whole, partElement)) {
@@ -39,7 +45,7 @@ const makeListStrategy = (insistElementKind, isEqual) => {
           combinedList.push(rightElement);
         }
       }
-      return combinedList;
+      return harden(combinedList);
     },
     without: (whole, part) => {
       insist(listStrategy.includes(whole, part))`part is not in whole`;
@@ -49,7 +55,7 @@ const makeListStrategy = (insistElementKind, isEqual) => {
           wholeMinusPart.push(wholeElement);
         }
       }
-      return wholeMinusPart;
+      return harden(wholeMinusPart);
     },
   });
   return listStrategy;
