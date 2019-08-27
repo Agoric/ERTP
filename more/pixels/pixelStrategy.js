@@ -1,19 +1,9 @@
 import harden from '@agoric/harden';
-
 import { passStyleOf } from '@agoric/marshal';
 
-import { insistPixel, isEqual } from './types/pixel';
+import { insistPixel } from './types/pixel';
+import { includesPixel } from './types/pixelList';
 import { insist } from '../../util/insist';
-
-function includesPixel(pixelList, pixel) {
-  let result = false;
-  for (const p of pixelList) {
-    if (isEqual(pixel, p)) {
-      result = true;
-    }
-  }
-  return result;
-}
 
 // A pixelList is a naive collection of pixels in the form:
 // [ { x: 0, y: 0 }, { x: 1, y: 1} ...]

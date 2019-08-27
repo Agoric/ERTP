@@ -1,3 +1,5 @@
+import { isEqual } from './pixel';
+
 function makeWholePixelList(canvasSize) {
   const pixelList = [];
   for (let x = 0; x < canvasSize; x += 1) {
@@ -11,4 +13,14 @@ function makeWholePixelList(canvasSize) {
   return pixelList;
 }
 
-export { makeWholePixelList };
+function includesPixel(pixelList, pixel) {
+  let result = false;
+  for (const p of pixelList) {
+    if (isEqual(pixel, p)) {
+      result = true;
+    }
+  }
+  return result;
+}
+
+export { makeWholePixelList, includesPixel };
