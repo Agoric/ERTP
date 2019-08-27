@@ -14,13 +14,12 @@ function makeWholePixelList(canvasSize) {
 }
 
 function includesPixel(pixelList, pixel) {
-  let result = false;
   for (const p of pixelList) {
     if (isEqual(pixel, p)) {
-      result = true;
+      return true;
     }
   }
-  return result;
+  return false;
 }
 
 export { makeWholePixelList, includesPixel };

@@ -24,8 +24,7 @@ const makePixelStrategy = (canvasSize = 10) => {
     isEmpty: pixelList => pixelList.length === 0,
     includes: (whole, part) => {
       for (const partPixel of part) {
-        const result = includesPixel(whole, partPixel);
-        if (!result) {
+        if (!includesPixel(whole, partPixel)) {
           return false; // return early if false
         }
       }

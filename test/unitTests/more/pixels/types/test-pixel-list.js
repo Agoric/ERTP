@@ -15,8 +15,11 @@ test('pixelList insistKind', t => {
   const pixelList = harden([startPixel, secondPixel, thirdPixel]);
   const pixelStrategy = makePixelStrategy();
   t.doesNotThrow(() => pixelStrategy.insistKind(pixelList));
-  t.throws(() => pixelStrategy.insistKind(startPixel));
-  t.throws(() => pixelStrategy.insistKind({}));
+  t.throws(
+    () => pixelStrategy.insistKind(startPixel),
+    'pixelList must be an array',
+  );
+  t.throws(() => pixelStrategy.insistKind({}), 'pixelList must be an array');
   t.doesNotThrow(() => pixelStrategy.insistKind([thirdPixel]));
   t.end();
 });
