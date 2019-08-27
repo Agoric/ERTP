@@ -1,12 +1,12 @@
 import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
-import { makeWholePixelList } from '../../../../../more/pixels/types/pixelList';
-
 import {
-  makePixelStrategy,
+  makeWholePixelList,
   includesPixel,
-} from '../../../../../more/pixels/pixelStrategy';
+} from '../../../../../more/pixels/types/pixelList';
+
+import { makePixelStrategy } from '../../../../../more/pixels/pixelStrategy';
 
 test('pixelList insistKind', t => {
   const startPixel = harden({ x: 0, y: 0 });

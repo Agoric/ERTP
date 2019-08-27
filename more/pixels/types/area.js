@@ -1,6 +1,6 @@
 import harden from '@agoric/harden';
 import { insistPixel, isLessThanOrEqual } from './pixel';
-import { includesPixel } from '../pixelStrategy';
+import { includesPixel } from './pixelList';
 
 import { insist } from '../../../util/insist';
 

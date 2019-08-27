@@ -59,4 +59,4 @@ const makePixelStrategy = (canvasSize = 10) => {
 
 harden(makePixelStrategy);
 
-export { makePixelStrategy, includesPixel };
+export { makePixelStrategy };
