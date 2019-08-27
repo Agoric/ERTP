@@ -11,14 +11,16 @@ function insistWithinBounds(num, canvasSize) {
   pixel position must be within bounds`;
 }
 
-function insistPixel(pixel, canvasSize) {
+const makeInsistPixel = (canvasSize = 10) => pixel => {
   const properties = Object.getOwnPropertyNames(pixel);
   insist(properties.length === 2)`\
   pixels must have x, y properties only`;
 
   insistWithinBounds(pixel.x, canvasSize);
   insistWithinBounds(pixel.y, canvasSize);
-}
+
+  return pixel;
+};
 
 // should only be used with valid pixels - no checks
 function isEqual(leftPixel, rightPixel) {
@@ -52,7 +54,7 @@ function getString(pixel) {
 
 export {
   insistWithinBounds,
-  insistPixel,
+  makeInsistPixel,
   isEqual,
   isLessThanOrEqual,
   getString,
