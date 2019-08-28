@@ -36,6 +36,33 @@ function isLessThanOrEqual(leftPixel, rightPixel) {
   return leftPixel.x <= rightPixel.x && leftPixel.y <= rightPixel.y;
 }
 
+function compare(a, b) {
+  if (!a || !b) {
+    return undefined;
+  }
+  const xLess = a.x < b.x;
+  const yLess = a.y < b.y;
+  const xEqual = a.x === b.x;
+  const yEqual = a.y === b.y;
+
+  if (xEqual && yEqual) {
+    return 0;
+  }
+
+  // 1, 2 before 2, 1
+  if (xLess) {
+    return -1;
+  }
+
+  // 1, 2 before 1, 3
+  if (xEqual && yLess) {
+    return -1;
+  }
+
+  // must be greater
+  return 1;
+}
+
 function getDistance(a, b) {
   const { x: xA, y: yA } = a;
   const { x: xB, y: yB } = b;
@@ -60,4 +87,5 @@ export {
   getString,
   getDistance,
   getDistanceFromCenter,
+  compare,
 };

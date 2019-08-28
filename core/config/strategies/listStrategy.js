@@ -5,7 +5,11 @@ import { insist } from '../../../util/insist';
 
 // This list strategy follows the Strategy interface defined in
 // issuers.chainmail.
-const makeListStrategy = (insistElementKind, isElementEqual) => {
+const makeListStrategy = (
+  insistElementKind,
+  isElementEqual,
+  compareElements,
+) => {
   function includesElement(list, element) {
     for (const e of list) {
       if (isElementEqual(element, e)) {
@@ -39,13 +43,17 @@ const makeListStrategy = (insistElementKind, isElementEqual) => {
     equals: (left, right) =>
       listStrategy.includes(left, right) && listStrategy.includes(right, left),
     with: (left, right) => {
-      const combinedList = Array.from(left);
-      for (const rightElement of right) {
-        if (!includesElement(left, rightElement)) {
-          combinedList.push(rightElement);
+      const combinedList = left.concat(right);
+      combinedList.sort(compareElements);
+      const dedupedList = [];
+      let prev;
+      for (const element of combinedList) {
+        if (prev === undefined || !isElementEqual(element, prev)) {
+          dedupedList.push(element);
         }
+        prev = element;
       }
-      return harden(combinedList);
+      return harden(dedupedList);
     },
     without: (whole, part) => {
       insist(listStrategy.includes(whole, part))`part is not in whole`;
