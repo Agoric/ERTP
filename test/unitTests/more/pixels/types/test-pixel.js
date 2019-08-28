@@ -18,9 +18,15 @@ test('pixel insistWithinBounds', t => {
   t.end();
 });
 
-test('pixel makeInsistPixel', t => {
-  t.doesNotThrow(() => makeInsistPixel(2)({ x: 0, y: 0 }));
-  t.doesNotThrow(() => makeInsistPixel(1)({ x: 0, y: 0 }));
+test('pixel makeInsistPixel good', t => {
+  t.deepEquals(makeInsistPixel(2)({ x: 0, y: 0 }), { x: 0, y: 0 });
+  t.deepEquals(makeInsistPixel(1)({ x: 0, y: 0 }), { x: 0, y: 0 });
+  // This doesn't throw because there is a default canvasSize
+  t.deepEquals(makeInsistPixel(undefined)({ x: 0, y: 0 }), { x: 0, y: 0 });
+  t.end();
+});
+
+test('pixel makeInsistPixel bad', t => {
   t.throws(() => makeInsistPixel('a')({ x: 0, y: 0 }), /not a safe integer/);
   t.throws(
     () => makeInsistPixel(1)({}),
@@ -35,8 +41,6 @@ test('pixel makeInsistPixel', t => {
     () => makeInsistPixel(1)({ x: 0, y: 3, empty: true }),
     /pixels must have x, y properties only/,
   );
-  // This doesn't throw because there is a default canvasSize
-  t.deepEquals(makeInsistPixel(undefined)({ x: 0, y: 0 }), { x: 0, y: 0 });
   t.end();
 });
 
