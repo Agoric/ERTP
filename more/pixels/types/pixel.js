@@ -50,12 +50,12 @@ function compare(a, b) {
   }
 
   // 1, 2 before 2, 1
-  if (xLess) {
+  if (yLess) {
     return -1;
   }
 
   // 1, 2 before 1, 3
-  if (xEqual && yLess) {
+  if (yEqual && xLess) {
     return -1;
   }
 
