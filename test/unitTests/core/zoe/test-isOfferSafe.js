@@ -1,31 +1,10 @@
 import { test } from 'tape-promise/tape';
-import harden from '@agoric/harden';
 
 import {
   isOfferSafeForPlayer,
   isOfferSafeForAll,
 } from '../../../../core/zoe/isOfferSafe';
-import { makeMint } from '../../../../core/issuers';
-
-const setup = () => {
-  const moolaMint = makeMint('moola');
-  const simoleanMint = makeMint('simoleans');
-  const bucksMint = makeMint('bucks');
-
-  const moolaIssuer = moolaMint.getIssuer();
-  const simoleanIssuer = simoleanMint.getIssuer();
-  const bucksIssuer = bucksMint.getIssuer();
-
-  const moolaAssay = moolaIssuer.getAssay();
-  const simoleanAssay = simoleanIssuer.getAssay();
-  const bucksAssay = bucksIssuer.getAssay();
-
-  return harden({
-    mints: [moolaMint, simoleanMint, bucksMint],
-    issuers: [moolaIssuer, simoleanIssuer, bucksIssuer],
-    assays: [moolaAssay, simoleanAssay, bucksAssay],
-  });
-};
+import { setup } from './setupBasicMints';
 
 // The player must have rules for each issuer
 test('isOfferSafeForPlayer - empty rules', t => {
