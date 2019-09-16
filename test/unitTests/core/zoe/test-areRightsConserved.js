@@ -1,28 +1,7 @@
 import { test } from 'tape-promise/tape';
-import harden from '@agoric/harden';
 
 import { areRightsConserved } from '../../../../core/zoe/areRightsConserved';
-import { makeMint } from '../../../../core/issuers';
-
-const setup = () => {
-  const moolaMint = makeMint('moola');
-  const simoleanMint = makeMint('simoleans');
-  const bucksMint = makeMint('bucks');
-
-  const moolaIssuer = moolaMint.getIssuer();
-  const simoleanIssuer = simoleanMint.getIssuer();
-  const bucksIssuer = bucksMint.getIssuer();
-
-  const moolaAssay = moolaIssuer.getAssay();
-  const simoleanAssay = simoleanIssuer.getAssay();
-  const bucksAssay = bucksIssuer.getAssay();
-
-  return harden({
-    mints: [moolaMint, simoleanMint, bucksMint],
-    issuers: [moolaIssuer, simoleanIssuer, bucksIssuer],
-    assays: [moolaAssay, simoleanAssay, bucksAssay],
-  });
-};
+import { setup } from './setupBasicMints';
 
 // rights are conserved for Nat quantities
 test(`areRightsConserved - true for nat quantities`, t => {
