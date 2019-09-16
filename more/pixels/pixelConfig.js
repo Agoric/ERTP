@@ -59,8 +59,9 @@ function makePixelConfigMaker(
     }
 
     return harden({
-      makePaymentTrait(superPayment, issuer) {
+      makeCustomPayment(superPayment, issuer) {
         return harden({
+          ...superPayment,
           // This creates a new use object on every call. Please see
           // the gallery for the definition of the use object that is
           // created here by calling `makeUseObj`
@@ -85,8 +86,9 @@ function makePixelConfigMaker(
           },
         });
       },
-      makePurseTrait(superPurse, issuer) {
+      makeCustomPurse(superPurse, issuer) {
         return harden({
+          ...superPurse,
           // This creates a new use object on every call. Please see
           // the gallery for the definition of the use object that is
           // created here by calling `makeUseObj`
@@ -107,8 +109,9 @@ function makePixelConfigMaker(
           },
         });
       },
-      makeMintTrait(_superMint, issuer, assay, mintKeeper) {
+      makeCustomMint(superMint, issuer, assay, mintKeeper) {
         return harden({
+          ...superMint,
           // revoke destroys the amount from this mint and calls
           // revoke on the childMint with an amount of the same
           // quantity. Destroying the amount depends on the fact that
@@ -126,8 +129,9 @@ function makePixelConfigMaker(
           },
         });
       },
-      makeIssuerTrait(superIssuer) {
+      makeCustomIssuer(superIssuer) {
         return harden({
+          ...superIssuer,
           // The parent issuer is one level up in the chain of
           // issuers.
           getParentIssuer() {
