@@ -7,64 +7,58 @@ import {
   mustBeComparable,
 } from '../../../util/sameStructure';
 
-// A uniAssay makes uni amounts, which are either empty or have unique
-// descriptions. The quantity must either be null, in which case it is
-// empty, or be some truthy comparable value, in which case it
-// represents a single unique unit described by that truthy
-// quantity. Combining two uni amounts with different truthy
-// quantities fails, as they represent non-combinable rights.
-const makeUniStrategy = (descriptionCoercer = d => d) => {
+// The uniStrategy represents quantities that can never be combined.
+// For example, usually there is only one invite in an invite purse or
+// payment. (Using a listStrategy is an alternative, but when there is
+// usually a quantity of one, it's bothersome to always have to grab
+// the first item in the list rather than just represent the item
+// itself.)
+
+// The uni quantities are either empty (null) or unique. (The unique
+// quantities will often include an empty object for identity).
+// Combining two non-null uni quantities fails because they represent
+// non-combinable rights.
+
+// `customInsistKind` enforces the particular kind of thing represented. For
+// example, the quantity in an invitation to join a contract might look like:
+// {
+//   id: harden({}),
+//   offerToBeMade: [rule1, rule2],
+// }
+
+const makeUniStrategy = customInsistKind => {
   const uniStrategy = harden({
-    insistKind: optDescription => {
-      if (optDescription === null) {
+    insistKind: quantity => {
+      if (quantity === null) {
         return null;
       }
-      insist(
-        !!optDescription,
-      )`Uni optDescription must be either null or truthy: ${optDescription}`;
-      mustBeComparable(optDescription);
-      const description = descriptionCoercer(optDescription);
-      insist(!!description)`Uni description must be truthy ${description}`;
-      mustBeComparable(description);
-      return description;
+      mustBeComparable(quantity);
+      return customInsistKind(quantity);
     },
     empty: _ => null,
     isEmpty: uni => uni === null,
     includes: (whole, part) => {
-      if (part === null) {
-        return true;
-      }
-      return sameStructure(whole, part);
+      // the part is only included in the whole if the part is null or
+      // if the part equals the whole
+      return uniStrategy.isEmpty(part) || uniStrategy.equals(whole, part);
     },
-    equals: (left, right) =>
-      uniStrategy.includes(left, right) && uniStrategy.includes(right, left),
+    equals: sameStructure,
     with: (left, right) => {
-      if (left === null) {
+      // left and right can only be added together if one of them is null
+      if (uniStrategy.isEmpty(left)) {
         return right;
       }
-      if (right === null) {
+      if (uniStrategy.isEmpty(right)) {
         return left;
       }
-      if (sameStructure(left, right)) {
-        // The "throw" is useless since insist(false) will unconditionally
-        // throw anyway. Rather, it informs IDEs of this control flow.
-        throw insist(
-          false,
-        )`Even identical non-empty uni amounts cannot be added together ${left}`;
-      } else {
-        // The "throw" is useless since insist(false) will unconditionally
-        // throw anyway. Rather, it informs IDEs of this control flow.
-        throw insist(
-          false,
-        )`Cannot combine different uni descriptions ${left} vs ${right}`;
-      }
+      throw insist(false)`Cannot combine uni quantities ${left} and ${right}`;
     },
     without: (whole, part) => {
-      if (part === null) {
+      // we can only subtract the part from the whole if either part
+      // is null or the part equals the whole
+      if (uniStrategy.isEmpty(part)) {
         return whole;
       }
-      insist(whole !== null)`Empty left does not include ${part}`;
-
       mustBeSameStructure(
         whole,
         part,

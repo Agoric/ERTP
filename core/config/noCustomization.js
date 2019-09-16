@@ -7,17 +7,25 @@ import harden from '@agoric/harden';
 // These methods must be paired with a mintKeeper and Assay to be a
 // full configuration that can be passed into `makeMint`.
 const noCustomization = harden({
-  makePaymentTrait(_superPayment) {
-    return harden({});
+  makeCustomPayment(superPayment) {
+    return harden({
+      ...superPayment,
+    });
   },
-  makePurseTrait(_superPurse) {
-    return harden({});
+  makeCustomPurse(superPurse) {
+    return harden({
+      ...superPurse,
+    });
   },
-  makeMintTrait(_superMint) {
-    return harden({});
+  makeCustomMint(superMint) {
+    return harden({
+      ...superMint,
+    });
   },
-  makeIssuerTrait(_superIssuer) {
-    return harden({});
+  makeCustomIssuer(superIssuer) {
+    return harden({
+      ...superIssuer,
+    });
   },
 });
 
