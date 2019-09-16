@@ -2,6 +2,7 @@ import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
 import { makeSeatMint } from '../../../core/seatMint';
+import { offerEqual } from '../../../core/zoe/utils';
 import { makeMint } from '../../../core/issuers';
 import { insist } from '../../../util/insist';
 
@@ -21,28 +22,6 @@ import { insist } from '../../../util/insist';
  * }
  *
  */
-
-const allTrue = (prev, curr) => prev && curr;
-
-const ruleEqual = (leftRule, rightRule) => leftRule.rule === rightRule.rule;
-
-const amountEqual = (assay, leftRule, rightRule) =>
-  assay.equals(leftRule.amount, rightRule.amount);
-
-const offerEqual = (assays, leftOffer, rightOffer) => {
-  const isLengthEqual = leftOffer.length === rightOffer.length;
-  if (!isLengthEqual) {
-    return false;
-  }
-  return leftOffer
-    .map((leftRule, i) => {
-      return (
-        ruleEqual(leftRule, rightOffer[i]) &&
-        amountEqual(assays[i], leftRule, rightOffer[i])
-      );
-    })
-    .reduce(allTrue);
-};
 
 const setup = () => {
   const moolaMint = makeMint('moola');
