@@ -1,7 +1,7 @@
 import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
-import { makeSeatMint } from '../../../core/config/seatMint';
+import { makeSeatMint } from '../../../core/seatMint';
 import { makeMint } from '../../../core/issuers';
 import { insist } from '../../../util/insist';
 

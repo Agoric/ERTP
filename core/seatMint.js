@@ -1,14 +1,14 @@
 import harden from '@agoric/harden';
 
-import { makeSeatConfigMaker } from './seatConfig';
-import { makeMint } from '../issuers';
+import { makeSeatConfigMaker } from './config/seatConfig';
+import { makeMint } from './issuers';
 
 /**
  * `makeSeatMint` creates an instance of the seatMint with an
  * associated WeakMap mapping ids (represented by unique empty
  * objects) to use objects
  */
-const makeSeatMint = () => {
+const makeSeatMint = (description = 'seats') => {
   const idObjsToSeats = new WeakMap();
 
   const addUseObj = (idObj, useObj) => {
@@ -47,7 +47,7 @@ const makeSeatMint = () => {
     purseMakeUseAndBurn,
   );
 
-  const seatMint = makeMint('seats', makeSeatConfig);
+  const seatMint = makeMint(description, makeSeatConfig);
   const seatIssuer = seatMint.getIssuer();
 
   return harden({
