@@ -1,4 +1,4 @@
-import { allTrue } from './utils';
+import { bothTrue } from './utils';
 import { insist } from '../../util/insist';
 
 /**
@@ -46,7 +46,7 @@ function isOfferSafeForPlayer(
       }
       return true;
     })
-    .reduce(allTrue, true);
+    .reduce(bothTrue, true);
 
   // If we are not refunding the player, are their allocated amounts
   // greater than or equal to what they said they wanted at the beginning?
@@ -60,7 +60,7 @@ function isOfferSafeForPlayer(
       }
       return true;
     })
-    .reduce(allTrue, true);
+    .reduce(bothTrue, true);
 
   return refundOk || winningsOk;
 }
@@ -80,7 +80,7 @@ function isOfferSafeForAll(assays, offerMatrix, amountMatrix) {
       const amountsPerPlayer = amountMatrix[i];
       return isOfferSafeForPlayer(assays, rulesForPlayer, amountsPerPlayer);
     })
-    .reduce(allTrue);
+    .reduce(bothTrue);
 }
 
 export { isOfferSafeForPlayer, isOfferSafeForAll };
