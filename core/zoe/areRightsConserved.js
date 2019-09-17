@@ -28,7 +28,7 @@ const isEqualPerIssuer = (strategies, leftQuantities, rightQuantities) =>
     .reduce(bothTrue);
 
 /**
- * `areRightConserved` checks that the total quantity per issuer stays
+ * `areRightsConserved` checks that the total quantity per issuer stays
  * the same regardless of the reallocation.
  * @param  {array} strategies - an array of strategies per issuer
  * @param  {matrix} previousQuantities - array of arrays where a row
