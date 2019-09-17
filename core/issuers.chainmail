@@ -15,27 +15,45 @@ interface Issuer (Amount (Quantity)) {
   /* Get the Assay for this Issuer. */
   getAssay() -> (Assay);
 
+  /* Get the Strategy for this Issuer. */
+  getStrategy() -> (Strategy);
+
   /** Make an Amount that contains the indicated quantity. */
   makeAmount(quantity :Quantity) -> (Amount);
 
   /** Make an empty purse associated with this kind of right. */
   makeEmptyPurse(name :String) -> (Purse);
 
-  /**
-   * Make a new Payment that has exclusive rights to the amount, only if src had
-   * those rights, exclusively or not. The src payment retains any excess not
-   * included in amount.
+  /** Combine multiple payments into one payment. */
+  combine(paymentsArray :List(Payment), 
+  name :String = 'combined payment') -> (Payment)
+
+  /** 
+   * Split a single payment into multiple payments, according to the
+   * amounts and names passed in. 
    */
-  getExclusive(amount :Amount, src :Payment, name :String = 'a payment')
+  split(payment, amountsArray :List(Amount), namesArray
+  :List(String))
+    -> (List(Payment))
+
+  /**
+   * Make a new Payment that has exclusive rights to all the contents
+   * of src. If amount does not equal the balance of the src payment,
+   * throws error.
+   */
+  claimExactly(amount :Amount, src :Payment, name :String = 'a payment')
     -> (Payment);
 
   /**
    * Make a new Payment that has exclusive rights to all the contents of src.
    */
-  getExclusiveAll(src :Payment, name :String = 'a payment') -> (Payment);
+  claimAll(src :Payment, name :String = 'a payment') -> (Payment);
 
-  /** Burn amount of the rights from src. */
-  burn(amount :Amount, src :Payment) -> (Amount);
+  /** 
+   * Burn all of the rights from src. If amount does not equal the
+   * balance of the src payment, throw error. 
+   */
+  burnExactly(amount :Amount, src :Payment) -> (Amount);
 
   /** Burn all of the rights from src. */
   burnAll(src :Payment) -> (Amount);
@@ -54,8 +72,7 @@ interface Issuer (Amount (Quantity)) {
 interface MintMaker {
   makeMint(
       description :Comparable,
-      makeMintController :MintControllerMaker,
-      makeAssay :AssayMaker) -> (Mint);
+      makeConfig :MintConfigMaker) -> (Mint);
 }
 
 /**
@@ -73,27 +90,15 @@ interface Mint (Amount (Quantity)) {
    * purse'.
    */
   mint(initialBalance :Amount, name :String = 'a purse') -> (Purse);
-
-  /** Reset all purses and payments to contain nothing. */
-  destroyAll();
-
-  /** (Non-fungible amounts only) Ensure no purse or payment contains amount. */
-  destroy(amount :Amount);
-
-  /**
-   * Destroy any purses or payments containing amount, then issue a new Purse
-   * with that amount.
-   */
-  revoke(amount :Amount) -> (Purse);
 }
 
 /**
  * Purses hold verified amounts of certain rights issued by Mints. Purses can
  * transfer part of the balance they hold in a payment, which has a narrower
  * interface. A purse's balance can rise and fall, through the action of
- * deposit() and withdraw(), while payments don't accept deposits, but can be
- * reduced with burn(), aggregated by passing them as a parameter to deposit(),
- * or claimed using issuer.getExclusive().
+ * depositExactly() and withdraw(). Operations on payments
+ * (burnExactly(), depositExactly(), issuer.claimExactly()) kill the
+ * original payment and create new payments if applicable.
  *
  * The primary use for Purses and Payments is for currency-like and goods-like
  * valuables, but they can also be used to represent other kinds of rights, such
@@ -109,8 +114,12 @@ interface Purse (Amount) {
   /** Get the amount contained in this purse, confirmed by the issuer. */
   getBalance() -> (Amount);
 
-  /** Deposit amount from srcPayment into this purse, returning the amount. */
-  deposit(amount :Amount, srcPayment :Payment) -> (Amount);
+  /**
+   * Deposit all the contents of srcPayment into this purse, returning the
+   * amount. If the amount does not equal the balance of srcPayment,
+   * throw error.
+   */
+  depositExactly(amount :Amount, srcPayment :Payment) -> (Amount);
 
   /**
    * Deposit all the contents of srcPayment into this purse, returning the
@@ -129,7 +138,7 @@ interface Purse (Amount) {
  * Payments hold verified amounts of certain rights issued by Mints. Amounts
  * from payments can be deposited in purses, but otherwise, the entire amount is
  * available when the payment is transferred. A payment's balance can only fall,
- * through the action of deposit(), getExclusive() or burn().
+ * through the action of depositExactly(), claimExactly() or burnExactly().
  *
  * Payments can be converted to Purses by getting a verified issuer and calling
  * issuer.makeEmptyPurse().depositAll(payment);
@@ -143,4 +152,39 @@ interface Payment (Amount) {
 
   /** Get the amount contained in this payment, confirmed by the issuer. */
   getBalance() -> (Amount);
+}
+
+/** 
+ * All of the difference in how an assay behaves can be reduced to
+ * the behavior of the set operations on quantities (think: arithmetic)
+ * such as `empty`, `with`, `without`, `includes`, etc. We extract this
+ * custom logic into a strategy. Strategies are about quantity
+ * arithmetic, whereas Assays are about Amounts, which are labeled
+ * quantities. Assays use Strategies to do their quantity arithmetic,
+ * and then label the results, making new Amounts. 
+ */ 
+interface Strategy () {
+  /** 
+   * Check the kind of this quantity and throw if it is not the
+   * expected kind. 
+   */
+  insistKind(allegedQuantity :Quantity) -> (Quantity);
+
+  /** Get the representation for empty */
+  empty() -> (Quantity);
+
+  /** Is the quantity empty? */
+  isEmpty(quantity :Quantity) -> (boolean);
+
+  /** Does the whole include the part? */
+  includes(whole :Quantity, part :Quantity) -> (boolean);
+
+  /** Does left equal right? */
+  equals(left :Quantity, right :Quantity) -> (boolean);
+
+  /** Return the left combined with the right */
+  with(left :Quantity, right :Quantity) -> (Quantity);
+
+  /** Return what remains after removing the part from the whole */
+  without(whole :Quantity, part :Quantity) -> (Quantity);
 }

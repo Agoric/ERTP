@@ -12,7 +12,8 @@ function build(E, log) {
   function showPaymentBalance(name, paymentP) {
     return E(paymentP)
       .getBalance()
-      .then(amount => log(name, ' balance ', amount));
+      .then(amount => log(name, ' balance ', amount))
+      .catch(err => console.log(err));
   }
   // TODO BUG: All callers should wait until settled before doing
   // anything that would change the balance before show*Balance* reads
@@ -21,7 +22,8 @@ function build(E, log) {
     return Promise.all([
       E(purseP)
         .getBalance()
-        .then(amount => log(name, ' balance ', amount)),
+        .then(amount => log(name, ' balance ', amount))
+        .catch(err => console.log(err)),
     ]);
   }
 
@@ -85,12 +87,12 @@ function build(E, log) {
   function trivialContractTest(host) {
     log('starting trivialContractTest');
 
-    const trivContract = {
+    const trivContract = harden({
       start: (terms, inviteMaker) => {
         return inviteMaker.make('foo', 8);
       },
-    };
-    const contractSrcs = { start: `${trivContract.start} ` };
+    });
+    const contractSrcs = harden({ start: `${trivContract.start} ` });
 
     const installationP = E(host).install(contractSrcs);
 

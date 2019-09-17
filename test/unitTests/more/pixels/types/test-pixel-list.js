@@ -2,32 +2,30 @@ import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
 import {
-  insistPixelList,
-  includesPixel,
-  insistIncludesPixel,
-  includesPixelList,
-  withPixelList,
-  withoutPixelList,
   makeWholePixelList,
+  includesPixel,
 } from '../../../../../more/pixels/types/pixelList';
 
-test('pixelList insistPixelList', t => {
-  const startPixel = { x: 0, y: 0 };
-  const secondPixel = { x: 0, y: 1 };
-  const thirdPixel = { x: 0, y: 2 };
+import { makePixelStrategy } from '../../../../../more/pixels/pixelStrategy';
+
+test('pixelList insistKind', t => {
+  const startPixel = harden({ x: 0, y: 0 });
+  const secondPixel = harden({ x: 0, y: 1 });
+  const thirdPixel = harden({ x: 0, y: 2 });
   const pixelList = harden([startPixel, secondPixel, thirdPixel]);
-  t.doesNotThrow(() => insistPixelList(pixelList, 5));
-  t.throws(() => insistPixelList(startPixel, 5));
-  t.throws(() => insistPixelList({}, 5));
-  t.throws(() => insistPixelList([thirdPixel], 1));
+  const pixelStrategy = makePixelStrategy();
+  t.doesNotThrow(() => pixelStrategy.insistKind(pixelList));
+  t.throws(() => pixelStrategy.insistKind(startPixel), /list must be an array/);
+  t.throws(() => pixelStrategy.insistKind(harden({})), /list must be an array/);
+  t.doesNotThrow(() => pixelStrategy.insistKind(harden([thirdPixel])));
   t.end();
 });
 
 test('pixelList includesPixel', t => {
-  const startPixel = { x: 0, y: 0 };
-  const secondPixel = { x: 0, y: 1 };
-  const thirdPixel = { x: 0, y: 2 };
-  const fourthPixel = { x: 9, y: 1 };
+  const startPixel = harden({ x: 0, y: 0 });
+  const secondPixel = harden({ x: 0, y: 1 });
+  const thirdPixel = harden({ x: 0, y: 2 });
+  const fourthPixel = harden({ x: 9, y: 1 });
   const pixelList = harden([startPixel, secondPixel, thirdPixel]);
   t.true(includesPixel(pixelList, startPixel));
   t.true(includesPixel(pixelList, secondPixel));
@@ -36,40 +34,28 @@ test('pixelList includesPixel', t => {
   t.end();
 });
 
-test('pixelList insistIncludesPixel', t => {
-  const startPixel = { x: 0, y: 0 };
-  const secondPixel = { x: 0, y: 1 };
-  const thirdPixel = { x: 0, y: 2 };
-  const fourthPixel = { x: 9, y: 1 };
-  const pixelList = harden([startPixel, secondPixel, thirdPixel]);
-  t.doesNotThrow(() => insistIncludesPixel(pixelList, startPixel));
-  t.doesNotThrow(() => insistIncludesPixel(pixelList, secondPixel));
-  t.doesNotThrow(() => insistIncludesPixel(pixelList, thirdPixel));
-  t.throws(() => insistIncludesPixel(pixelList, fourthPixel));
-  t.end();
-});
-
-test('pixelList includesPixelList', t => {
-  const startPixel = { x: 0, y: 0 };
-  const secondPixel = { x: 0, y: 1 };
-  const thirdPixel = { x: 0, y: 2 };
-  const fourthPixel = { x: 9, y: 1 };
-  t.true(includesPixelList(harden([]), harden([])));
-  t.true(includesPixelList(harden([startPixel]), harden([])));
-  t.true(includesPixelList(harden([startPixel]), harden([startPixel])));
+test('pixelList includes', t => {
+  const startPixel = harden({ x: 0, y: 0 });
+  const secondPixel = harden({ x: 0, y: 1 });
+  const thirdPixel = harden({ x: 0, y: 2 });
+  const fourthPixel = harden({ x: 9, y: 1 });
+  const strategy = makePixelStrategy();
+  t.true(strategy.includes(harden([]), harden([])));
+  t.true(strategy.includes(harden([startPixel]), harden([])));
+  t.true(strategy.includes(harden([startPixel]), harden([startPixel])));
   t.true(
-    includesPixelList(harden([startPixel, secondPixel]), harden([startPixel])),
+    strategy.includes(harden([startPixel, secondPixel]), harden([startPixel])),
   );
-  t.false(includesPixelList(harden([]), harden([startPixel])));
-  t.false(includesPixelList(harden([startPixel]), harden([secondPixel])));
+  t.false(strategy.includes(harden([]), harden([startPixel])));
+  t.false(strategy.includes(harden([startPixel]), harden([secondPixel])));
   t.false(
-    includesPixelList(
+    strategy.includes(
       harden([startPixel, thirdPixel]),
       harden([secondPixel, fourthPixel]),
     ),
   );
   t.false(
-    includesPixelList(
+    strategy.includes(
       [startPixel, secondPixel, thirdPixel],
       [thirdPixel, fourthPixel],
     ),
@@ -77,39 +63,157 @@ test('pixelList includesPixelList', t => {
   t.end();
 });
 
-test('pixelList withPixelList', t => {
-  const startPixel = { x: 0, y: 0 };
-  const secondPixel = { x: 0, y: 1 };
-  t.deepEqual(withPixelList(harden([]), harden([])), []);
-  t.deepEqual(withPixelList(harden([startPixel]), harden([])), [startPixel]);
-  t.deepEqual(withPixelList(harden([]), harden([startPixel])), [startPixel]);
-  t.deepEqual(withPixelList(harden([startPixel]), harden([startPixel])), [
+test('pixelList with', t => {
+  const startPixel = harden({ x: 0, y: 0 });
+  const secondPixel = harden({ x: 0, y: 1 });
+  const strategy = makePixelStrategy();
+  t.deepEqual(strategy.with(harden([]), harden([])), []);
+  t.deepEqual(strategy.with(harden([startPixel]), harden([])), [startPixel]);
+  t.deepEqual(strategy.with(harden([]), harden([startPixel])), [startPixel]);
+  t.deepEqual(strategy.with(harden([startPixel]), harden([startPixel])), [
     startPixel,
   ]);
-  t.deepEqual(withPixelList(harden([startPixel]), harden([secondPixel])), [
+  t.deepEqual(strategy.with(harden([startPixel]), harden([secondPixel])), [
     startPixel,
     secondPixel,
   ]);
   t.deepEqual(
-    withPixelList(harden([startPixel, secondPixel]), harden([secondPixel])),
+    strategy.with(harden([startPixel, secondPixel]), harden([secondPixel])),
     [startPixel, secondPixel],
   );
   t.end();
 });
 
-test('pixelList withoutPixelList', t => {
-  const startPixel = { x: 0, y: 0 };
-  const secondPixel = { x: 0, y: 1 };
-  t.deepEqual(withoutPixelList(harden([]), harden([])), []);
-  t.deepEqual(withoutPixelList(harden([startPixel]), harden([])), [startPixel]);
-  t.throws(() => withoutPixelList(harden([]), harden([startPixel])));
-  t.deepEqual(withoutPixelList(harden([startPixel]), harden([startPixel])), []);
+test('pixelList with deduplication', t => {
+  const array5 = makeWholePixelList(5);
+  const array10 = makeWholePixelList(10);
+  const left = harden(array5.concat(array5)); // duplicate
+  const right = harden(array10.concat(array10)); // duplicate
+
+  // Left and right have two of everything, and right includes all of left.
+
+  const strategy = makePixelStrategy();
+  const result = strategy.with(left, right);
+  t.equal(result.length, 100);
+  t.deepEqual(result, [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 2, y: 0 },
+    { x: 3, y: 0 },
+    { x: 4, y: 0 },
+    { x: 5, y: 0 },
+    { x: 6, y: 0 },
+    { x: 7, y: 0 },
+    { x: 8, y: 0 },
+    { x: 9, y: 0 },
+    { x: 0, y: 1 },
+    { x: 1, y: 1 },
+    { x: 2, y: 1 },
+    { x: 3, y: 1 },
+    { x: 4, y: 1 },
+    { x: 5, y: 1 },
+    { x: 6, y: 1 },
+    { x: 7, y: 1 },
+    { x: 8, y: 1 },
+    { x: 9, y: 1 },
+    { x: 0, y: 2 },
+    { x: 1, y: 2 },
+    { x: 2, y: 2 },
+    { x: 3, y: 2 },
+    { x: 4, y: 2 },
+    { x: 5, y: 2 },
+    { x: 6, y: 2 },
+    { x: 7, y: 2 },
+    { x: 8, y: 2 },
+    { x: 9, y: 2 },
+    { x: 0, y: 3 },
+    { x: 1, y: 3 },
+    { x: 2, y: 3 },
+    { x: 3, y: 3 },
+    { x: 4, y: 3 },
+    { x: 5, y: 3 },
+    { x: 6, y: 3 },
+    { x: 7, y: 3 },
+    { x: 8, y: 3 },
+    { x: 9, y: 3 },
+    { x: 0, y: 4 },
+    { x: 1, y: 4 },
+    { x: 2, y: 4 },
+    { x: 3, y: 4 },
+    { x: 4, y: 4 },
+    { x: 5, y: 4 },
+    { x: 6, y: 4 },
+    { x: 7, y: 4 },
+    { x: 8, y: 4 },
+    { x: 9, y: 4 },
+    { x: 0, y: 5 },
+    { x: 1, y: 5 },
+    { x: 2, y: 5 },
+    { x: 3, y: 5 },
+    { x: 4, y: 5 },
+    { x: 5, y: 5 },
+    { x: 6, y: 5 },
+    { x: 7, y: 5 },
+    { x: 8, y: 5 },
+    { x: 9, y: 5 },
+    { x: 0, y: 6 },
+    { x: 1, y: 6 },
+    { x: 2, y: 6 },
+    { x: 3, y: 6 },
+    { x: 4, y: 6 },
+    { x: 5, y: 6 },
+    { x: 6, y: 6 },
+    { x: 7, y: 6 },
+    { x: 8, y: 6 },
+    { x: 9, y: 6 },
+    { x: 0, y: 7 },
+    { x: 1, y: 7 },
+    { x: 2, y: 7 },
+    { x: 3, y: 7 },
+    { x: 4, y: 7 },
+    { x: 5, y: 7 },
+    { x: 6, y: 7 },
+    { x: 7, y: 7 },
+    { x: 8, y: 7 },
+    { x: 9, y: 7 },
+    { x: 0, y: 8 },
+    { x: 1, y: 8 },
+    { x: 2, y: 8 },
+    { x: 3, y: 8 },
+    { x: 4, y: 8 },
+    { x: 5, y: 8 },
+    { x: 6, y: 8 },
+    { x: 7, y: 8 },
+    { x: 8, y: 8 },
+    { x: 9, y: 8 },
+    { x: 0, y: 9 },
+    { x: 1, y: 9 },
+    { x: 2, y: 9 },
+    { x: 3, y: 9 },
+    { x: 4, y: 9 },
+    { x: 5, y: 9 },
+    { x: 6, y: 9 },
+    { x: 7, y: 9 },
+    { x: 8, y: 9 },
+    { x: 9, y: 9 },
+  ]);
+  t.end();
+});
+
+test('pixelList without', t => {
+  const startPixel = harden({ x: 0, y: 0 });
+  const secondPixel = harden({ x: 0, y: 1 });
+  const strategy = makePixelStrategy();
+  t.deepEqual(strategy.without(harden([]), harden([])), []);
+  t.deepEqual(strategy.without(harden([startPixel]), harden([])), [startPixel]);
+  t.throws(() => strategy.without(harden([]), harden([startPixel])));
+  t.deepEqual(strategy.without(harden([startPixel]), harden([startPixel])), []);
   t.deepEqual(
-    withoutPixelList(harden([startPixel, secondPixel]), harden([secondPixel])),
+    strategy.without(harden([startPixel, secondPixel]), harden([secondPixel])),
     [startPixel],
   );
   t.deepEqual(
-    withoutPixelList(
+    strategy.without(
       harden([{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 0 }, { x: 1, y: 1 }]),
       harden([{ x: 0, y: 0 }, { x: 0, y: 1 }]),
     ),

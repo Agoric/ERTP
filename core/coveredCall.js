@@ -14,7 +14,7 @@ import { mustBeSameStructure, sameStructure } from '../util/sameStructure';
  * limited, and the offerer and potential acceptor are 'bob' and 'alice'
  * respectively.
  */
-const coveredCall = {
+const coveredCall = harden({
   start: (terms, inviteMaker) => {
     const {
       escrowExchangeInstallation: escrowExchangeInstallationP,
@@ -45,7 +45,7 @@ const coveredCall = {
       offer(stockPayment) {
         const sIssuer = stockNeeded.label.issuer;
         return E(sIssuer)
-          .getExclusive(stockNeeded, stockPayment, 'prePay')
+          .claimExactly(stockNeeded, stockPayment, 'prePay')
           .then(prePayment => {
             E(bobEscrowSeatP).offer(prePayment);
             return inviteMaker.make('holder', aliceEscrowSeatP);
@@ -98,11 +98,11 @@ const coveredCall = {
     }
     return true;
   },
-};
+});
 
-const coveredCallSrcs = {
+const coveredCallSrcs = harden({
   start: `${coveredCall.start}`,
   checkAmount: `${coveredCall.checkAmount}`,
-};
+});
 
 export { coveredCallSrcs };

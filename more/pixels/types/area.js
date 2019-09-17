@@ -1,5 +1,6 @@
-import { insistPixel, isLessThanOrEqual } from './pixel';
-import { insistIncludesPixel } from './pixelList';
+import harden from '@agoric/harden';
+import { makeInsistPixel, isLessThanOrEqual } from './pixel';
+import { includesPixel } from './pixelList';
 
 import { insist } from '../../../util/insist';
 
@@ -13,8 +14,10 @@ function insistArea(area, canvasSize) {
   insist(properties.length === 2)`\
   areas must have start, end properties only`;
 
-  insistPixel(area.start, canvasSize);
-  insistPixel(area.end, canvasSize);
+  const insistPixel = makeInsistPixel(canvasSize);
+
+  insistPixel(area.start);
+  insistPixel(area.end);
 
   insistLessThanOrEqual(area.start, area.end);
 
@@ -48,8 +51,8 @@ function makeArea(allegedArea, pixelList, canvasSize) {
     for (let { y } = start; y <= end.y; y += 1) {
       // check that all of the pixels within the area are included in
       // the pixelList
-      const pixel = { x, y };
-      insistIncludesPixel(pixelList, pixel);
+      const pixel = harden({ x, y });
+      insist(includesPixel(pixelList, pixel))`must include pixel`;
     }
   }
   return area;
