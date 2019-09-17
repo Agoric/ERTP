@@ -2,7 +2,7 @@ import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
 import { makeSeatMint } from '../../../core/seatMint';
-import { offerEqual } from '../../../core/zoe/utils';
+import { offerEqual } from '../../../core/zoe/contractUtils';
 import { setup } from './zoe/setupBasicMints';
 import { insist } from '../../../util/insist';
 

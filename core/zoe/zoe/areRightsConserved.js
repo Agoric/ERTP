@@ -1,4 +1,4 @@
-import { allTrue, transpose } from './utils';
+import { allTrue, transpose } from '../contractUtils';
 
 /**
  * The columns in a `quantities` matrix are per issuer, and the rows

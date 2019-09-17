@@ -4,8 +4,11 @@ import {
   allTrue,
   anyTrue,
   transpose,
+  mapArrayOnMatrix,
   offerEqual,
-} from '../../../../core/zoe/utils';
+  toAmountMatrix,
+  makeEmptyQuantities,
+} from '../../../../core/zoe/contractUtils';
 import { setup } from './setupBasicMints';
 
 test('allTrue', t => {
@@ -37,6 +40,48 @@ test('anyTrue', t => {
 test('transpose', t => {
   try {
     t.deepEquals(transpose([[1, 2, 3], [4, 5, 6]]), [[1, 4], [2, 5], [3, 6]]);
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('mapArrayOnMatrix', t => {
+  try {
+    const matrix = [[1, 2, 3], [4, 5, 6]];
+    const add2 = x => x + 2;
+    const subtract4 = x => x - 4;
+    const mult5 = x => x * 5;
+    const arrayF = [add2, subtract4, mult5];
+    t.deepEquals(mapArrayOnMatrix(matrix, arrayF), [[3, -2, 15], [6, 1, 30]]);
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('toAmountMatrix', t => {
+  try {
+    const { assays } = setup();
+    const matrix = [[1, 2, 3], [4, 5, 6]];
+    t.deepEquals(toAmountMatrix(assays, matrix), [
+      [assays[0].make(1), assays[1].make(2), assays[2].make(3)],
+      [assays[0].make(4), assays[1].make(5), assays[2].make(6)],
+    ]);
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('makeEmptyQuantities', t => {
+  try {
+    const { issuers } = setup();
+    const strategies = issuers.map(issuer => issuer.getStrategy());
+    t.deepEquals(makeEmptyQuantities(strategies), [0, 0, 0]);
   } catch (e) {
     t.assert(false, e);
   } finally {

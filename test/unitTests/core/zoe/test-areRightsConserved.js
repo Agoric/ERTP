@@ -1,6 +1,6 @@
 import { test } from 'tape-promise/tape';
 
-import { areRightsConserved } from '../../../../core/zoe/areRightsConserved';
+import { areRightsConserved } from '../../../../core/zoe/zoe/areRightsConserved';
 import { setup } from './setupBasicMints';
 
 // rights are conserved for Nat quantities
