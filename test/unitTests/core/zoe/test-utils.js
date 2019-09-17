@@ -187,3 +187,42 @@ test('offerEqual - returns false bc different rule', t => {
     t.end();
   }
 });
+
+test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
+  const { issuers, assays } = setup();
+  try {
+    const offer1 = [
+      {
+        rule: 'haveExactly',
+        amount: issuers[0].makeAmount(3),
+      },
+      {
+        rule: 'wantExactly',
+        amount: issuers[1].makeAmount(7),
+      },
+      {
+        rule: 'wantExactly',
+        amount: issuers[2].makeAmount(7),
+      },
+    ];
+    const offer2 = [
+      {
+        rule: 'haveExactly',
+        amount: issuers[0].makeAmount(3),
+      },
+      {
+        rule: 'wantExactly',
+        amount: issuers[1].makeAmount(7),
+      },
+      {
+        rule: 'wantAtLeast',
+        amount: issuers[2].makeAmount(7),
+      },
+    ];
+    t.notOk(offerEqual(assays, offer1, offer2));
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});

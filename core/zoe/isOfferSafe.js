@@ -30,20 +30,20 @@ function isOfferSafeForPlayer(
       assaysPerIssuer.length === amountsPerIssuer.length,
   )`assays, rules, and amounts must be arrays of the same length`;
 
-  // Is the amount greater than or equal to the amount in the offer?
-  const isAmountOfferSafe = (assay, amount, rule) => {
-    return assay.includes(amount, rule.amount);
-  };
-
   // If we are refunding the player, are their allocated amounts
   // greater than or equal to what they said they had at the beginning?
   const refundOk = rulesPerIssuer
     .map((rule, i) => {
       // If the rule was 'haveExactly', we should make sure that the
-      // user gets it back in a refund. If it is not 'haveExactly' anything
+      // user gets it back exactly in a refund. If the rule is
+      // 'haveAtLeast' we need to ensure that the user gets back the
+      // amount or greater. If the rule is something else, anything
       // we give back is fine.
       if (rule.rule === 'haveExactly') {
-        return isAmountOfferSafe(assaysPerIssuer[i], amountsPerIssuer[i], rule);
+        return assaysPerIssuer[i].equals(amountsPerIssuer[i], rule.amount);
+      }
+      if (rule.rule === 'haveAtLeast') {
+        return assaysPerIssuer[i].includes(amountsPerIssuer[i], rule.amount);
       }
       return true;
     })
@@ -53,11 +53,16 @@ function isOfferSafeForPlayer(
   // greater than or equal to what they said they wanted at the beginning?
   const winningsOk = rulesPerIssuer
     .map((rule, i) => {
-      // If the rule was 'wantExactly' or 'wantAtLeast', we should make
-      // sure that the user gets what they wanted. If it is not,
-      // anything we give back is fine.
-      if (rule.rule === 'wantExactly' || rule.rule === 'wantAtLeast') {
-        return isAmountOfferSafe(assaysPerIssuer[i], amountsPerIssuer[i], rule);
+      // If the rule was 'wantExactly', we should make sure that the
+      // user gets exactly the amount specified in their winnings. If
+      // the rule is 'wantAtLeast', we need to ensure that the user
+      // gets back winnings that are equal or greater to the amount.
+      // If the rule is something else, anything we give back is fine.
+      if (rule.rule === 'wantExactly') {
+        return assaysPerIssuer[i].equals(amountsPerIssuer[i], rule.amount);
+      }
+      if (rule.rule === 'wantAtLeast') {
+        return assaysPerIssuer[i].includes(amountsPerIssuer[i], rule.amount);
       }
       return true;
     })
