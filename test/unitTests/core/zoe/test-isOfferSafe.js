@@ -237,13 +237,13 @@ test('isOfferSafeForPlayer - more than haveExactly, no wants', t => {
   }
 });
 
-// The user gets refunded more than what they put in, with 'haveAtLeast'
-test('isOfferSafeForPlayer - more than haveAtLeast', t => {
+// The user gets refunded more than what they put in, with 'haveAtMost'
+test('isOfferSafeForPlayer - more than haveAtMost', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveAtLeast', amount: assays[0].make(2) },
-      { rule: 'haveAtLeast', amount: assays[1].make(3) },
+      { rule: 'haveAtMost', amount: assays[0].make(2) },
+      { rule: 'haveAtMost', amount: assays[1].make(3) },
       { rule: 'wantExactly', amount: assays[2].make(4) },
     ];
     const amounts = [assays[0].make(5), assays[1].make(3), assays[2].make(0)];
