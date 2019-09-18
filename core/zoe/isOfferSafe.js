@@ -30,19 +30,29 @@ function isOfferSafeForPlayer(
       assaysPerIssuer.length === amountsPerIssuer.length,
   )`assays, rules, and amounts must be arrays of the same length`;
 
+  const allowedRules = [
+    'haveExactly',
+    'haveAtMost',
+    'wantExactly',
+    'wantAtLeast',
+  ];
+
   // If we are refunding the player, are their allocated amounts
   // greater than or equal to what they said they had at the beginning?
   const refundOk = rulesPerIssuer
     .map((rule, i) => {
+      insist(
+        allowedRules.includes(rule.rule),
+      )`The rule ${rule.rule} was not recognized`;
       // If the rule was 'haveExactly', we should make sure that the
       // user gets it back exactly in a refund. If the rule is
-      // 'haveAtLeast' we need to ensure that the user gets back the
+      // 'haveAtMost' we need to ensure that the user gets back the
       // amount or greater. If the rule is something else, anything
       // we give back is fine.
       if (rule.rule === 'haveExactly') {
         return assaysPerIssuer[i].equals(amountsPerIssuer[i], rule.amount);
       }
-      if (rule.rule === 'haveAtLeast') {
+      if (rule.rule === 'haveAtMost') {
         return assaysPerIssuer[i].includes(amountsPerIssuer[i], rule.amount);
       }
       return true;
@@ -53,6 +63,9 @@ function isOfferSafeForPlayer(
   // greater than or equal to what they said they wanted at the beginning?
   const winningsOk = rulesPerIssuer
     .map((rule, i) => {
+      insist(
+        allowedRules.includes(rule.rule),
+      )`The rule ${rule.rule} was not recognized`;
       // If the rule was 'wantExactly', we should make sure that the
       // user gets exactly the amount specified in their winnings. If
       // the rule is 'wantAtLeast', we need to ensure that the user
