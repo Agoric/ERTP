@@ -49,24 +49,17 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
       claimWinnings: aliceClaimWinnings,
     } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
 
-    // 3: Alice does a claimAll on the escrowReceipt payment
+    // 3: Alice does a claimAll on the escrowReceipt payment. It's
+    // unnecessary if she trusts Zoe but we will do it for the tests.
     const aliceEscrowReceipt = await escrowReceiptIssuer.claimAll(
       allegedAliceEscrowReceipt,
     );
 
-    // 3: Alice initializes the swap with her escrow receipt
-
-    // Alice gets two kinds of things back - invites (the ability to
-    // make an offer) and a seat for herself (the right to claim after
-    // an offer has been made). She gets a seat since she made an
-    // offer. Bob gets an invite.
+    // 4: Alice initializes the swap with her escrow receipt
     const aliceOfferResult = await simpleSwap.makeOffer(aliceEscrowReceipt);
 
-    // 3: Imagine that Bob also has access to the escrowReceiptIssuer
-    // and the automaticRefund
-
-    // 4: Bob inspects the invite payment and checks that the offerToBeMade
-    // matches what he expects
+    // 5: Alice spreads the zoeInstance and simpleSwap far and wide with instructions
+    // on how to use it and Bob decides he wants to be the counter-party.
 
     const bobOfferDesc = harden([
       {
@@ -80,13 +73,14 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     ]);
     const bobPayments = [bobMoolaPayment, bobSimoleanPayment];
 
-    // 6: Bob escrows
+    // 6: Bob escrows with the zoeInstance
     const {
       escrowReceipt: allegedBobEscrowReceipt,
       claimWinnings: bobClaimWinnings,
     } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
 
-    // 7: Bob does a claimAll on the escrowReceipt payment
+    // 7: Bob does a claimAll on the escrowReceipt payment. This is
+    // unnecessary but we will do it anyways for the test
     const bobEscrowReceipt = await escrowReceiptIssuer.claimAll(
       allegedBobEscrowReceipt,
     );
@@ -103,16 +97,16 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
       'The offer has been accepted. Once another offer has been accepted, please check your winnings',
     );
 
-    // 7: Alice unwraps the claimWinnings to get her seat
+    // 9: Alice unwraps the claimWinnings to get her seat
     const aliceSeat = await aliceClaimWinnings.unwrap();
 
-    // 8: Bob unwraps his claimWinnings to get his seat
+    // 10: Bob unwraps his claimWinnings to get his seat
     const bobSeat = await bobClaimWinnings.unwrap();
 
-    // 9: Alice claims her portion of the outcome (what Bob paid in)
+    // 11: Alice claims her portion of the outcome (what Bob paid in)
     const aliceResult = await aliceSeat.getWinnings();
 
-    // 10: Bob claims his position of the outcome (what Alice paid in)
+    // 12: Bob claims his position of the outcome (what Alice paid in)
     const bobResult = await bobSeat.getWinnings();
 
     // Alice gets back what she wanted
@@ -121,15 +115,15 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     // Alice didn't get any of what she put in
     t.equals(aliceResult[0].getBalance().quantity, 0);
 
-    // 11: Alice deposits her refund to ensure she can
+    // 13: Alice deposits her winnings to ensure she can
     await aliceMoolaPurse.depositAll(aliceResult[0]);
     await aliceSimoleanPurse.depositAll(aliceResult[1]);
 
-    // 12: Bob deposits his original payments to ensure he can
+    // 14: Bob deposits his original payments to ensure he can
     await bobMoolaPurse.depositAll(bobResult[0]);
     await bobSimoleanPurse.depositAll(bobResult[1]);
 
-    // Assert that the correct refund was achieved.
+    // Assert that the correct winnings were received.
     // Alice had 3 moola and 0 simoleans.
     // Bob had 0 moola and 7 simoleans.
     t.equals(aliceMoolaPurse.getBalance().quantity, 0);
