@@ -1,6 +1,5 @@
 import harden from '@agoric/harden';
 
-import { insist } from '../../../util/insist';
 import makePromise from '../../../util/makePromise';
 import { makeEmptyQuantities } from '../contractUtils';
 
