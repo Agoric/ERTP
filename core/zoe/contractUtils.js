@@ -51,6 +51,12 @@ const toAmountMatrix = (assays, quantitiesMatrix) => {
 const makeEmptyQuantities = strategies =>
   strategies.map(strategy => strategy.empty());
 
+// validRules is an array of arrays where each row is the rules of a valid offer:
+// e.g. validRules =
+//     [['haveExactly', 'wantExactly'], ['wantExactly', 'haveExactly']]
+const makeHasOkRules = validRules => offer =>
+  validRules.map((rules, i) => rules[i] === offer[i].rule).reduce(anyTrue);
+
 export {
   allTrue,
   anyTrue,
@@ -59,4 +65,5 @@ export {
   offerEqual,
   toAmountMatrix,
   makeEmptyQuantities,
+  makeHasOkRules,
 };
