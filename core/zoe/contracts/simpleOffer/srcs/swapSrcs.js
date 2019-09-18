@@ -45,7 +45,19 @@ const isValidOffer = (
 const swapSrcs = harden({
   isValidOffer,
   canReallocate: (offerIds, _offerIdsToOfferDescs) => offerIds.length === 2,
-  reallocate: quantities => harden([quantities[1], quantities[0]]),
+  reallocate: (
+    _strategies,
+    offerIds,
+    _offerIdsToOfferDescs,
+    getQuantitiesFor,
+  ) =>
+    harden({
+      reallocOfferIds: offerIds,
+      reallocQuantities: harden([
+        ...getQuantitiesFor(harden([offerIds[1]])),
+        ...getQuantitiesFor(harden([offerIds[0]])),
+      ]),
+    }),
 });
 
 export { swapSrcs };

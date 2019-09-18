@@ -34,15 +34,18 @@ const makeSimpleOfferMaker = srcs => zoeInstance => {
 
       // Check if we can reallocate and reallocate.
       if (srcs.canReallocate(offerIds, offerIdsToOfferDescs)) {
-        const reallocation = srcs.reallocate(
-          zoeInstance.getQuantitiesFor(offerIds),
+        const { reallocOfferIds, reallocQuantities } = srcs.reallocate(
+          zoeInstance.getStrategies(),
+          offerIds,
+          offerIdsToOfferDescs,
+          zoeInstance.getQuantitiesFor,
         );
-        zoeInstance.reallocate(offerIds, reallocation);
+        zoeInstance.reallocate(reallocOfferIds, reallocQuantities);
         zoeInstance.eject(offerIds);
       }
 
       status.res(
-        'The offer has been accepted. Once another offer has been accepted, please check your winnings',
+        'The offer has been accepted. Once the contract has been completed, please check your winnings',
       );
       return status.p;
     },

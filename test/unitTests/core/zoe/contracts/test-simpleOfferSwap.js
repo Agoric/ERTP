@@ -90,11 +90,11 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
 
     t.equals(
       bobOfferResult,
-      'The offer has been accepted. Once another offer has been accepted, please check your winnings',
+      'The offer has been accepted. Once the contract has been completed, please check your winnings',
     );
     t.equals(
       aliceOfferResult,
-      'The offer has been accepted. Once another offer has been accepted, please check your winnings',
+      'The offer has been accepted. Once the contract has been completed, please check your winnings',
     );
 
     // 9: Alice unwraps the claimWinnings to get her seat

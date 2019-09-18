@@ -35,24 +35,16 @@ const mintClaimWinningsPayment = (seatMint, addUseObj, offerDesc, result) => {
 const depositAll = async (purses, strategies, offerDesc, offerPayments) => {
   const quantitiesArrayPromises = purses.map(async (purse, i) => {
     // if the user's contractual understanding includes
-    // "haveExactly", make sure that they have supplied a
+    // "haveExactly" or "haveAtMost", make sure that they have supplied a
     // payment with that exact balance
-    if (offerDesc[i].rule === 'haveExactly') {
+    if (
+      offerDesc[i].rule === 'haveExactly' ||
+      offerDesc[i].rule === 'haveAtMost'
+    ) {
       const amount = await purse.depositExactly(
         offerDesc[i].amount,
         offerPayments[i],
       );
-      return amount.quantity;
-    }
-    // if the user's contractual understanding includes
-    // "haveAtLeast", make sure that they have supplied the
-    // coordinating payment with a balance equal or greater
-    // TODO: test this with an example
-    if (offerDesc[i].rule === 'haveAtLeast') {
-      const amount = await purse.depositAll(offerPayments[i]);
-      insist(
-        strategies[i].includes(amount, offerDesc[i].amount),
-      )`did not escrow enough to cover 'haveAtLeast'`;
       return amount.quantity;
     }
     return strategies[i].empty();
