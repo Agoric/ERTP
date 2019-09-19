@@ -8,6 +8,7 @@ import {
   offerEqual,
   toAmountMatrix,
   makeEmptyQuantities,
+  vectorWith,
 } from '../../../../core/zoe/contractUtils';
 import { setup } from './setupBasicMints';
 
@@ -265,6 +266,23 @@ test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
       },
     ];
     t.notOk(offerEqual(assays, offer1, offer2));
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('vectorWith', t => {
+  try {
+    const { strategies } = setup();
+    const leftQuantities = [4, 5, 6];
+    const rightQuantities = [3, 5, 10];
+    t.deepEquals(vectorWith(strategies, leftQuantities, rightQuantities), [
+      7,
+      10,
+      16,
+    ]);
   } catch (e) {
     t.assert(false, e);
   } finally {

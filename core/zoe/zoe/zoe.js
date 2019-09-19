@@ -148,7 +148,11 @@ const makeZoe = () => {
          *  empty offer and then reallocate other quantities to this offer.
          */
         escrowEmptyOffer: () =>
-          escrowEmptyOffer(adminState, readOnlyState.getAssays()),
+          escrowEmptyOffer(
+            adminState,
+            readOnlyState.getAssays(),
+            readOnlyState.getStrategies(),
+          ),
 
         /**
          *  The governing contract can also create a real offer and
@@ -157,10 +161,10 @@ const makeZoe = () => {
          *  offers on the users' behalf, as happens in the
          *  `addLiquidity` step of the `autoswap` contract.
          */
-        escrowOffer: (offerDesc, offerPayments) => {
+        escrowOffer: async (offerDesc, offerPayments) => {
           // attenuate the authority by not passing along the result
           // promise object and only passing the offerId
-          const { offerId } = escrowOffer(
+          const { offerId } = await escrowOffer(
             adminState,
             readOnlyState.getStrategies(),
             offerDesc,
@@ -175,7 +179,8 @@ const makeZoe = () => {
         },
 
         // read-only, side-effect-free access below this line:
-        makeEmptyQuantities,
+        makeEmptyQuantities: () =>
+          makeEmptyQuantities(readOnlyState.getStrategies()),
         getIssuers: readOnlyState.getIssuers,
         getAssays: readOnlyState.getAssays,
         getStrategies: readOnlyState.getStrategies,

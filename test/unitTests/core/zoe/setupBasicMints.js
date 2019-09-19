@@ -19,6 +19,11 @@ const setup = () => {
     mints: [moolaMint, simoleanMint, bucksMint],
     issuers: [moolaIssuer, simoleanIssuer, bucksIssuer],
     assays: [moolaAssay, simoleanAssay, bucksAssay],
+    strategies: [
+      moolaIssuer.getStrategy(),
+      simoleanIssuer.getStrategy(),
+      bucksIssuer.getStrategy(),
+    ],
   });
 };
 harden(setup);

@@ -57,6 +57,12 @@ const makeEmptyQuantities = strategies =>
 const makeHasOkRules = validRules => offer =>
   validRules.map((rules, i) => rules[i] === offer[i].rule).reduce(anyTrue);
 
+// Vector addition of two quantity arrays
+const vectorWith = (strategies, leftQuantities, rightQuantities) =>
+  leftQuantities.map((leftQ, i) =>
+    strategies[i].with(leftQ, rightQuantities[i]),
+  );
+
 export {
   allTrue,
   anyTrue,
@@ -66,4 +72,5 @@ export {
   toAmountMatrix,
   makeEmptyQuantities,
   makeHasOkRules,
+  vectorWith,
 };

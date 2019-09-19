@@ -86,7 +86,7 @@ const makePayments = (purses, amountsMatrix) =>
     }),
   );
 
-const escrowEmptyOffer = (adminState, assays) => {
+const escrowEmptyOffer = (adminState, assays, strategies) => {
   const result = makePromise();
   const offerDesc = assays.map(assay =>
     harden({
@@ -97,7 +97,12 @@ const escrowEmptyOffer = (adminState, assays) => {
   const offerId = harden({});
 
   // has side effects
-  adminState.recordOffer(offerId, offerDesc, makeEmptyQuantities(), result);
+  adminState.recordOffer(
+    offerId,
+    offerDesc,
+    makeEmptyQuantities(strategies),
+    result,
+  );
   return offerId;
 };
 
