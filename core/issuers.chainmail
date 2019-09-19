@@ -25,8 +25,8 @@ interface Issuer (Amount (Quantity)) {
   makeEmptyPurse(name :String) -> (Purse);
 
   /** Combine multiple payments into one payment. */
-  combine(paymentsArray :List(Payment), 
-  name :String = 'combined payment') -> (Payment);
+  combine(paymentsArray :List(Payment), name :String = 'combined payment')
+    -> (Payment);
 
   /** 
    * Split a single payment into multiple payments, according to the
