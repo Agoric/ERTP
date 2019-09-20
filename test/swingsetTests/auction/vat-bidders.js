@@ -35,7 +35,7 @@ function makeBidderMaker(E, host, log) {
             const [terms, allegedInviteBalance] = p;
             E(auctionInstallationP)
               .checkAmount(allegedInviteBalance, terms, bidSeat)
-              .then(v => insist(v))` installation must verify.`;
+              .then(v => insist(v)` installation must verify.`);
             const { deadline } = terms;
             insist(deadline > 5 && deadline < 40)`unreasonable deadline`;
             E(timerP)

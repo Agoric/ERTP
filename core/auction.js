@@ -51,6 +51,7 @@ const auction = {
     E(timerP)
       .delayUntil(deadline)
       .then(() => {
+        E(timerP).tick(`TIME to START`);
         // hold auction:
         if (bidderSeatCount < minBidCount || secondPrice < minPrice) {
           E(timerP).tick(`Cancelling: not enough bids`);
@@ -70,14 +71,18 @@ const auction = {
           escrowedGoods.p,
           timerP,
         );
+        E(timerP).tick(`paidAmountPromise: ${paidAmountP}`);
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
         sellerRefund.res(
           E(E(productIssuer).makeEmptyPurse()).withdrawAll('empty'),
         );
         E.resolve(paidAmountP).then(paidAmount => {
+          debugger
+          E(timerP).tick(`paidAmount: ${paidAmount}`);
           auctionComplete.res(paidAmount.quantity);
           return E(timerP).tick(`closed Auction at ${paidAmount.quantity}`);
         });
+        E(timerP).tick(`TIMER start 2`);
       });
 
     function addNewBid(paymentP, buyerSeatP, agencySeatP) {
@@ -140,7 +145,7 @@ const auction = {
       offer(productPayment) {
         E(timerP).tick('seller`s offer');
         return E(productAmount.label.issuer)
-          .claim(productAmount, productPayment, 'consignment')
+          .claimExactly(productAmount, productPayment, 'consignment')
           .then(consignment => {
             escrowedGoods.res(consignment);
             E(timerP).tick('consignment');

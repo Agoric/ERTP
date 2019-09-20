@@ -35,12 +35,6 @@ const agencyEscrow = {
     // winner the seller receives funds here.
     const earnings = makePromise();
 
-    function claimQuantity(issuer, quantity, sourcePayment, label) {
-      return E(issuer)
-        .makeAmount(quantity)
-        .then(amount => E(issuer).claim(amount, sourcePayment, label));
-    }
-
     // Seats
 
     const agencySeat = harden({
@@ -51,38 +45,45 @@ const agencyEscrow = {
 
         const wonGoodsPayment = E(goodsIssuer).claimAll(goodsPayment, 'wins');
         const { issuer: currencyIssuer } = currencyAmount.label;
-        const overbidP = claimQuantity(
-          currencyIssuer,
+        const overbidAmount = E(currencyIssuer).makeAmount(
           bestPrice - secondPrice,
-          deposit.p,
-          'overbid',
         );
-        const proceedsP = claimQuantity(
-          currencyIssuer,
-          secondPrice,
-          deposit.p,
-          'proceeds',
-        );
+        const secondPriceAmount = E(currencyIssuer).makeAmount(secondPrice);
         return E.resolve(
-          Promise.all([wonGoodsPayment, proceedsP, overbidP]),
-        ).then(
-          outPurses => {
-            const [
-              wonGoodsPaymentP,
-              proceedsPaymentP,
-              overbidPaymentP,
-            ] = outPurses;
-            E(timerP).tick('assigning purses');
-            earnings.res(proceedsPaymentP);
-            winnings.res(wonGoodsPaymentP);
-            refund.res(overbidPaymentP);
-            return E(earnings.p).getBalance();
-          },
-          rej => {
-            E(timerP).tick(`cancel agency: unable to get goods: ${rej}`);
-            return rej;
-          },
-        );
+          Promise.all([deposit.p, overbidAmount, secondPriceAmount]),
+        ).then(splitDetails => {
+          const [dep, overbidAmt, secondPriceAmt] = splitDetails;
+          return E(currencyIssuer)
+            .split(dep, [secondPriceAmt, overbidAmt])
+            .then(splitPurses => {
+              const [proceedsP, overbidP] = splitPurses;
+              E(timerP).tick(`SPLIT purses ${overbidP}, ${proceedsP}`);
+              return E.resolve(
+                Promise.all([wonGoodsPayment, proceedsP, overbidP]),
+              ).then(
+                outPurses => {
+                  const [
+                    wonGoodsPaymentP,
+                    proceedsPaymentP,
+                    overbidPaymentP,
+                  ] = outPurses;
+                  E(timerP).tick('assigning purses');
+                  earnings.res(proceedsPaymentP);
+                  winnings.res(wonGoodsPaymentP);
+                  refund.res(overbidPaymentP);
+                  debugger
+                  E(timerP).tick(
+                    `CONSUMMATE results: ${E(earnings.p).getBalance()}`,
+                  );
+                  return E(earnings.p).getBalance();
+                },
+                rej => {
+                  E(timerP).tick(`cancel agency: unable to get goods: ${rej}`);
+                  return rej;
+                },
+              );
+            });
+        });
       },
       getWinnings() {
         return earnings.p;

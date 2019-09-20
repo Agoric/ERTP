@@ -39,6 +39,26 @@ test('split good assetDescs', t => {
   }
 });
 
+test('split good w/different amounts', t => {
+  try {
+    const mint = makeMint('fungible');
+    const issuer = mint.getIssuer();
+    const purse = mint.mint(1000);
+    const oldPayment = purse.withdrawAll();
+
+    const goodAmountsArray = [issuer.makeAmount(100), issuer.makeAmount(900)];
+    const splitPayments = issuer.split(oldPayment, goodAmountsArray);
+    t.deepEqual(splitPayments[0].getBalance(), issuer.makeAmount(100));
+    t.deepEqual(splitPayments[1].getBalance(), issuer.makeAmount(900));
+
+    t.throws(() => oldPayment.getBalance());
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
 test('combine good payments', t => {
   try {
     const mint = makeMint('fungible');
