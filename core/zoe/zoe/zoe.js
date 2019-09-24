@@ -9,6 +9,7 @@ import {
   makePayments,
   escrowEmptyOffer,
   escrowOffer,
+  burnAll,
   mintEscrowReceiptPayment,
   mintClaimPayoffPayment,
 } from './zoeUtils';
@@ -97,6 +98,8 @@ const makeZoe = () => {
          * @param  {matrix} reallocation - a matrix of quantities,
          * with one array of quantities per offerId. This is likely
          * a subset of the full quantitiesMatrix.
+         * @param  {array} burnQuantities - an array of quantities to
+         * be burned as part of the reallocation
          */
         reallocate: (offerIds, reallocation) => {
           const offerDescs = readOnlyState.getOfferDescsFor(offerIds);
@@ -119,6 +122,38 @@ const makeZoe = () => {
 
           // 3) save the reallocation
           adminState.setQuantitiesFor(offerIds, reallocation);
+        },
+
+        reallocateAndBurn: async (offerIds, reallocation, burnQuantities) => {
+          const offerDescs = readOnlyState.getOfferDescsFor(offerIds);
+          const currentQuantities = readOnlyState.getQuantitiesFor(offerIds);
+          const reallocationPlusBurn = [...reallocation, burnQuantities];
+
+          // 1) ensure that rights are conserved
+          insist(
+            areRightsConserved(
+              readOnlyState.strategies,
+              currentQuantities,
+              reallocationPlusBurn,
+            ),
+          )`Rights are not conserved in the proposed reallocation`;
+
+          // 2) ensure offer safety for each player
+          const amounts = toAmountMatrix(readOnlyState.assays, reallocation);
+          insist(
+            isOfferSafeForAll(readOnlyState.assays, offerDescs, amounts),
+          )`The proposed reallocation was not offer safe`;
+
+          // 3) save the reallocation
+          adminState.setQuantitiesFor(offerIds, reallocation);
+
+          // 4) burn the quantities specified in burnQuantities
+          return burnAll(
+            adminState.getPurses(),
+            issuers,
+            readOnlyState.getAssays(),
+            burnQuantities,
+          );
         },
 
         /**

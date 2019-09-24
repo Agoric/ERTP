@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
 import makePromise from '../../../util/makePromise';
-import { makeEmptyQuantities } from '../contractUtils';
+import { makeEmptyQuantities, toAmountMatrix } from '../contractUtils';
 
 // These utilities are used within Zoe itself. Importantly, there is
 // no ambient authority for these utilities. Any authority must be
@@ -106,10 +106,21 @@ const escrowEmptyOffer = (adminState, assays, strategies) => {
   return offerId;
 };
 
+const burnAll = async (purses, issuers, assays, burnQuantities) => {
+  const burnMatrix = harden([burnQuantities]);
+  const amountsMatrix = toAmountMatrix(assays, burnMatrix);
+  const payments = makePayments(purses, amountsMatrix);
+  const burnedAmountsP = issuers.map((issuer, i) =>
+    issuer.burnAll(payments[0][i]),
+  );
+  return Promise.all(burnedAmountsP);
+};
+
 export {
   makePayments,
   escrowEmptyOffer,
   escrowOffer,
   mintEscrowReceiptPayment,
   mintClaimPayoffPayment,
+  burnAll,
 };
