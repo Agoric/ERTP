@@ -15,7 +15,7 @@ ERTP. [assays](https://github.com/Agoric/ERTP/blob/master/core/assays.chainmail)
 [contractHost](https://github.com/Agoric/ERTP/blob/master/core/contractHost.chainmail),
 [issuers](https://github.com/Agoric/ERTP/blob/master/core/issuers.chainmail).
 
-We have several ideas for making use of chainmail descriptions in addition to formal proofs:
+We have several other ideas for making use of chainmail descriptions:
 
 * We might enable our CapTP protocol to detect and enforce compliance with object interfaces
 * Generate TypeScript code to cross-check type consistency
