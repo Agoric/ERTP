@@ -25,10 +25,10 @@ Description must be truthy: ${description}`;
   // Each of these methods is used below and must be defined (even in
   // a trivial way) in any configuration
   const {
-    makeCustomIssuer,
-    makeCustomPayment,
-    makeCustomPurse,
-    makeCustomMint,
+    makeIssuerTrait,
+    makePaymentTrait,
+    makePurseTrait,
+    makeMintTrait,
     makeMintKeeper,
     strategy,
   } = makeConfig();
@@ -65,10 +65,15 @@ Description must be truthy: ${description}`;
       },
     });
 
-    // makeCustomPayment is defined in the passed-in configuration and
-    // can add additional methods to (or even override, though this is
-    // firmly discouraged) the corePayment methods
-    const payment = makeCustomPayment(corePayment, issuer);
+    // makePaymentTrait is defined in the passed-in configuration and adds
+    // additional methods to corePayment
+    const makePaymentTraitIter = makePaymentTrait(corePayment, issuer);
+    const paymentTrait = makePaymentTraitIter.next().value;
+    const payment = harden({
+      ...paymentTrait,
+      ...corePayment,
+    });
+    makePaymentTraitIter.next(payment);
 
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
@@ -96,10 +101,15 @@ Description must be truthy: ${description}`;
         return name;
       },
     });
-    // makeCustomPayment is defined in the passed-in configuration and
-    // can add additional methods to (or even override, though this is
-    // firmly discouraged) the corePayment methods
-    const payment = makeCustomPayment(corePayment, issuer);
+    // makePaymentTrait is defined in the passed-in configuration and adds
+    // additional methods to corePayment
+    const makePaymentTraitIter = makePaymentTrait(corePayment, issuer);
+    const paymentTrait = makePaymentTraitIter.next().value;
+    const payment = harden({
+      ...paymentTrait,
+      ...corePayment,
+    });
+    makePaymentTraitIter.next(payment);
 
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
@@ -218,10 +228,15 @@ Description must be truthy: ${description}`;
     },
   });
 
-  // makeCustomIssuer is defined in the passed-in configuration and
-  // can add additional methods to (or even override, though this is
-  // firmly discouraged) the coreIssuer methods
-  const issuer = makeCustomIssuer(coreIssuer);
+  // makeIssuerTrait is defined in the passed-in configuration and adds
+  // additional methods to coreIssuer.
+  const makeIssuerTraitIter = makeIssuerTrait(coreIssuer);
+  const issuerTrait = makeIssuerTraitIter.next().value;
+  const issuer = harden({
+    ...issuerTrait,
+    ...coreIssuer,
+  });
+  makeIssuerTraitIter.next(issuer);
 
   const label = harden({ issuer, description });
 
@@ -288,20 +303,30 @@ Description must be truthy: ${description}`;
         },
       });
 
-      // makeCustomPurse is defined in the passed-in configuration and
-      // can add additional methods to (or even override, though this is
-      // firmly discouraged) the corePurse methods
-      const purse = makeCustomPurse(corePurse, issuer);
+      // makePurseTrait is defined in the passed-in configuration and
+      // adds additional methods to corePurse
+      const makePurseTraitIter = makePurseTrait(corePurse, issuer);
+      const purseTrait = makePurseTraitIter.next().value;
+      const purse = harden({
+        ...purseTrait,
+        ...corePurse,
+      });
+      makePurseTraitIter.next(purse);
 
       purseKeeper.recordNew(purse, initialBalance);
       return purse;
     },
   });
 
-  // makeCustomMint is defined in the passed-in configuration and
-  // can add additional methods to (or even override, though this is
-  // firmly discouraged) the coreMint methods
-  const mint = makeCustomMint(coreMint, issuer, assay, mintKeeper);
+  // makeMintTrait is defined in the passed-in configuration and
+  // adds additional methods to coreMint
+  const makeMintTraitIter = makeMintTrait(coreMint, issuer, assay, mintKeeper);
+  const mintTrait = makeMintTraitIter.next().value;
+  const mint = harden({
+    ...mintTrait,
+    ...coreMint,
+  });
+  makeMintTraitIter.next(mint);
 
   return mint;
 }

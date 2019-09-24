@@ -17,33 +17,35 @@ import { seatStrategy } from './strategies/seatStrategy';
  */
 function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
   function makeSeatConfig() {
+    function* makePaymentTrait(_superPayment, issuer) {
+      const payment = yield harden({
+        // This creates a new use object which destroys the payment
+        unwrap: () => makeUseObjForPayment(issuer, payment),
+      });
+      return payment;
+    }
+
+    function* makePurseTrait(_superPurse, issuer) {
+      const purse = yield harden({
+        // This creates a new use object which empties the purse
+        unwrap: () => makeUseObjForPurse(issuer, purse),
+      });
+      return purse;
+    }
+
+    function* makeMintTrait(_superMint) {
+      return yield harden({});
+    }
+
+    function* makeIssuerTrait(_superIssuer) {
+      return yield harden({});
+    }
+
     return harden({
-      makeCustomPayment(superPayment, issuer) {
-        const payment = harden({
-          ...superPayment,
-          // This creates a new use object which destroys the payment
-          unwrap: () => makeUseObjForPayment(issuer, payment),
-        });
-        return payment;
-      },
-      makeCustomPurse(superPurse, issuer) {
-        const purse = harden({
-          ...superPurse,
-          // This creates a new use object which empties the purse
-          unwrap: () => makeUseObjForPurse(issuer, purse),
-        });
-        return purse;
-      },
-      makeCustomMint(superMint) {
-        return harden({
-          ...superMint,
-        });
-      },
-      makeCustomIssuer(superIssuer) {
-        return harden({
-          ...superIssuer,
-        });
-      },
+      makePaymentTrait,
+      makePurseTrait,
+      makeMintTrait,
+      makeIssuerTrait,
       makeMintKeeper: makeCoreMintKeeper,
       strategy: seatStrategy,
     });
