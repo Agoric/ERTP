@@ -19,8 +19,7 @@ const makeHandleOffer = (
     offerIds,
   );
   const liquidityTokenIn = playerQuantities[2];
-  const liquidityIssuer = liquidityMint.getIssuer();
-  const liqTokenSupply = liquidityIssuer.getTotalSupply().quantity;
+  const liqTokenSupply = liquidityMint.getTotalSupply().quantity;
 
   const newPlayerQuantities = poolQuantities.map(poolQ =>
     divide(mult(liquidityTokenIn, poolQ), liqTokenSupply),

@@ -1,6 +1,7 @@
 import harden from '@agoric/harden';
 
 import { makeMint } from '../../../issuers';
+import { makeTotalSupplyConfig } from '../../../config/totalSupplyConfig';
 import { makeGetPrice } from './methods/getPrice';
 import { makeMakeOfferMethod } from './methods/makeOffer';
 import { makeAddLiquidityMethod } from './methods/addLiquidity';
@@ -12,7 +13,7 @@ const makeAutoSwapMaker = () => {
   // the underlying rights to be swapped, and this liquidityIssuer. So
   // we will make the liquidityIssuer now and return it to the user
   // along with the `makeAutoSwap` function.
-  const liquidityMint = makeMint('liquidity');
+  const liquidityMint = makeMint('liquidity', makeTotalSupplyConfig);
   const liquidityIssuer = liquidityMint.getIssuer();
 
   const makeAutoSwap = zoeInstance => {

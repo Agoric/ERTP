@@ -22,8 +22,7 @@ const makeHandleOfferF = (
     harden([poolOfferId, offerId]),
   );
   const strategies = zoeInstance.getStrategies();
-  const liquidityIssuer = liquidityMint.getIssuer();
-  const liqTokenSupply = liquidityIssuer.getTotalSupply().quantity;
+  const liqTokenSupply = liquidityMint.getTotalSupply().quantity;
 
   // Calculate how many liquidity tokens we should be minting.
   // Calculations are based on the quantities represented by index 0.
