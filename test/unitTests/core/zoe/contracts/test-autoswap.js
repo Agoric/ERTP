@@ -64,7 +64,7 @@ test('autoSwap with valid offers', async t => {
 
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
-      claimWinnings: aliceClaimWinnings,
+      claimPayoff: aliceClaimPayoff,
     } = await zoeInstance.escrow(aliceOffer, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment
@@ -76,9 +76,9 @@ test('autoSwap with valid offers', async t => {
 
     t.equals(liquidityOk, 'Added liquidity.');
 
-    const aliceAddLiquiditySeat = await aliceClaimWinnings.unwrap();
+    const aliceAddLiquiditySeat = await aliceClaimPayoff.unwrap();
 
-    const liquidityPayments = await aliceAddLiquiditySeat.getWinnings();
+    const liquidityPayments = await aliceAddLiquiditySeat.getPayoff();
 
     t.deepEquals(
       liquidityPayments[2].getBalance(),
@@ -117,7 +117,7 @@ test('autoSwap with valid offers', async t => {
 
     const {
       escrowReceipt: allegedBobEscrowReceipt,
-      claimWinnings: bobClaimWinnings,
+      claimPayoff: bobClaimPayoff,
     } = await zoeInstance.escrow(
       bobMoolaForSimOfferDesc,
       bobMoolaForSimPayments,
@@ -132,12 +132,12 @@ test('autoSwap with valid offers', async t => {
     const offerOk = await autoswap.makeOffer(bobEscrowReceipt);
     t.equal(offerOk, 'Swap successfully completed.');
 
-    const bobClaimWinningsSeat = await bobClaimWinnings.unwrap();
+    const bobClaimPayoffSeat = await bobClaimPayoff.unwrap();
 
-    const bobWinnings = await bobClaimWinningsSeat.getWinnings();
+    const bobPayoff = await bobClaimPayoffSeat.getPayoff();
 
-    t.deepEqual(bobWinnings[0].getBalance(), issuers[0].makeAmount(0));
-    t.deepEqual(bobWinnings[1].getBalance(), issuers[1].makeAmount(1));
+    t.deepEqual(bobPayoff[0].getBalance(), issuers[0].makeAmount(0));
+    t.deepEqual(bobPayoff[1].getBalance(), issuers[1].makeAmount(1));
     t.deepEquals(autoswap.getPoolQuantities(), [12, 4, 0]);
 
     // 7: Bob looks up the price of 3 simoleans
@@ -165,7 +165,7 @@ test('autoSwap with valid offers', async t => {
 
     const {
       escrowReceipt: bobsSimsForMoolaEscrowReceipt,
-      claimWinnings: bobSimsForMoolaClaimWinnings,
+      claimPayoff: bobSimsForMoolaClaimPayoff,
     } = await zoeInstance.escrow(
       bobSimsForMoolaOfferDesc,
       simsForMoolaPayments,
@@ -176,9 +176,9 @@ test('autoSwap with valid offers', async t => {
     );
     t.equal(simsForMoolaOk, 'Swap successfully completed.');
 
-    const bobSimsForMoolaWinningsSeat = await bobSimsForMoolaClaimWinnings.unwrap();
+    const bobSimsForMoolaPayoffSeat = await bobSimsForMoolaClaimPayoff.unwrap();
 
-    const bobsNewMoolaPayment = await bobSimsForMoolaWinningsSeat.getWinnings();
+    const bobsNewMoolaPayment = await bobSimsForMoolaPayoffSeat.getPayoff();
 
     t.deepEqual(bobsNewMoolaPayment[0].getBalance(), issuers[0].makeAmount(6));
     t.deepEqual(bobsNewMoolaPayment[1].getBalance(), issuers[1].makeAmount(0));
@@ -203,7 +203,7 @@ test('autoSwap with valid offers', async t => {
 
     const {
       escrowReceipt: aliceRemoveLiquidityEscrowReceipt,
-      claimWinnings: aliceRemoveLiquidityWinnings,
+      claimPayoff: aliceRemoveLiquidityPayoff,
     } = await zoeInstance.escrow(
       aliceRemoveLiquidityOfferDesc,
       liquidityPayments,
@@ -214,20 +214,20 @@ test('autoSwap with valid offers', async t => {
     );
     t.equals(removeLiquidityResult, 'Liquidity successfully removed.');
 
-    const aliceRemoveLiquidityWinningsSeat = await aliceRemoveLiquidityWinnings.unwrap();
+    const aliceRemoveLiquidityPayoffSeat = await aliceRemoveLiquidityPayoff.unwrap();
 
-    const aliceWinningsPayments = await aliceRemoveLiquidityWinningsSeat.getWinnings();
+    const alicePayoffPayments = await aliceRemoveLiquidityPayoffSeat.getPayoff();
 
     t.deepEquals(
-      aliceWinningsPayments[0].getBalance(),
+      alicePayoffPayments[0].getBalance(),
       allIssuers[0].makeAmount(6),
     );
     t.deepEquals(
-      aliceWinningsPayments[1].getBalance(),
+      alicePayoffPayments[1].getBalance(),
       allIssuers[1].makeAmount(7),
     );
     t.deepEquals(
-      aliceWinningsPayments[2].getBalance(),
+      alicePayoffPayments[2].getBalance(),
       allIssuers[2].makeAmount(0),
     );
     t.deepEquals(autoswap.getPoolQuantities(), [0, 0, 0]);

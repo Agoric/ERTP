@@ -50,7 +50,7 @@ And then makes an offer using the escrowReceipt and tries to collect her winning
 ```js
 const aliceOfferResultP = simpleSwap.makeOffer(aliceEscrowReceipt);
 const aliceSeat = await aliceClaimPayoff.unwrap();
-const aliceWinningsP = aliceSeat.getPayoff();
+const alicePayoffP = aliceSeat.getPayoff();
 
 ```
 
@@ -71,7 +71,7 @@ const bobOfferDesc = harden([
 ]);
 ```
 
-Now that Bob has made his offer, `aliceWinningsP` resolves to an array
+Now that Bob has made his offer, `alicePayoffP` resolves to an array
 of ERTP payments `[moolaPayment, simoleanPayment]` where the
 moolaPayment is empty, and the simoleanPayment has a balance of 7. 
 
