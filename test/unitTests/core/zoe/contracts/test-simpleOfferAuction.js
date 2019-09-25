@@ -59,7 +59,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment];
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
-      claimWinnings: aliceClaimWinnings,
+      claimPayoff: aliceClaimPayoff,
     } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. It's
@@ -94,7 +94,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     // 6: Bob escrows with the zoeInstance
     const {
       escrowReceipt: allegedBobEscrowReceipt,
-      claimWinnings: bobClaimWinnings,
+      claimPayoff: bobClaimPayoff,
     } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment. This is
@@ -127,7 +127,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     // 10: Carol escrows with the zoeInstance
     const {
       escrowReceipt: carolEscrowReceipt,
-      claimWinnings: carolClaimWinnings,
+      claimPayoff: carolClaimPayoff,
     } = await zoeInstance.escrow(carolOfferDesc, carolPayments);
 
     // 11: Carol makes an offer with her escrow receipt
@@ -154,7 +154,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     // 13: Dave escrows with the zoeInstance
     const {
       escrowReceipt: daveEscrowReceipt,
-      claimWinnings: daveClaimWinnings,
+      claimPayoff: daveClaimPayoff,
     } = await zoeInstance.escrow(daveOfferDesc, davePayments);
 
     // 14: Dave makes an offer with his escrow receipt
@@ -165,29 +165,29 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
       'The offer has been accepted. Once the contract has been completed, please check your winnings',
     );
 
-    // 15: Alice unwraps the claimWinnings to get her seat
-    const aliceSeat = await aliceClaimWinnings.unwrap();
+    // 15: Alice unwraps the claimPayoff to get her seat
+    const aliceSeat = await aliceClaimPayoff.unwrap();
 
-    // 16: Bob unwraps his claimWinnings to get his seat
-    const bobSeat = await bobClaimWinnings.unwrap();
+    // 16: Bob unwraps his claimPayoff to get his seat
+    const bobSeat = await bobClaimPayoff.unwrap();
 
-    // 17: Carol unwraps her claimWinnings to get her seat
-    const carolSeat = await carolClaimWinnings.unwrap();
+    // 17: Carol unwraps her claimPayoff to get her seat
+    const carolSeat = await carolClaimPayoff.unwrap();
 
-    // 18: Dave unwraps his claimWinnings to get his seat
-    const daveSeat = await daveClaimWinnings.unwrap();
+    // 18: Dave unwraps his claimPayoff to get his seat
+    const daveSeat = await daveClaimPayoff.unwrap();
 
     // 19: Alice claims her portion of the outcome
-    const aliceResult = await aliceSeat.getWinnings();
+    const aliceResult = await aliceSeat.getPayoff();
 
     // 20: Bob claims his portion of the outcome
-    const bobResult = await bobSeat.getWinnings();
+    const bobResult = await bobSeat.getPayoff();
 
     // 21: Carol claims her portion of the outcome
-    const carolResult = await carolSeat.getWinnings();
+    const carolResult = await carolSeat.getPayoff();
 
     // 22: Dave claims his portion of the outcome
-    const daveResult = await daveSeat.getWinnings();
+    const daveResult = await daveSeat.getPayoff();
 
     // Alice (the creator of the auction) gets back the second highest bid
     t.deepEquals(aliceResult[1].getBalance(), carolOfferDesc[1].amount);

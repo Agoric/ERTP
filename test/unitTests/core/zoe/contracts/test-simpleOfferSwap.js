@@ -46,7 +46,7 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment];
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
-      claimWinnings: aliceClaimWinnings,
+      claimPayoff: aliceClaimPayoff,
     } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. It's
@@ -76,7 +76,7 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     // 6: Bob escrows with the zoeInstance
     const {
       escrowReceipt: allegedBobEscrowReceipt,
-      claimWinnings: bobClaimWinnings,
+      claimPayoff: bobClaimPayoff,
     } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment. This is
@@ -97,17 +97,17 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
       'The offer has been accepted. Once the contract has been completed, please check your winnings',
     );
 
-    // 9: Alice unwraps the claimWinnings to get her seat
-    const aliceSeat = await aliceClaimWinnings.unwrap();
+    // 9: Alice unwraps the claimPayoff to get her seat
+    const aliceSeat = await aliceClaimPayoff.unwrap();
 
-    // 10: Bob unwraps his claimWinnings to get his seat
-    const bobSeat = await bobClaimWinnings.unwrap();
+    // 10: Bob unwraps his claimPayoff to get his seat
+    const bobSeat = await bobClaimPayoff.unwrap();
 
     // 11: Alice claims her portion of the outcome (what Bob paid in)
-    const aliceResult = await aliceSeat.getWinnings();
+    const aliceResult = await aliceSeat.getPayoff();
 
     // 12: Bob claims his position of the outcome (what Alice paid in)
-    const bobResult = await bobSeat.getWinnings();
+    const bobResult = await bobSeat.getPayoff();
 
     // Alice gets back what she wanted
     t.deepEquals(aliceResult[1].getBalance(), aliceOfferDesc[1].amount);

@@ -17,18 +17,18 @@ const mintEscrowReceiptPayment = (escrowReceiptMint, offerId, offerDesc) => {
   return escrowReceiptPaymentP;
 };
 
-const mintClaimWinningsPayment = (seatMint, addUseObj, offerDesc, result) => {
-  const claimWinningsQuantity = harden({
+const mintClaimPayoffPayment = (seatMint, addUseObj, offerDesc, result) => {
+  const claimPayoffQuantity = harden({
     id: harden({}),
     offerMade: offerDesc,
   });
-  const claimWinningsPurseP = seatMint.mint(claimWinningsQuantity);
+  const claimPayoffPurseP = seatMint.mint(claimPayoffQuantity);
   const seat = harden({
-    getWinnings: () => result.p,
+    getPayoff: () => result.p,
   });
-  addUseObj(claimWinningsQuantity.id, seat);
-  const claimWinningsPaymentP = claimWinningsPurseP.withdrawAll();
-  return claimWinningsPaymentP;
+  addUseObj(claimPayoffQuantity.id, seat);
+  const claimPayoffPaymentP = claimPayoffPurseP.withdrawAll();
+  return claimPayoffPaymentP;
 };
 
 const depositAll = async (purses, strategies, offerDesc, offerPayments) => {
@@ -111,5 +111,5 @@ export {
   escrowEmptyOffer,
   escrowOffer,
   mintEscrowReceiptPayment,
-  mintClaimWinningsPayment,
+  mintClaimPayoffPayment,
 };

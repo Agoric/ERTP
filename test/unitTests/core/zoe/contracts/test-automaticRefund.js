@@ -49,12 +49,12 @@ test('zoe.makeInstance with automaticRefund', async t => {
 
     // Alice gets two kinds of ERTP payments back: an 'escrowReceipt' that
     // represents what she escrowed and which she can use interact
-    // safely with untrusted contracts, and a 'claimWinnings'
+    // safely with untrusted contracts, and a 'claimPayoff'
     // ERTP payment that represents the right to claim the winnings of
     // the offer that she made.
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
-      claimWinnings: allegedAliceClaimWinnings,
+      claimPayoff: allegedAliceClaimPayoff,
     } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. (This is
@@ -91,10 +91,10 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const bobPayments = [bobMoolaPayment, bobSimoleanPayment];
 
     // Bob also gets two ERTP payments back: an escrowReceipt and a
-    // claimWinnings payment
+    // claimPayoff payment
     const {
       escrowReceipt: allegedBobEscrowReceipt,
-      claimWinnings: allegedBobClaimWinnings,
+      claimPayoff: allegedBobClaimPayoff,
     } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment
@@ -108,29 +108,27 @@ test('zoe.makeInstance with automaticRefund', async t => {
     t.equals(bobOfferMadeDesc, bobOfferDesc);
     t.equals(aliceOfferMadeDesc, aliceOfferDesc);
 
-    // 9: Alice does a claimAll on her claimWinnings (she doesn't have
+    // 9: Alice does a claimAll on her claimPayoff (she doesn't have
     // to if she already trusts Zoe, but we will in the tests.)
-    const aliceClaimWinnings = await seatIssuer.claimAll(
-      allegedAliceClaimWinnings,
-    );
+    const aliceClaimPayoff = await seatIssuer.claimAll(allegedAliceClaimPayoff);
 
-    // 10: Bob does a claimAll on his claimWinnings (he doesn't have
+    // 10: Bob does a claimAll on his claimPayoff (he doesn't have
     // to, but we will in the tests.)
-    const bobClaimWinnings = await seatIssuer.claimAll(allegedBobClaimWinnings);
+    const bobClaimPayoff = await seatIssuer.claimAll(allegedBobClaimPayoff);
 
-    // 11: Alice unwraps the claimWinnings to get her seat
-    const aliceSeat = await aliceClaimWinnings.unwrap();
+    // 11: Alice unwraps the claimPayoff to get her seat
+    const aliceSeat = await aliceClaimPayoff.unwrap();
 
-    // 12: Bob unwraps his claimWinnings to get his seat
-    const bobSeat = await bobClaimWinnings.unwrap();
+    // 12: Bob unwraps his claimPayoff to get his seat
+    const bobSeat = await bobClaimPayoff.unwrap();
 
     // 9: Alice claims her portion of the outcome (what she put in,
     // since it's an automatic refund)
-    const aliceResult = await aliceSeat.getWinnings();
+    const aliceResult = await aliceSeat.getPayoff();
 
     // 10: Bob claims his position of the outcome (what he put in,
     // since it's an automatic refund)
-    const bobResult = await bobSeat.getWinnings();
+    const bobResult = await bobSeat.getPayoff();
 
     // Alice got back what she put in
     t.deepEquals(aliceResult[0].getBalance(), aliceOfferDesc[0].amount);

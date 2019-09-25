@@ -43,7 +43,7 @@ const aliceOfferDesc = harden([
 const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment];
 const {
   escrowReceipt: allegedAliceEscrowReceipt,
-  claimWinnings: aliceClaimWinnings,
+  claimPayoff: aliceClaimPayoff,
 } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
 ```
 
@@ -68,7 +68,7 @@ const bobOfferDesc = harden([
 const bobPayments = [bobMoolaPayment, bobSimoleanPayment];
 const {
   escrowReceipt: allegedBobEscrowReceipt,
-  claimWinnings: bobClaimWinnings,
+  claimPayoff: bobClaimPayoff,
 } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
 ```
 

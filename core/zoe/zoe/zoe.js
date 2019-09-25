@@ -10,7 +10,7 @@ import {
   escrowEmptyOffer,
   escrowOffer,
   mintEscrowReceiptPayment,
-  mintClaimWinningsPayment,
+  mintClaimPayoffPayment,
 } from './zoeUtils';
 
 import { makeState } from './state';
@@ -56,7 +56,7 @@ const makeZoe = () => {
             offerDesc,
           );
 
-          const claimWinningsPaymentP = mintClaimWinningsPayment(
+          const claimPayoffPaymentP = mintClaimPayoffPayment(
             seatMint,
             addUseObj,
             offerDesc,
@@ -65,7 +65,7 @@ const makeZoe = () => {
 
           return {
             escrowReceipt: escrowReceiptPaymentP,
-            claimWinnings: claimWinningsPaymentP,
+            claimPayoff: claimPayoffPaymentP,
           };
         },
         getIssuers: _ => readOnlyState.issuers,
