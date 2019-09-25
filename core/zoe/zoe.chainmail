@@ -82,17 +82,82 @@ interface ZoeUserFacet ( ) {
 }
 
 interface ZoeGoverningContractFacet () {
-  reallocate (offerIds :List, reallocation :List) -> (undefined);
-  eject (offerIds :List) -> (undefined);
+
+  /** 
+   * Instruct Zoe to try reallocating for the given offerIds.
+   * Reallocation is a matrix (array of arrays) where the rows are the
+   * quantities to be paid to the player who made the offer at the same
+   * index in the offerIds array. The reallocation will only happen if
+   * offer safety and conservation of rights are true, as enforced by Zoe.
+   */
+  reallocate (offerIds :List, reallocation :List);
+
+  /** 
+   * Eject the offer, taking the current allocation for that offer and
+   * creating payments to be returned to the user. The payments can be
+   * claimed by the user by taking the `claimPayment` ERTP payment
+   * received after escrowing, calling `unwrap` and calling the `claimPayoff`
+   * method on the resulting use object. No offer safety checks are
+   * done here because any previous reallocation performed those checks.
+   */
+  eject (offerIds :List);
+
+  /**
+   * Create an empty offer for recordkeeping purposes (Autoswap uses
+   * this to create the liquidity pool). 
+   */
   escrowEmptyOffer ( ) -> (offerId);
+  
+  /**
+   * Escrow an offer created by the governing contract. Autoswap uses
+   * this to mint liquidity tokens and add them to the rights managed by
+   * the zoeInstance.
+   */
   escrowOffer (offerDesc :List, offerPayments :List) -> (offerId);
+
+  /** 
+   * A helper function provided by Zoe to allow the governing contract
+   * to easily burn and validate an escrowReceipt received from the
+   * user. 
+   */
   burnEscrowReceipt (escrowReceipt :Payment) -> (Quantity);
+
+  /**
+   * The methods below are pure and have no side-effects.
+   */ 
+
+  /**
+   * A helper function for creating an array of empty quantities per
+   * issuer. Note that if the mint is not a basic fungible mint, this may
+   * be something other than 0. 
+   */
   makeEmptyQuantities ( ) -> (List);
+
+  /** Get the array of issuers */
   getIssuers ( ) -> (List);
+  
+  /** Get the array of assays */
   getAssays ( ) -> (List);
+
+  /** Get the array of strategies, the logic from the assays */
   getStrategies ( ) -> (List);
+
+  /** 
+   * Pass in an array of offerIds and get a matrix (array of arrays)
+   * containing the quantities, in the same order as the offerIds array.
+   */
   getQuantitiesFor (offerIds :List) -> (List);
+
+  /** 
+   * Pass in an array of offerIds and get a matrix (array of arrays)
+   * containing the offer descriptions for the offers, in the same 
+   * order as the offerIds array.
+   */
   getOfferDescsFor (offerIds :List) -> (List);
+
+  /** Get the Zoe seatIssuer */
   getSeatIssuer ( ) -> (Issuer);
+
+  /** Get the Zoe escrowReceiptIssuer */
   getEscrowReceiptIssuer ( ) -> (Issuer);
 }
