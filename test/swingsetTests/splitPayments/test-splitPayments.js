@@ -17,11 +17,9 @@ async function main(withSES, basedir, argv) {
 
 const expectedTapFaucetLog = [
   '=> setup called',
-  'starting tapFaucet',
-  'alice is made',
-  'starting testTapFaucet',
-  '++ alice.doTapFaucet starting',
-  'pixel from faucet balance {"label":{"issuer":{},"description":"pixels"},"quantity":[{"x":1,"y":4}]}',
+  'start test splitPayments',
+  'oldPayment balance:{"label":{"issuer":{},"description":"moola"},"quantity":1000}',
+  'splitPayment[0] balance: {"label":{"issuer":{},"description":"moola"},"quantity":900}',
 ];
 
 test('test splitPayments with SES', async t => {
@@ -30,7 +28,7 @@ test('test splitPayments with SES', async t => {
   t.end();
 });
 
-test.only('test splitPayments without SES', async t => {
+test('test splitPayments without SES', async t => {
   const dump = await main(false, 'splitPayments', ['splitPayments']);
   t.deepEquals(dump.log, expectedTapFaucetLog);
   t.end();

@@ -2,8 +2,9 @@ import harden from '@agoric/harden';
 
 import { makeMint } from '../../../core/issuers';
 
-function build(E, _log) {
+function build(E, log) {
   function testSplitPayments(aliceMaker) {
+    log('start test splitPayments');
     const moolaMint = makeMint('moola');
     const moolaPurse = moolaMint.mint(1000, 'alice money');
 
