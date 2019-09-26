@@ -22,7 +22,7 @@ test('zoe.makeInstance with automaticRefund', async t => {
     // Setup Bob
     const bobMoolaPurse = mints[0].mint(issuers[0].makeAmount(0));
     const bobMoolaPayment = bobMoolaPurse.withdrawAll();
-    const bobSimoleanPurse = mints[1].mint(issuers[1].makeAmount(7));
+    const bobSimoleanPurse = mints[1].mint(issuers[1].makeAmount(17));
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates an automatic refund instance
@@ -66,14 +66,14 @@ test('zoe.makeInstance with automaticRefund', async t => {
     // 4: Alice makes an offer with her escrow receipt
 
     // In the 'automaticRefund' trivial contract, you just get your
-    // offerDesc back when you make an offer. This will vary widely
-    // depending on the governing contract.
+    // offerDesc back when you make an offer. The effect of calling
+    // makeOffer will vary widely depending on the governing contract.
     const aliceOfferMadeDesc = await automaticRefund.makeOffer(
       aliceEscrowReceipt,
     );
 
-    // 5: Imagine that Bob also has access to the zoeInstance and the
-    // automaticRefund
+    // 5: Imagine that Alice has shared the zoeInstance and
+    // automaticRefund with Bob
 
     // 6: Bob also wants to get an automaticRefund (why? we don't
     // know) so he escrows his offer and his offer payments.
@@ -81,11 +81,11 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const bobOfferDesc = harden([
       {
         rule: 'wantExactly',
-        amount: issuers[0].makeAmount(3),
+        amount: issuers[0].makeAmount(15),
       },
       {
         rule: 'offerExactly',
-        amount: issuers[1].makeAmount(7),
+        amount: issuers[1].makeAmount(17),
       },
     ]);
     const bobPayments = [bobMoolaPayment, bobSimoleanPayment];
@@ -150,7 +150,7 @@ test('zoe.makeInstance with automaticRefund', async t => {
     t.equals(aliceMoolaPurse.getBalance().quantity, 3);
     t.equals(aliceSimoleanPurse.getBalance().quantity, 0);
     t.equals(bobMoolaPurse.getBalance().quantity, 0);
-    t.equals(bobSimoleanPurse.getBalance().quantity, 7);
+    t.equals(bobSimoleanPurse.getBalance().quantity, 17);
   } catch (e) {
     t.assert(false, e);
     console.log(e);

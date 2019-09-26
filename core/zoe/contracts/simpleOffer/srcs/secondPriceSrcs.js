@@ -85,8 +85,8 @@ const reallocate = (
   // The person who created the auction gets the price paid.
   creatorQuantities[1] = price;
 
-  // The winner gets to keep the difference between the their bid and
-  // the price paid.
+  // The winner gets to keep the difference between their bid and the
+  // price paid.
   winnerQuantities[1] = strategies[1].without(winnerQuantities[1], price);
 
   // Everyone else gets a refund so their quantities remain the same.
