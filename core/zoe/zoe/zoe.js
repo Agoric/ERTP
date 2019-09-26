@@ -150,13 +150,16 @@ const makeZoe = () => {
          *  represent a pool, the governing contract can create an
          *  empty offer and then reallocate other quantities to this offer.
          */
-        escrowEmptyOffer: () =>
-          escrowEmptyOffer(
+        escrowEmptyOffer: async () => {
+          // attenuate the authority by not passing along the result
+          // promise object and only passing the offerId
+          const { offerId } = await escrowEmptyOffer(
             adminState,
             readOnlyState.getAssays(),
             readOnlyState.getStrategies(),
-          ),
-
+          );
+          return offerId;
+        },
         /**
          *  The governing contract can also create a real offer and
          *  get the associated offerId, bypassing the seat and receipt

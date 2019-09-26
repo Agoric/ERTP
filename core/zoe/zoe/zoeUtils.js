@@ -80,6 +80,18 @@ const escrowOffer = async (
   });
 };
 
+const escrowEmptyOffer = (adminState, assays, strategies) => {
+  const offerPayments = assays.map(_assay => undefined);
+
+  const offerDesc = assays.map(assay =>
+    harden({
+      rule: 'wantAtLeast',
+      amount: assay.empty(),
+    }),
+  );
+  return escrowOffer(adminState, strategies, offerDesc, offerPayments);
+};
+
 const makePayments = (purses, amountsMatrix) =>
   amountsMatrix.map(row =>
     row.map((amount, i) => {
@@ -87,26 +99,6 @@ const makePayments = (purses, amountsMatrix) =>
       return payment;
     }),
   );
-
-const escrowEmptyOffer = (adminState, assays, strategies) => {
-  const result = makePromise();
-  const offerDesc = assays.map(assay =>
-    harden({
-      rule: 'wantAtLeast',
-      amount: assay.empty(),
-    }),
-  );
-  const offerId = harden({});
-
-  // has side effects
-  adminState.recordOffer(
-    offerId,
-    offerDesc,
-    makeEmptyQuantities(strategies),
-    result,
-  );
-  return offerId;
-};
 
 export {
   makePayments,
