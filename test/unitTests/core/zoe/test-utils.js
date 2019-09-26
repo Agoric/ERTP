@@ -1,19 +1,19 @@
 import { test } from 'tape-promise/tape';
 
 import {
-  allTrue,
+  bothTrue,
   anyTrue,
   transpose,
   offerEqual,
 } from '../../../../core/zoe/utils';
 import { setup } from './setupBasicMints';
 
-test('allTrue', t => {
+test('bothTrue', t => {
   try {
-    t.ok([1, 2].reduce(allTrue));
-    t.notOk([false, 2].reduce(allTrue));
-    t.notOk([false, false].reduce(allTrue));
-    t.ok([true, true].reduce(allTrue));
+    t.ok([1, 2].reduce(bothTrue));
+    t.notOk([false, 2].reduce(bothTrue));
+    t.notOk([false, false].reduce(bothTrue));
+    t.ok([true, true].reduce(bothTrue));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -102,7 +102,7 @@ test('offerEqual - throws bc offers have different issuers', t => {
     ];
     // This throws because the assay does not recognize the amounts
     // for a different issuer
-    t.throws(() => offerEqual(assays, offer1, offer2), /Unrecognized amount/);
+    t.throws(() => offerEqual(assays, offer1, offer2), /Unrecognized label/);
   } catch (e) {
     t.assert(false, e);
   } finally {
