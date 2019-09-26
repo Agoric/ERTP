@@ -184,8 +184,6 @@ const makeZoe = () => {
         // read-only, side-effect-free access below this line:
         makeEmptyQuantities: () =>
           makeEmptyQuantities(readOnlyState.getStrategies()),
-        getIssuers: readOnlyState.getIssuers,
-        getAssays: readOnlyState.getAssays,
         getStrategies: readOnlyState.getStrategies,
         getQuantitiesFor: readOnlyState.getQuantitiesFor,
         getOfferDescsFor: readOnlyState.getOfferDescsFor,

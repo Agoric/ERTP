@@ -91,7 +91,7 @@ test('makeEmptyQuantities', t => {
 });
 
 test('offerEqual - offers are equal', t => {
-  const { issuers, assays } = setup();
+  const { issuers, strategies } = setup();
   try {
     const offer1 = [
       {
@@ -107,7 +107,7 @@ test('offerEqual - offers are equal', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.ok(offerEqual(assays, offer1, offer1));
+    t.ok(offerEqual(strategies, offer1, offer1));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -116,7 +116,7 @@ test('offerEqual - offers are equal', t => {
 });
 
 test('offerEqual - throws bc offers have different issuers', t => {
-  const { issuers, assays } = setup();
+  const { issuers, strategies } = setup();
   try {
     const offer1 = [
       {
@@ -146,9 +146,7 @@ test('offerEqual - throws bc offers have different issuers', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    // This throws because the assay does not recognize the amounts
-    // for a different issuer
-    t.throws(() => offerEqual(assays, offer1, offer2), /Unrecognized amount/);
+    t.notOk(offerEqual(strategies, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -157,7 +155,7 @@ test('offerEqual - throws bc offers have different issuers', t => {
 });
 
 test('offerEqual - returns false bc different quantity', t => {
-  const { issuers, assays } = setup();
+  const { issuers, strategies } = setup();
   try {
     const offer1 = [
       {
@@ -187,7 +185,7 @@ test('offerEqual - returns false bc different quantity', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.notOk(offerEqual(assays, offer1, offer2));
+    t.notOk(offerEqual(strategies, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -196,7 +194,7 @@ test('offerEqual - returns false bc different quantity', t => {
 });
 
 test('offerEqual - returns false bc different rule', t => {
-  const { issuers, assays } = setup();
+  const { issuers, strategies } = setup();
   try {
     const offer1 = [
       {
@@ -226,7 +224,7 @@ test('offerEqual - returns false bc different rule', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.notOk(offerEqual(assays, offer1, offer2));
+    t.notOk(offerEqual(strategies, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -235,7 +233,7 @@ test('offerEqual - returns false bc different rule', t => {
 });
 
 test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
-  const { issuers, assays } = setup();
+  const { issuers, strategies } = setup();
   try {
     const offer1 = [
       {
@@ -265,7 +263,7 @@ test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.notOk(offerEqual(assays, offer1, offer2));
+    t.notOk(offerEqual(strategies, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {

@@ -22,11 +22,14 @@ const mapArrayOnMatrix = (matrix, arrayF) => {
 
 const ruleEqual = (leftRule, rightRule) => leftRule.rule === rightRule.rule;
 
-const amountEqual = (assay, leftRule, rightRule) =>
-  assay.equals(leftRule.amount, rightRule.amount);
+const quantityEqual = (strategy, leftRule, rightRule) =>
+  strategy.equals(leftRule.amount.quantity, rightRule.amount.quantity);
+
+const issuerEqual = (leftRule, rightRule) =>
+  leftRule.amount.label.issuer === rightRule.amount.label.issuer;
 
 // Check that two offers are equal in both their rules and their amounts
-const offerEqual = (assays, leftOffer, rightOffer) => {
+const offerEqual = (strategies, leftOffer, rightOffer) => {
   const isLengthEqual = leftOffer.length === rightOffer.length;
   if (!isLengthEqual) {
     return false;
@@ -35,7 +38,8 @@ const offerEqual = (assays, leftOffer, rightOffer) => {
     .map(
       (leftRule, i) =>
         ruleEqual(leftRule, rightOffer[i]) &&
-        amountEqual(assays[i], leftRule, rightOffer[i]),
+        issuerEqual(leftRule, rightOffer[i]) &&
+        quantityEqual(strategies[i], leftRule, rightOffer[i]),
     )
     .reduce(bothTrue);
 };

@@ -17,7 +17,7 @@ const makeSimpleOfferMaker = srcs => zoeInstance => {
       // Eject if the offer is invalid
       if (
         !srcs.isValidOffer(
-          zoeInstance.getAssays(),
+          zoeInstance.getStrategies(),
           offerIds,
           offerIdsToOfferDescs,
           offerMadeDesc,

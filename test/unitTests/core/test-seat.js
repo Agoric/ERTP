@@ -24,7 +24,7 @@ import { insist } from '../../../util/insist';
  */
 
 test('seatMint', async t => {
-  const { assays } = setup();
+  const { assays, strategies } = setup();
   const { seatMint, addUseObj } = makeSeatMint();
 
   const makeUseObj = quantity => {
@@ -32,7 +32,7 @@ test('seatMint', async t => {
     if (quantity.offerToBeMade) {
       return harden({
         makeOffer: offer => {
-          insist(offerEqual(assays, offer, quantity.offerToBeMade));
+          insist(offerEqual(strategies, offer, quantity.offerToBeMade));
           // do things with the offer
           return true;
         },
