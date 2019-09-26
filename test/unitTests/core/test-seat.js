@@ -22,7 +22,7 @@ import { insist } from '../../../util/insist';
  *
  */
 
-const allTrue = (prev, curr) => prev && curr;
+const bothTrue = (prev, curr) => prev && curr;
 
 const ruleEqual = (leftRule, rightRule) => leftRule.rule === rightRule.rule;
 
@@ -41,7 +41,7 @@ const offerEqual = (assays, leftOffer, rightOffer) => {
         amountEqual(assays[i], leftRule, rightOffer[i])
       );
     })
-    .reduce(allTrue);
+    .reduce(bothTrue);
 };
 
 const setup = () => {
