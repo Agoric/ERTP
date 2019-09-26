@@ -61,13 +61,13 @@ interface ZoeUserFacet ( ) {
 
   /** 
    * To escrow, the user must provide an `offerDesc` which is a list of
-   * objects with a rule property (such as 'haveExactly') and an amount
+   * objects with a rule property (such as 'offerExactly') and an amount
    * property. The objects in the `offerDesc` must be in the same order
    * as the issuers array. That is, the amount in index 0 of `offerDesc`
    * should be an amount for the issuer in index 0 of the issuers array.
    * `payments` is an array of the actual payments to be escrowed,
    * following the rules in the offerDesc. If the offerDesc rule is
-   * 'haveExactly' or 'haveAtMost', then a payment matching the amount is
+   * 'offerExactly' or 'offerAtMost', then a payment matching the amount is
    * expected. If the offerDesc rule is 'wantAtLeast' or 'wantExactly'
    * then the payment will be ignored and should be undefined.
    */

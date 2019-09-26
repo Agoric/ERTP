@@ -1,8 +1,8 @@
 import { test } from 'tape-promise/tape';
 
 import {
-  allTrue,
-  anyTrue,
+  bothTrue,
+  eitherTrue,
   transpose,
   mapArrayOnMatrix,
   offerEqual,
@@ -12,12 +12,12 @@ import {
 } from '../../../../core/zoe/contractUtils';
 import { setup } from './setupBasicMints';
 
-test('allTrue', t => {
+test('bothTrue', t => {
   try {
-    t.ok([1, 2].reduce(allTrue));
-    t.notOk([false, 2].reduce(allTrue));
-    t.notOk([false, false].reduce(allTrue));
-    t.ok([true, true].reduce(allTrue));
+    t.ok([1, 2].reduce(bothTrue));
+    t.notOk([false, 2].reduce(bothTrue));
+    t.notOk([false, false].reduce(bothTrue));
+    t.ok([true, true].reduce(bothTrue));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -25,12 +25,12 @@ test('allTrue', t => {
   }
 });
 
-test('anyTrue', t => {
+test('eitherTrue', t => {
   try {
-    t.ok([1, 2].reduce(anyTrue));
-    t.ok([false, 2].reduce(anyTrue));
-    t.notOk([false, false].reduce(anyTrue));
-    t.ok([true, true].reduce(anyTrue));
+    t.ok([1, 2].reduce(eitherTrue));
+    t.ok([false, 2].reduce(eitherTrue));
+    t.notOk([false, false].reduce(eitherTrue));
+    t.ok([true, true].reduce(eitherTrue));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -95,7 +95,7 @@ test('offerEqual - offers are equal', t => {
   try {
     const offer1 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(3),
       },
       {
@@ -120,7 +120,7 @@ test('offerEqual - throws bc offers have different issuers', t => {
   try {
     const offer1 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(3),
       },
       {
@@ -134,7 +134,7 @@ test('offerEqual - throws bc offers have different issuers', t => {
     ];
     const offer2 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[1].makeAmount(3),
       },
       {
@@ -161,7 +161,7 @@ test('offerEqual - returns false bc different quantity', t => {
   try {
     const offer1 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(3),
       },
       {
@@ -175,7 +175,7 @@ test('offerEqual - returns false bc different quantity', t => {
     ];
     const offer2 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(4),
       },
       {
@@ -200,7 +200,7 @@ test('offerEqual - returns false bc different rule', t => {
   try {
     const offer1 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(3),
       },
       {
@@ -214,11 +214,11 @@ test('offerEqual - returns false bc different rule', t => {
     ];
     const offer2 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(3),
       },
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[1].makeAmount(7),
       },
       {
@@ -239,7 +239,7 @@ test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
   try {
     const offer1 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(3),
       },
       {
@@ -253,7 +253,7 @@ test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
     ];
     const offer2 = [
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(3),
       },
       {

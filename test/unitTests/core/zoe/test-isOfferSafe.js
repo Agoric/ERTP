@@ -48,11 +48,11 @@ test('isOfferSafeForPlayer - empty amounts', t => {
 
 // The player puts in something and gets exactly what they wanted,
 // with no refund
-test('isOfferSafeForPlayer - gets wantExactly, with haveExactly', t => {
+test('isOfferSafeForPlayer - gets wantExactly, with offerExactly', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(8) },
+      { rule: 'offerExactly', amount: assays[0].make(8) },
       { rule: 'wantExactly', amount: assays[1].make(6) },
       { rule: 'wantExactly', amount: assays[2].make(7) },
     ];
@@ -108,13 +108,13 @@ test('isOfferSafeForPlayer - gets wantExactly', t => {
 });
 
 // The user gets refunded exactly what they put in, with a 'wantExactly'
-test(`isOfferSafeForPlayer - gets haveExactly, doesn't get wantExactly`, t => {
+test(`isOfferSafeForPlayer - gets offerExactly, doesn't get wantExactly`, t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(1) },
+      { rule: 'offerExactly', amount: assays[0].make(1) },
       { rule: 'wantExactly', amount: assays[1].make(2) },
-      { rule: 'haveExactly', amount: assays[2].make(3) },
+      { rule: 'offerExactly', amount: assays[2].make(3) },
     ];
     const amounts = [assays[0].make(1), assays[1].make(0), assays[2].make(3)];
 
@@ -127,13 +127,13 @@ test(`isOfferSafeForPlayer - gets haveExactly, doesn't get wantExactly`, t => {
 });
 
 // The user gets refunded exactly what they put in, with no 'wantExactly'
-test('isOfferSafeForPlayer - gets haveExactly, no wantExactly', t => {
+test('isOfferSafeForPlayer - gets offerExactly, no wantExactly', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(1) },
-      { rule: 'haveExactly', amount: assays[1].make(2) },
-      { rule: 'haveExactly', amount: assays[2].make(3) },
+      { rule: 'offerExactly', amount: assays[0].make(1) },
+      { rule: 'offerExactly', amount: assays[1].make(2) },
+      { rule: 'offerExactly', amount: assays[2].make(3) },
     ];
     const amounts = [assays[0].make(1), assays[1].make(2), assays[2].make(3)];
 
@@ -150,7 +150,7 @@ test('isOfferSafeForPlayer - refund and winnings', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
       { rule: 'wantExactly', amount: assays[1].make(3) },
       { rule: 'wantExactly', amount: assays[2].make(3) },
     ];
@@ -168,7 +168,7 @@ test('isOfferSafeForPlayer - more than wantExactly', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
       { rule: 'wantExactly', amount: assays[1].make(3) },
       { rule: 'wantExactly', amount: assays[2].make(4) },
     ];
@@ -200,12 +200,12 @@ test('isOfferSafeForPlayer - more than wantAtLeast', t => {
 });
 
 // The user gets refunded more than what they put in
-test('isOfferSafeForPlayer - more than haveExactly', t => {
+test('isOfferSafeForPlayer - more than offerExactly', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
-      { rule: 'haveExactly', amount: assays[1].make(3) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[1].make(3) },
       { rule: 'wantExactly', amount: assays[2].make(4) },
     ];
     const amounts = [assays[0].make(5), assays[1].make(6), assays[2].make(8)];
@@ -220,13 +220,13 @@ test('isOfferSafeForPlayer - more than haveExactly', t => {
 // The user gets refunded more than what they put in, with no
 // wantExactly. Note: This returns 'true' counterintuitively
 // because no winnings were specified and none were given back.
-test('isOfferSafeForPlayer - more than haveExactly, no wants', t => {
+test('isOfferSafeForPlayer - more than offerExactly, no wants', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
-      { rule: 'haveExactly', amount: assays[1].make(3) },
-      { rule: 'haveExactly', amount: assays[2].make(4) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[1].make(3) },
+      { rule: 'offerExactly', amount: assays[2].make(4) },
     ];
     const amounts = [assays[0].make(5), assays[1].make(6), assays[2].make(8)];
     t.ok(isOfferSafeForPlayer(assays, rules, amounts));
@@ -237,13 +237,13 @@ test('isOfferSafeForPlayer - more than haveExactly, no wants', t => {
   }
 });
 
-// The user gets refunded more than what they put in, with 'haveAtMost'
-test('isOfferSafeForPlayer - more than haveAtMost', t => {
+// The user gets refunded more than what they put in, with 'offerAtMost'
+test('isOfferSafeForPlayer - more than offerAtMost', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveAtMost', amount: assays[0].make(2) },
-      { rule: 'haveAtMost', amount: assays[1].make(3) },
+      { rule: 'offerAtMost', amount: assays[0].make(2) },
+      { rule: 'offerAtMost', amount: assays[1].make(3) },
       { rule: 'wantExactly', amount: assays[2].make(4) },
     ];
     const amounts = [assays[0].make(5), assays[1].make(3), assays[2].make(0)];
@@ -260,7 +260,7 @@ test('isOfferSafeForPlayer - less than wantExactly', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
       { rule: 'wantExactly', amount: assays[1].make(3) },
       { rule: 'wantExactly', amount: assays[2].make(5) },
     ];
@@ -278,7 +278,7 @@ test('isOfferSafeForPlayer - less than wantExactly', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
       { rule: 'wantAtLeast', amount: assays[1].make(3) },
       { rule: 'wantAtLeast', amount: assays[2].make(9) },
     ];
@@ -296,7 +296,7 @@ test('isOfferSafeForPlayer - less than wantExactly', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
       { rule: 'wantAtLeast', amount: assays[1].make(3) },
       { rule: 'wantAtLeast', amount: assays[2].make(3) },
     ];
@@ -314,7 +314,7 @@ test('isOfferSafeForAll - get wantExactly', t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
       { rule: 'wantExactly', amount: assays[1].make(3) },
       { rule: 'wantExactly', amount: assays[2].make(3) },
     ];
@@ -335,7 +335,7 @@ test(`isOfferSafeForAll - get wantExactly - one doesn't`, t => {
   try {
     const { assays } = setup();
     const rules = [
-      { rule: 'haveExactly', amount: assays[0].make(2) },
+      { rule: 'offerExactly', amount: assays[0].make(2) },
       { rule: 'wantExactly', amount: assays[1].make(3) },
       { rule: 'wantExactly', amount: assays[2].make(3) },
     ];

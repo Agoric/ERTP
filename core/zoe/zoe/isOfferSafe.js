@@ -1,4 +1,4 @@
-import { allTrue } from '../contractUtils';
+import { bothTrue } from '../contractUtils';
 import { insist } from '../../../util/insist';
 
 /**
@@ -31,8 +31,8 @@ function isOfferSafeForPlayer(
   )`assays, rules, and amounts must be arrays of the same length`;
 
   const allowedRules = [
-    'haveExactly',
-    'haveAtMost',
+    'offerExactly',
+    'offerAtMost',
     'wantExactly',
     'wantAtLeast',
   ];
@@ -44,20 +44,20 @@ function isOfferSafeForPlayer(
       insist(
         allowedRules.includes(rule.rule),
       )`The rule ${rule.rule} was not recognized`;
-      // If the rule was 'haveExactly', we should make sure that the
+      // If the rule was 'offerExactly', we should make sure that the
       // user gets it back exactly in a refund. If the rule is
-      // 'haveAtMost' we need to ensure that the user gets back the
+      // 'offerAtMost' we need to ensure that the user gets back the
       // amount or greater. If the rule is something else, anything
       // we give back is fine.
-      if (rule.rule === 'haveExactly') {
+      if (rule.rule === 'offerExactly') {
         return assaysPerIssuer[i].equals(amountsPerIssuer[i], rule.amount);
       }
-      if (rule.rule === 'haveAtMost') {
+      if (rule.rule === 'offerAtMost') {
         return assaysPerIssuer[i].includes(amountsPerIssuer[i], rule.amount);
       }
       return true;
     })
-    .reduce(allTrue);
+    .reduce(bothTrue);
 
   // If we are not refunding the player, are their allocated amounts
   // greater than or equal to what they said they wanted at the beginning?
@@ -79,7 +79,7 @@ function isOfferSafeForPlayer(
       }
       return true;
     })
-    .reduce(allTrue);
+    .reduce(bothTrue);
 
   return refundOk || winningsOk;
 }
@@ -99,7 +99,7 @@ function isOfferSafeForAll(assays, offerMatrix, amountMatrix) {
       const amountsPerPlayer = amountMatrix[i];
       return isOfferSafeForPlayer(assays, rulesForPlayer, amountsPerPlayer);
     })
-    .reduce(allTrue);
+    .reduce(bothTrue);
 }
 
 export { isOfferSafeForPlayer, isOfferSafeForAll };

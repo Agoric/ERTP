@@ -32,7 +32,7 @@ calling `makeOffer` on the auction instance.
 ```js
 const aliceOfferDesc = harden([
   {
-    rule: 'haveExactly',
+    rule: 'offerExactly',
     amount: moolaIssuer.makeAmount(1),
   },
   {
@@ -61,7 +61,7 @@ const bobOfferDesc = harden([
     amount: moolaIssuer.makeAmount(1),
   },
   {
-    rule: 'haveAtMost',
+    rule: 'offerAtMost',
     amount: simoleanIssuer.makeAmount(11),
   },
 ]);

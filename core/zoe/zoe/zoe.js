@@ -68,7 +68,7 @@ const makeZoe = () => {
             claimPayoff: claimPayoffPaymentP,
           };
         },
-        getIssuers: _ => readOnlyState.issuers,
+        getIssuers: readOnlyState.getIssuers,
       });
 
       // The `governingContractFacet` is what is accessible by the
@@ -105,16 +105,19 @@ const makeZoe = () => {
           // 1) ensure that rights are conserved
           insist(
             areRightsConserved(
-              readOnlyState.strategies,
+              readOnlyState.getStrategies(),
               currentQuantities,
               reallocation,
             ),
           )`Rights are not conserved in the proposed reallocation`;
 
           // 2) ensure offer safety for each player
-          const amounts = toAmountMatrix(readOnlyState.assays, reallocation);
+          const amounts = toAmountMatrix(
+            readOnlyState.getAssays(),
+            reallocation,
+          );
           insist(
-            isOfferSafeForAll(readOnlyState.assays, offerDescs, amounts),
+            isOfferSafeForAll(readOnlyState.getAssays(), offerDescs, amounts),
           )`The proposed reallocation was not offer safe`;
 
           // 3) save the reallocation
@@ -133,7 +136,7 @@ const makeZoe = () => {
          */
         eject: offerIds => {
           const quantities = readOnlyState.getQuantitiesFor(offerIds);
-          const amounts = toAmountMatrix(readOnlyState.assays, quantities);
+          const amounts = toAmountMatrix(readOnlyState.getAssays(), quantities);
           const payments = makePayments(adminState.getPurses(), amounts);
           const results = adminState.getResultsFor(offerIds);
           results.map((result, i) => result.res(payments[i]));

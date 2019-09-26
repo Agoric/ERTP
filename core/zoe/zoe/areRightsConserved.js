@@ -1,4 +1,4 @@
-import { allTrue, transpose } from '../contractUtils';
+import { bothTrue, transpose } from '../contractUtils';
 
 /**
  * The columns in a `quantities` matrix are per issuer, and the rows
@@ -25,7 +25,7 @@ const sumByIssuer = (strategies, quantities) =>
 const isEqualPerIssuer = (strategies, leftQuantities, rightQuantities) =>
   leftQuantities
     .map((leftQ, i) => strategies[i].equals(leftQ, rightQuantities[i]))
-    .reduce(allTrue);
+    .reduce(bothTrue);
 
 /**
  * `areRightsConserved` checks that the total quantity per issuer stays

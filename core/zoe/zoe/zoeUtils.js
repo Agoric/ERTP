@@ -31,15 +31,17 @@ const mintClaimPayoffPayment = (seatMint, addUseObj, offerDesc, result) => {
   return claimPayoffPaymentP;
 };
 
-const depositAll = async (purses, strategies, offerDesc, offerPayments) => {
+const escrowAllPayments = async (
+  purses,
+  strategies,
+  offerDesc,
+  offerPayments,
+) => {
   const quantitiesArrayPromises = purses.map(async (purse, i) => {
     // if the user's contractual understanding includes
-    // "haveExactly" or "haveAtMost", make sure that they have supplied a
+    // "offerExactly" or "offerAtMost", make sure that they have supplied a
     // payment with that exact balance
-    if (
-      offerDesc[i].rule === 'haveExactly' ||
-      offerDesc[i].rule === 'haveAtMost'
-    ) {
+    if (['offerExactly', 'offerAtMost'].includes(offerDesc[i].rule)) {
       const amount = await purse.depositExactly(
         offerDesc[i].amount,
         offerPayments[i],
@@ -60,7 +62,7 @@ const escrowOffer = async (
 ) => {
   const result = makePromise();
 
-  const quantitiesArray = await depositAll(
+  const quantitiesArray = await escrowAllPayments(
     adminState.getPurses(),
     strategies,
     offerDesc,

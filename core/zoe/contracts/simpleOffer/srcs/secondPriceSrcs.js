@@ -3,11 +3,11 @@ import harden from '@agoric/harden';
 import { makeHasOkRules } from '../../../contractUtils';
 
 const hasOkRulesInitialOffer = makeHasOkRules([
-  ['haveExactly', 'wantAtLeast'], // The initial offer
+  ['offerExactly', 'wantAtLeast'], // The initial offer
 ]);
 
 const hasOkRulesBids = makeHasOkRules([
-  ['wantExactly', 'haveAtMost'], // Subsequent bids
+  ['wantExactly', 'offerAtMost'], // Subsequent bids
 ]);
 
 const isValidInitialOfferDesc = newOfferDesc =>

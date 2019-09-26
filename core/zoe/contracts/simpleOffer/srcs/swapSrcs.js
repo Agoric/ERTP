@@ -3,8 +3,8 @@ import harden from '@agoric/harden';
 import { makeHasOkRules, offerEqual } from '../../../contractUtils';
 
 const hasOkRules = makeHasOkRules([
-  ['haveExactly', 'wantExactly'],
-  ['wantExactly', 'haveExactly'],
+  ['offerExactly', 'wantExactly'],
+  ['wantExactly', 'offerExactly'],
 ]);
 
 const makeSecondOffer = firstOffer =>
