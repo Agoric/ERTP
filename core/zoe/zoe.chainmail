@@ -97,7 +97,7 @@ interface ZoeGoverningContractFacet () {
    * Reallocation is a matrix (array of arrays) where the rows are the
    * quantities to be paid to the player who made the offer at the same
    * index in the offerIds array. The reallocation will only happen if
-   * offer safety and conservation of rights are true, as enforced by Zoe.
+   * 'offer safety' and conservation of rights are true, as enforced by Zoe.
    */
   reallocate (offerIds :List, reallocation :List(List(Quantity)));
 
@@ -106,7 +106,7 @@ interface ZoeGoverningContractFacet () {
    * creating payments to be returned to the user. The payments can be
    * claimed by the user by taking the `claimPayment` ERTP payment
    * received after escrowing, calling `unwrap` and calling the `claimPayoff`
-   * method on the resulting use object. No offer safety checks are
+   * method on the resulting use object. No 'offer safety' checks are
    * done here because any previous reallocation performed those checks.
    */
   eject (offerIds :List);
@@ -124,23 +124,16 @@ interface ZoeGoverningContractFacet () {
    */
   escrowOffer (offerDesc :List, offerPayments :List) -> (offerId);
 
-  /** 
-   * A helper function provided by Zoe to allow the governing contract
-   * to easily burn and validate an escrowReceipt received from the
-   * user. 
-   */
+  /** Burn and validate an escrowReceipt received from the user. */
   burnEscrowReceipt (escrowReceipt :Payment) -> (Quantity);
 
-  /**
-   * The methods below are pure and have no side-effects.
-   */ 
+  ////// The methods below are pure and have no side-effects. ////////
 
   /**
-   * A helper function for creating an array of empty quantities per
-   * issuer. Note that if the mint is not a basic fungible mint, this may
-   * be something other than 0. 
+   * Create an array of empty quantities per issuer. Note that if the 
+   * mint is not a basic fungible mint, this may be something other than 0. 
    */
-  makeEmptyQuantities ( ) -> (List);
+  makeEmptyQuantities ( ) -> (List(Quantity));
 
   /** Get the array of issuers */
   getIssuers ( ) -> (List(Issuer));

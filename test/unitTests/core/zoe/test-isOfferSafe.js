@@ -145,7 +145,7 @@ test('isOfferSafeForPlayer - gets offerExactly, no wantExactly', t => {
   }
 });
 
-// The user gets a refund *and* winnings. This is offer safe.
+// The user gets a refund *and* winnings. This is 'offer safe'.
 test('isOfferSafeForPlayer - refund and winnings', t => {
   try {
     const { assays } = setup();

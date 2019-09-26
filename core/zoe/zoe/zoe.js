@@ -84,7 +84,7 @@ const makeZoe = () => {
         /**
          * The governing contract can propose a reallocation of
          * quantities per player, which will only succeed if the
-         * reallocation 1) conserves rights, and 2) is offer safe for
+         * reallocation 1) conserves rights, and 2) is 'offer safe' for
          * all parties involved. This reallocation is partial, meaning
          * that it applies only to the quantities associated with the
          * offerIds that are passed in, rather than applying to all of
@@ -111,7 +111,7 @@ const makeZoe = () => {
             ),
           )`Rights are not conserved in the proposed reallocation`;
 
-          // 2) ensure offer safety for each player
+          // 2) ensure 'offer safety' for each player
           const amounts = toAmountMatrix(
             readOnlyState.getAssays(),
             reallocation,
@@ -129,7 +129,7 @@ const makeZoe = () => {
          * from the ongoing governing contract and resolve the
          * `result` promise with their payouts (either winnings or
          * refunds). Because Zoe only allows for reallocations that
-         * conserve rights and are offer safe, we don't need to do
+         * conserve rights and are 'offer safe', we don't need to do
          * those checks at this step and can assume that the
          * invariants hold.
          * @param  {array} offerIds - an array of offerIds
