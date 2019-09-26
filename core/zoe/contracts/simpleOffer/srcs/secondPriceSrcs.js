@@ -48,7 +48,7 @@ const isValidOffer = (
 };
 
 // Iterate over all of the bids keeping the highest and second highest bid.
-const findWinnerAndPrice = (strategy, offerIds, bids) => {
+const findWinnerAndPrice = (strategy, bidOfferIds, bids) => {
   let highestBid = strategy.empty();
   let secondHighestBid = strategy.empty();
   let offerIdHighestBid;
@@ -56,7 +56,7 @@ const findWinnerAndPrice = (strategy, offerIds, bids) => {
   // bid.
   // Has side effects
   // eslint-disable-next-line array-callback-return
-  offerIds.map((offerId, i) => {
+  bidOfferIds.map((offerId, i) => {
     const bid = bids[i];
     if (strategy.includes(bid, highestBid)) {
       secondHighestBid = highestBid;
