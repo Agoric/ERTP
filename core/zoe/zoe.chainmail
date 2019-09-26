@@ -13,7 +13,7 @@ struct UserFacetAndGoverningContract ( ) {
  * claimPayoff ERTP payment is what can be unwrapped to claim the
  * payoff of involvement with a contract. 
  */
-struct UserFacetAndGoverningContract ( ) {
+struct EscrowReceiptAndClaimPayoff ( ) {
   escrowReceipt :Payment;
   claimPayoff :Payment;
 }
@@ -27,8 +27,7 @@ struct UserFacetAndGoverningContract ( ) {
  * they receive from someone else. 
  */
 
-
-interface Zoe ( ) {
+interface Zoe {
   /** 
    * Zoe is long-lived, but we want to create individual zoeInstances
    * that are instantiated with a particular governingContract and
@@ -36,7 +35,7 @@ interface Zoe ( ) {
    * with a swap contract and an array of the issuers for moola and
    * simoleans. We get back an object that has the user facet for the
    * zoeInstance and the governing contract facet. `makeContract` is a
-   * function that takes a zoeInstance
+   * function that takes a zoeInstance.
    */
   makeInstance(makeContract :Object, issuers :List) -> (UserFacetAndGoverningContract);
 
@@ -57,7 +56,17 @@ interface Zoe ( ) {
 
 }
 
-interface ZoeUserFacet ( ) {
+/**
+ * An offer description is an array of OfferDescElements. The possible
+ * rules are 'offerExactly', 'offerAtMost', 'wantExactly', and 
+ * 'wantAtLeast'.
+ */
+struct OfferDescElement ( ) {
+  rule :Rule;
+  amount :Amount;
+}
+
+interface ZoeUserFacet {
 
   /** 
    * To escrow, the user must provide an `offerDesc` which is a list of
@@ -71,11 +80,11 @@ interface ZoeUserFacet ( ) {
    * expected. If the offerDesc rule is 'wantAtLeast' or 'wantExactly'
    * then the payment will be ignored and should be undefined.
    */
-  escrow (offerDesc :List, payments :List) -> (escrowReceiptAndClaimPayoff);
+  escrow (offerDesc :List(OfferDescElement), payments :List(Payment)) -> (EscrowReceiptAndClaimPayoff);
 
   /**
-   * Returns the array of issuers that the zoeInstance was instantiated
-   * with. This is helpful in the case that the user has forgotten the order.
+   * Returns the zoeInstance's array of issuers. This is helpful in 
+   * the case that the user has forgotten the order.
    */
   getIssuers() -> (List);
 
@@ -90,7 +99,7 @@ interface ZoeGoverningContractFacet () {
    * index in the offerIds array. The reallocation will only happen if
    * offer safety and conservation of rights are true, as enforced by Zoe.
    */
-  reallocate (offerIds :List, reallocation :List);
+  reallocate (offerIds :List, reallocation :List(List(Quantity)));
 
   /** 
    * Eject the offer, taking the current allocation for that offer and
@@ -134,19 +143,19 @@ interface ZoeGoverningContractFacet () {
   makeEmptyQuantities ( ) -> (List);
 
   /** Get the array of issuers */
-  getIssuers ( ) -> (List);
+  getIssuers ( ) -> (List(Issuer));
   
   /** Get the array of assays */
-  getAssays ( ) -> (List);
+  getAssays ( ) -> (List(Assay));
 
   /** Get the array of strategies, the logic from the assays */
-  getStrategies ( ) -> (List);
+  getStrategies ( ) -> (List(Strategy));
 
   /** 
    * Pass in an array of offerIds and get a matrix (array of arrays)
    * containing the quantities, in the same order as the offerIds array.
    */
-  getQuantitiesFor (offerIds :List) -> (List);
+  getQuantitiesFor (offerIds :List) -> (List(List(Quantity)));
 
   /** 
    * Pass in an array of offerIds and get a matrix (array of arrays)
