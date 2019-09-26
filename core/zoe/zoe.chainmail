@@ -109,7 +109,7 @@ interface ZoeGoverningContractFacet () {
    * method on the resulting use object. No 'offer safety' checks are
    * done here because any previous reallocation performed those checks.
    */
-  eject (offerIds :List);
+  complete (offerIds :List);
 
   /**
    * Create an empty offer for recordkeeping purposes (Autoswap uses

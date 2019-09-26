@@ -23,7 +23,7 @@ const makeSimpleOfferMaker = srcs => zoeInstance => {
           offerMadeDesc,
         )
       ) {
-        zoeInstance.eject(harden([id]));
+        zoeInstance.complete(harden([id]));
         status.rej('The offer was invalid. Please check your refund.');
         return status.p;
       }
@@ -41,7 +41,7 @@ const makeSimpleOfferMaker = srcs => zoeInstance => {
           zoeInstance.getQuantitiesFor,
         );
         zoeInstance.reallocate(reallocOfferIds, reallocQuantities);
-        zoeInstance.eject(offerIds);
+        zoeInstance.complete(offerIds);
       }
 
       status.res(

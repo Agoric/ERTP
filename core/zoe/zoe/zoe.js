@@ -76,7 +76,7 @@ const makeZoe = () => {
       // access to the users' payments or the Zoe purses, or any of
       // the `adminState` of Zoe. The governing contract can do a
       // couple of things. It can propose a reallocation of
-      // quantities, eject an offer, and interestingly, can create a
+      // quantities, complete an offer, and interestingly, can create a
       // new offer itself for recordkeeping and other various
       // purposes.
 
@@ -125,16 +125,16 @@ const makeZoe = () => {
         },
 
         /**
-         * The governing contract can "eject" a player to remove them
+         * The governing contract can "complete" an offer to remove it
          * from the ongoing governing contract and resolve the
-         * `result` promise with their payouts (either winnings or
+         * `result` promise with the player's payouts (either winnings or
          * refunds). Because Zoe only allows for reallocations that
          * conserve rights and are 'offer safe', we don't need to do
          * those checks at this step and can assume that the
          * invariants hold.
          * @param  {array} offerIds - an array of offerIds
          */
-        eject: offerIds => {
+        complete: offerIds => {
           const quantities = readOnlyState.getQuantitiesFor(offerIds);
           const amounts = toAmountMatrix(readOnlyState.getAssays(), quantities);
           const payments = makePayments(adminState.getPurses(), amounts);
