@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import makePromise from '../../../util/makePromise';
-import { makeEmptyQuantities } from '../contractUtils';
 
 // These utilities are used within Zoe itself. Importantly, there is
 // no ambient authority for these utilities. Any authority must be
