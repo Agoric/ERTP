@@ -3,7 +3,9 @@
 An AutoSwap is like a swap, except instead of having to find a
 matching offer, an offer is always matched against the existing
 liquidity pool. The AutoSwap contract checks whether your offer will
-keep the constant product invariant before accepting. 
+keep the [constant product
+invariant](https://github.com/runtimeverification/verified-smart-contracts/blob/uniswap/uniswap/x-y-k.pdf)
+before accepting. 
 
 Based on UniSwap.
 

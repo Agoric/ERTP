@@ -52,20 +52,20 @@ const calculateSwapMath = (
 };
 
 const getTokenIndices = playerQuantities => {
-  const index0HasQuantity = playerQuantities[0] > 0;
-  const index1HasQuantity = playerQuantities[1] > 0;
+  const index0Positive = playerQuantities[0] > 0;
+  const index1Positive = playerQuantities[1] > 0;
 
-  if (index0HasQuantity && index1HasQuantity) {
+  if (index0Positive && index1Positive) {
     throw new Error('Both index 0 and index 1 have quantities greater than 0');
   }
 
-  if (!index0HasQuantity && !index1HasQuantity) {
+  if (!index0Positive && !index1Positive) {
     throw new Error(
       'Neither index 0 and index 1 have quantities greater than 0',
     );
   }
 
-  const tokenInIndex = index0HasQuantity ? 0 : 1;
+  const tokenInIndex = index0Positive ? 0 : 1;
   const tokenOutIndex = 1 - tokenInIndex;
 
   return harden({
