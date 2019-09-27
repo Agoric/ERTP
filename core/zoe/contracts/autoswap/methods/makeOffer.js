@@ -37,8 +37,9 @@ const fulfillsWantAtLeast = (poolQuantities, newOffer) => {
 };
 
 /**
- * `quantities` is a matrix in which the first row represents the pool
- * quantities and the second row is the quantity added by the player
+ * reallocate(quantities) takes a matrix representing the current pool
+ * and player quantities and returns a matrix representing the
+ * respective resulting quantities.
  */
 const reallocate = quantities => {
   const poolQuantities = quantities[0];

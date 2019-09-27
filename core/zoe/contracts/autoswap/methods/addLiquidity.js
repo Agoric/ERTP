@@ -7,7 +7,7 @@ import {
   vectorWith,
 } from '../../../contractUtils';
 
-const { divide, mult } = operations;
+const { divide, multiply } = operations;
 
 const isValidOfferAddingLiquidity = makeHasOkRules([
   ['offerExactly', 'offerExactly', 'wantAtLeast'],
@@ -31,7 +31,10 @@ const makeHandleOfferF = (
   // liquidity token.
   const liquidityQOut =
     liqTokenSupply > 0
-      ? divide(mult(playerQuantities[0], liqTokenSupply), oldPoolQuantities[0])
+      ? divide(
+          multiply(playerQuantities[0], liqTokenSupply),
+          oldPoolQuantities[0],
+        )
       : playerQuantities[0];
 
   // Calculate the new pool quantities by adding together the old
@@ -43,7 +46,7 @@ const makeHandleOfferF = (
   );
 
   // Set the liquidity token quantity in the array of quantities that
-  // be turned into payments sent back to the user.
+  // will be turned into payments sent back to the user.
   const newPlayerQuantities = zoeInstance.makeEmptyQuantities();
   newPlayerQuantities[2] = liquidityQOut;
 
@@ -65,8 +68,10 @@ const makeHandleOfferF = (
     liquidityOfferDesc,
     harden([undefined, undefined, newPayment]),
   );
+  // Reallocate, giving the liquidity tokens to the user, adding the
+  // user's liquidity to the pool, and setting the liquidity offer
+  // quantities to empty.
 
-  // The newly created liquidityOffer is temporary and can be dropped
   zoeInstance.reallocate(
     harden([offerId, poolOfferId, liquidityOfferId]),
     harden([
@@ -75,11 +80,9 @@ const makeHandleOfferF = (
       zoeInstance.makeEmptyQuantities(),
     ]),
   );
+  // The newly created liquidityOffer is temporary and is dropped
   zoeInstance.complete(harden([liquidityOfferId]));
 
-  // Reallocate, giving the liquidity tokens to the user, adding the
-  // user's liquidity to the pool, and setting the liquidity offer
-  // quantities to empty
   return harden({
     offerIds: harden([offerId, poolOfferId]),
     newQuantities: harden([newPlayerQuantities, newPoolQuantities]),

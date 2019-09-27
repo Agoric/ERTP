@@ -7,7 +7,7 @@ import {
   vectorWithout,
 } from '../../../contractUtils';
 
-const { mult, divide } = operations;
+const { multiply, divide } = operations;
 
 const makeHandleOffer = (
   zoeInstance,
@@ -22,7 +22,7 @@ const makeHandleOffer = (
   const liqTokenSupply = liquidityMint.getTotalSupply().quantity;
 
   const newPlayerQuantities = poolQuantities.map(poolQ =>
-    divide(mult(liquidityTokenIn, poolQ), liqTokenSupply),
+    divide(multiply(liquidityTokenIn, poolQ), liqTokenSupply),
   );
 
   const newPoolQuantities = vectorWithout(

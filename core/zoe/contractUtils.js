@@ -159,7 +159,7 @@ const makeOfferDesc = (strategies, labels, rules, quantities) =>
 const basicFungibleTokenOperations = harden({
   add: (x, y) => Nat(x + y),
   subtract: (x, y) => Nat(x - y),
-  mult: (x, y) => Nat(x * y),
+  multiply: (x, y) => Nat(x * y),
   divide: (x, y) => Nat(Math.floor(x / y)),
 });
 

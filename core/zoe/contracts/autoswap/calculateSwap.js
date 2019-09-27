@@ -2,7 +2,7 @@ import harden from '@agoric/harden';
 
 import { basicFungibleTokenOperations as operations } from '../../contractUtils';
 
-const { divide, mult, add, subtract } = operations;
+const { divide, multiply, add, subtract } = operations;
 
 /**
  * `calculateSwapMath` contains the logic for calculating how many tokens
@@ -30,8 +30,8 @@ const calculateSwapMath = (
   tokenAQ,
   feeInTenthOfPercent = 3,
 ) => {
-  const feeTokenAQ = mult(divide(tokenAQ, 1000), feeInTenthOfPercent);
-  const invariant = mult(tokenAPoolQ, tokenBPoolQ);
+  const feeTokenAQ = multiply(divide(tokenAQ, 1000), feeInTenthOfPercent);
+  const invariant = multiply(tokenAPoolQ, tokenBPoolQ);
   const newTokenAPoolQ = add(tokenAPoolQ, tokenAQ);
   const newTokenBPoolQ = divide(
     invariant,
