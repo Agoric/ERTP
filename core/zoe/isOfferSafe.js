@@ -1,5 +1,5 @@
-import { bothTrue } from '../contractUtils';
-import { insist } from '../../../util/insist';
+import { bothTrue } from './utils';
+import { insist } from '../../util/insist';
 
 /**
  * `isOfferSafeForPlayer` checks offer-safety for a single player.
@@ -31,8 +31,8 @@ function isOfferSafeForPlayer(
   )`assays, rules, and amounts must be arrays of the same length`;
 
   const allowedRules = [
-    'offerExactly',
-    'offerAtMost',
+    'haveExactly',
+    'haveAtMost',
     'wantExactly',
     'wantAtLeast',
   ];
@@ -44,15 +44,15 @@ function isOfferSafeForPlayer(
       insist(
         allowedRules.includes(rule.rule),
       )`The rule ${rule.rule} was not recognized`;
-      // If the rule was 'offerExactly', we should make sure that the
+      // If the rule was 'haveExactly', we should make sure that the
       // user gets it back exactly in a refund. If the rule is
-      // 'offerAtMost' we need to ensure that the user gets back the
+      // 'haveAtMost' we need to ensure that the user gets back the
       // amount or greater. If the rule is something else, anything
       // we give back is fine.
-      if (rule.rule === 'offerExactly') {
+      if (rule.rule === 'haveExactly') {
         return assaysPerIssuer[i].equals(amountsPerIssuer[i], rule.amount);
       }
-      if (rule.rule === 'offerAtMost') {
+      if (rule.rule === 'haveAtMost') {
         return assaysPerIssuer[i].includes(amountsPerIssuer[i], rule.amount);
       }
       return true;

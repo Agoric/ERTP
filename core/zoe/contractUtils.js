@@ -2,8 +2,8 @@
 // governing contracts.
 
 // used to reduce boolean arrays
-const allTrue = (prev, curr) => prev && curr;
-const anyTrue = (prev, curr) => prev || curr;
+const bothTrue = (prev, curr) => prev && curr;
+const eitherTrue = (prev, curr) => prev || curr;
 
 // https://stackoverflow.com/questions/17428587/transposing-a-2d-array-in-javascript/41772644#41772644
 const transpose = matrix =>
@@ -22,11 +22,14 @@ const mapArrayOnMatrix = (matrix, arrayF) => {
 
 const ruleEqual = (leftRule, rightRule) => leftRule.rule === rightRule.rule;
 
-const amountEqual = (assay, leftRule, rightRule) =>
-  assay.equals(leftRule.amount, rightRule.amount);
+const quantityEqual = (strategy, leftRule, rightRule) =>
+  strategy.equals(leftRule.amount.quantity, rightRule.amount.quantity);
+
+const issuerEqual = (leftRule, rightRule) =>
+  leftRule.amount.label.issuer === rightRule.amount.label.issuer;
 
 // Check that two offers are equal in both their rules and their amounts
-const offerEqual = (assays, leftOffer, rightOffer) => {
+const offerEqual = (strategies, leftOffer, rightOffer) => {
   const isLengthEqual = leftOffer.length === rightOffer.length;
   if (!isLengthEqual) {
     return false;
@@ -35,9 +38,10 @@ const offerEqual = (assays, leftOffer, rightOffer) => {
     .map(
       (leftRule, i) =>
         ruleEqual(leftRule, rightOffer[i]) &&
-        amountEqual(assays[i], leftRule, rightOffer[i]),
+        issuerEqual(leftRule, rightOffer[i]) &&
+        quantityEqual(strategies[i], leftRule, rightOffer[i]),
     )
-    .reduce(allTrue);
+    .reduce(bothTrue);
 };
 
 // Transform a quantitiesMatrix to a matrix of amounts given an array
@@ -53,9 +57,9 @@ const makeEmptyQuantities = strategies =>
 
 // validRules is an array of arrays where each row is the rules of a valid offer:
 // e.g. validRules =
-//     [['haveExactly', 'wantExactly'], ['wantExactly', 'haveExactly']]
+//     [['offerExactly', 'wantExactly'], ['wantExactly', 'offerExactly']]
 const makeHasOkRules = validRules => offer =>
-  validRules.map((rules, i) => rules[i] === offer[i].rule).reduce(anyTrue);
+  validRules.map((rules, i) => rules[i] === offer[i].rule).reduce(eitherTrue);
 
 // Vector addition of two quantity arrays
 const vectorWith = (strategies, leftQuantities, rightQuantities) =>
@@ -64,8 +68,8 @@ const vectorWith = (strategies, leftQuantities, rightQuantities) =>
   );
 
 export {
-  allTrue,
-  anyTrue,
+  bothTrue,
+  eitherTrue,
   transpose,
   mapArrayOnMatrix,
   offerEqual,

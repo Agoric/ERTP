@@ -5,14 +5,13 @@ const makeState = issuers => {
   const offers = new WeakMap();
   const results = new WeakMap();
   const purses = issuers.map(issuer => issuer.makeEmptyPurse());
+  const assays = issuers.map(issuer => issuer.getAssay());
+  const strategies = issuers.map(issuer => issuer.getStrategy());
 
   const readOnlyState = harden({
-    issuers,
-    assays: issuers.map(issuer => issuer.getAssay()),
-    strategies: issuers.map(issuer => issuer.getStrategy()),
     getIssuers: () => issuers,
-    getAssays: () => readOnlyState.assays,
-    getStrategies: () => readOnlyState.strategies,
+    getAssays: () => assays,
+    getStrategies: () => strategies,
     getQuantitiesFor: objIds => objIds.map(objId => quantities.get(objId)),
     getOfferDescsFor: objIds => objIds.map(objId => offers.get(objId)),
   });

@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import makePromise from '../../../util/makePromise';
-import { makeEmptyQuantities } from '../contractUtils';
 
 // These utilities are used within Zoe itself. Importantly, there is
 // no ambient authority for these utilities. Any authority must be
@@ -31,15 +30,17 @@ const mintClaimPayoffPayment = (seatMint, addUseObj, offerDesc, result) => {
   return claimPayoffPaymentP;
 };
 
-const depositAll = async (purses, strategies, offerDesc, offerPayments) => {
+const escrowAllPayments = async (
+  purses,
+  strategies,
+  offerDesc,
+  offerPayments,
+) => {
   const quantitiesArrayPromises = purses.map(async (purse, i) => {
     // if the user's contractual understanding includes
-    // "haveExactly" or "haveAtMost", make sure that they have supplied a
+    // "offerExactly" or "offerAtMost", make sure that they have supplied a
     // payment with that exact balance
-    if (
-      offerDesc[i].rule === 'haveExactly' ||
-      offerDesc[i].rule === 'haveAtMost'
-    ) {
+    if (['offerExactly', 'offerAtMost'].includes(offerDesc[i].rule)) {
       const amount = await purse.depositExactly(
         offerDesc[i].amount,
         offerPayments[i],
@@ -60,7 +61,7 @@ const escrowOffer = async (
 ) => {
   const result = makePromise();
 
-  const quantitiesArray = await depositAll(
+  const quantitiesArray = await escrowAllPayments(
     adminState.getPurses(),
     strategies,
     offerDesc,
@@ -78,6 +79,18 @@ const escrowOffer = async (
   });
 };
 
+const escrowEmptyOffer = (adminState, assays, strategies) => {
+  const offerPayments = assays.map(_assay => undefined);
+
+  const offerDesc = assays.map(assay =>
+    harden({
+      rule: 'wantAtLeast',
+      amount: assay.empty(),
+    }),
+  );
+  return escrowOffer(adminState, strategies, offerDesc, offerPayments);
+};
+
 const makePayments = (purses, amountsMatrix) =>
   amountsMatrix.map(row =>
     row.map((amount, i) => {
@@ -85,26 +98,6 @@ const makePayments = (purses, amountsMatrix) =>
       return payment;
     }),
   );
-
-const escrowEmptyOffer = (adminState, assays, strategies) => {
-  const result = makePromise();
-  const offerDesc = assays.map(assay =>
-    harden({
-      rule: 'wantAtLeast',
-      amount: assay.empty(),
-    }),
-  );
-  const offerId = harden({});
-
-  // has side effects
-  adminState.recordOffer(
-    offerId,
-    offerDesc,
-    makeEmptyQuantities(strategies),
-    result,
-  );
-  return offerId;
-};
 
 export {
   makePayments,

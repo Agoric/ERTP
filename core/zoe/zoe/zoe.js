@@ -68,7 +68,7 @@ const makeZoe = () => {
             claimPayoff: claimPayoffPaymentP,
           };
         },
-        getIssuers: _ => readOnlyState.issuers,
+        getIssuers: readOnlyState.getIssuers,
       });
 
       // The `governingContractFacet` is what is accessible by the
@@ -76,7 +76,7 @@ const makeZoe = () => {
       // access to the users' payments or the Zoe purses, or any of
       // the `adminState` of Zoe. The governing contract can do a
       // couple of things. It can propose a reallocation of
-      // quantities, eject an offer, and interestingly, can create a
+      // quantities, complete an offer, and interestingly, can create a
       // new offer itself for recordkeeping and other various
       // purposes.
 
@@ -84,7 +84,7 @@ const makeZoe = () => {
         /**
          * The governing contract can propose a reallocation of
          * quantities per player, which will only succeed if the
-         * reallocation 1) conserves rights, and 2) is offer safe for
+         * reallocation 1) conserves rights, and 2) is 'offer safe' for
          * all parties involved. This reallocation is partial, meaning
          * that it applies only to the quantities associated with the
          * offerIds that are passed in, rather than applying to all of
@@ -105,16 +105,19 @@ const makeZoe = () => {
           // 1) ensure that rights are conserved
           insist(
             areRightsConserved(
-              readOnlyState.strategies,
+              readOnlyState.getStrategies(),
               currentQuantities,
               reallocation,
             ),
           )`Rights are not conserved in the proposed reallocation`;
 
-          // 2) ensure offer safety for each player
-          const amounts = toAmountMatrix(readOnlyState.assays, reallocation);
+          // 2) ensure 'offer safety' for each player
+          const amounts = toAmountMatrix(
+            readOnlyState.getAssays(),
+            reallocation,
+          );
           insist(
-            isOfferSafeForAll(readOnlyState.assays, offerDescs, amounts),
+            isOfferSafeForAll(readOnlyState.getAssays(), offerDescs, amounts),
           )`The proposed reallocation was not offer safe`;
 
           // 3) save the reallocation
@@ -122,18 +125,18 @@ const makeZoe = () => {
         },
 
         /**
-         * The governing contract can "eject" a player to remove them
+         * The governing contract can "complete" an offer to remove it
          * from the ongoing governing contract and resolve the
-         * `result` promise with their payouts (either winnings or
+         * `result` promise with the player's payouts (either winnings or
          * refunds). Because Zoe only allows for reallocations that
-         * conserve rights and are offer safe, we don't need to do
+         * conserve rights and are 'offer safe', we don't need to do
          * those checks at this step and can assume that the
          * invariants hold.
          * @param  {array} offerIds - an array of offerIds
          */
-        eject: offerIds => {
+        complete: offerIds => {
           const quantities = readOnlyState.getQuantitiesFor(offerIds);
-          const amounts = toAmountMatrix(readOnlyState.assays, quantities);
+          const amounts = toAmountMatrix(readOnlyState.getAssays(), quantities);
           const payments = makePayments(adminState.getPurses(), amounts);
           const results = adminState.getResultsFor(offerIds);
           results.map((result, i) => result.res(payments[i]));
@@ -147,13 +150,16 @@ const makeZoe = () => {
          *  represent a pool, the governing contract can create an
          *  empty offer and then reallocate other quantities to this offer.
          */
-        escrowEmptyOffer: () =>
-          escrowEmptyOffer(
+        escrowEmptyOffer: async () => {
+          // attenuate the authority by not passing along the result
+          // promise object and only passing the offerId
+          const { offerId } = await escrowEmptyOffer(
             adminState,
             readOnlyState.getAssays(),
             readOnlyState.getStrategies(),
-          ),
-
+          );
+          return offerId;
+        },
         /**
          *  The governing contract can also create a real offer and
          *  get the associated offerId, bypassing the seat and receipt
@@ -181,8 +187,6 @@ const makeZoe = () => {
         // read-only, side-effect-free access below this line:
         makeEmptyQuantities: () =>
           makeEmptyQuantities(readOnlyState.getStrategies()),
-        getIssuers: readOnlyState.getIssuers,
-        getAssays: readOnlyState.getAssays,
         getStrategies: readOnlyState.getStrategies,
         getQuantitiesFor: readOnlyState.getQuantitiesFor,
         getOfferDescsFor: readOnlyState.getOfferDescsFor,
