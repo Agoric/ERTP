@@ -51,8 +51,7 @@ const auction = {
       .delayUntil(deadline)
       .then(() => {
         // hold auction:
-        if (bidderSeatCount < minBidCount || secondPrice < minPrice) {
-          E(timerP).tick(`Cancelling: not enough bids`);
+        if (bidsReceived < minBidCount || secondPrice < minPrice) {
           cancelExcept();
           sellerRefund.res(escrowedGoods.p);
           auctionComplete.reject('too few bids');
@@ -60,23 +59,17 @@ const auction = {
         }
         cancelExcept(bestBidderP);
         const bestBidAgencySeatP = agencySeatsP.get(bestBidderP);
-        E(timerP).tick(
-          `bestBids ${bestPrice}, ${secondPrice}, ${bidderSeatCount}, ${bidsReceived}`,
-        );
         const paidAmountP = E(bestBidAgencySeatP).consummateDeal(
           bestPrice,
           secondPrice,
           escrowedGoods.p,
-          timerP,
         );
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
         sellerRefund.res(
           E(E(productIssuer).makeEmptyPurse()).withdrawAll('empty'),
         );
         E.resolve(paidAmountP).then(paidAmount => {
-          E(timerP).tick(`paidAmount: ${paidAmount}`);
           auctionComplete.res(paidAmount.quantity);
-          return E(timerP).tick(`closed Auction at ${paidAmount.quantity}`);
         });
       });
 
@@ -84,13 +77,12 @@ const auction = {
       return E(currencyIssuer)
         .claimAll(paymentP)
         .then(currencyPaymentP => {
-          E(currencyPaymentP)
+          return E(currencyPaymentP)
             .getBalance()
             .then(amount => {
               const { quantity } = amount;
               E(buyerSeatP).offer(currencyPaymentP, escrowTerms);
               bidsReceived += 1;
-              E(timerP).tick(`amount bid ${quantity}`);
               if (quantity > bestPrice) {
                 bestBidderP = buyerSeatP;
                 [bestPrice, secondPrice] = [quantity, bestPrice];
@@ -98,7 +90,7 @@ const auction = {
                 secondPrice = quantity;
               }
               agencySeatsP.set(buyerSeatP, agencySeatP);
-              E(timerP).tick('added bidder');
+              return quantity;
             });
         });
     }
@@ -126,7 +118,6 @@ const auction = {
           // Can the bidder cancel? Not currently.
         });
         const bidderId = `bidder${bidderSeatCount}`;
-        E(timerP).tick(`returning new Bidder Invite: ${bidderId}`);
         return inviteMaker.make(bidderId, bidderSeat, `invite for ${bidderId}`);
       },
     });
@@ -141,7 +132,6 @@ const auction = {
           .claimExactly(productAmount, productPayment, 'consignment')
           .then(consignment => {
             escrowedGoods.res(consignment);
-            E(timerP).tick('consignment');
             return bidderMaker;
           });
       },

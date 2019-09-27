@@ -40,8 +40,7 @@ const agencyEscrow = {
     const agencySeat = harden({
       // The agency can accept one offer and collect the buyer's price or less.
       // The buyer will receive their winnings through a trusted escrow.
-      consummateDeal(bestPrice, secondPrice, goodsPayment, timerP) {
-        E(timerP).tick('consummate');
+      consummateDeal(bestPrice, secondPrice, goodsPayment) {
 
         const wonGoodsPayment = E(goodsIssuer).claimAll(goodsPayment, 'wins');
         const { issuer: currencyIssuer } = currencyAmount.label;
@@ -69,11 +68,9 @@ const agencyEscrow = {
                   earnings.res(proceedsPaymentP);
                   winnings.res(wonGoodsPaymentP);
                   refund.res(overbidPaymentP);
-                  E(timerP).tick(`CONSUMMATE results`);
                   return E(earnings.p).getBalance();
                 },
                 rej => {
-                  E(timerP).tick(`cancel agency: unable to get goods: ${rej}`);
                   return rej;
                 },
               );
@@ -137,5 +134,3 @@ const agencyEscrowSrcs = {
 };
 
 export { agencyEscrowSrcs };
-
-//# agencyEscrow.js

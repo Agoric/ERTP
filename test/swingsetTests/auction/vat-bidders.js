@@ -20,6 +20,7 @@ function makeBidderMaker(E, host, log) {
       const bidder = harden({
         offerSeat(bidderSeatInviteP, termsP) {
           log('++ bidder.offerSeat starting');
+          E(timerP).tick(`BIDDER: starting offerSeat()`);
           const inviteIssuerP = E(host).getInviteIssuer();
           const bidderSeatPaymentP = E(inviteIssuerP).claimAll(
             bidderSeatInviteP,
@@ -40,12 +41,15 @@ function makeBidderMaker(E, host, log) {
             E(timerP)
               .ticks()
               .then(ticks => insist(ticks < deadline)`Deadline already passed`);
+            E(timerP).tick(`BIDDER: verification.`);
           });
 
           const bidderSeatP = E(host).redeem(bidderSeatPaymentP);
-          E(bidderSeatP).offer(bidPaymentP);
+          E(bidderSeatP)
+            .offer(bidPaymentP)
+            .then(bid => E(timerP).tick(`BIDDER: bid ${bid}`));
 
-          E(timerP).tick(`BIDDER: seat `);
+          E(timerP).tick(`BIDDER: queuing collection`);
           return collect(
             bidderSeatP,
             myArtPurseP,

@@ -23,7 +23,7 @@ function makeAliceMaker(E, host, log) {
             currencyAmount: E(myMoneyPurseP).getBalance(),
             productAmount: E(myArtPurseP).getBalance(),
             timerP,
-            deadline: 10,
+            deadline: 11,
             minBidCount: 2,
             minPrice: 0,
           });
