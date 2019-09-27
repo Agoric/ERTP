@@ -57,7 +57,6 @@ const agencyEscrow = {
             .split(dep, [secondPriceAmt, overbidAmt])
             .then(splitPurses => {
               const [proceedsP, overbidP] = splitPurses;
-              E(timerP).tick(`SPLIT purses ${overbidP}, ${proceedsP}`);
               return E.resolve(
                 Promise.all([wonGoodsPayment, proceedsP, overbidP]),
               ).then(
@@ -67,14 +66,10 @@ const agencyEscrow = {
                     proceedsPaymentP,
                     overbidPaymentP,
                   ] = outPurses;
-                  E(timerP).tick('assigning purses');
                   earnings.res(proceedsPaymentP);
                   winnings.res(wonGoodsPaymentP);
                   refund.res(overbidPaymentP);
-                  debugger
-                  E(timerP).tick(
-                    `CONSUMMATE results: ${E(earnings.p).getBalance()}`,
-                  );
+                  E(timerP).tick(`CONSUMMATE results`);
                   return E(earnings.p).getBalance();
                 },
                 rej => {

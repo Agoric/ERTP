@@ -21,7 +21,6 @@ const auction = {
       minPrice,
     } = terms;
 
-    E(timerP).tick();
     const escrowTerms = harden({ left: currencyAmount, right: productAmount });
     const escrowedGoods = makePromise();
     const sellerWinnings = makePromise();
@@ -51,7 +50,6 @@ const auction = {
     E(timerP)
       .delayUntil(deadline)
       .then(() => {
-        E(timerP).tick(`TIME to START`);
         // hold auction:
         if (bidderSeatCount < minBidCount || secondPrice < minPrice) {
           E(timerP).tick(`Cancelling: not enough bids`);
@@ -71,18 +69,15 @@ const auction = {
           escrowedGoods.p,
           timerP,
         );
-        E(timerP).tick(`paidAmountPromise: ${paidAmountP}`);
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
         sellerRefund.res(
           E(E(productIssuer).makeEmptyPurse()).withdrawAll('empty'),
         );
         E.resolve(paidAmountP).then(paidAmount => {
-          debugger
           E(timerP).tick(`paidAmount: ${paidAmount}`);
           auctionComplete.res(paidAmount.quantity);
           return E(timerP).tick(`closed Auction at ${paidAmount.quantity}`);
         });
-        E(timerP).tick(`TIMER start 2`);
       });
 
     function addNewBid(paymentP, buyerSeatP, agencySeatP) {
@@ -113,7 +108,6 @@ const auction = {
       // allows the holder to make offers and ensures that the money will be
       // returned unless they get the goods.
       newBidderSeat() {
-        E(timerP).tick('newBidderSeat');
         const seats = E(agencyEscrowInstallationP).spawn(escrowTerms);
         const agencySeatP = seats.then(pair => inviteMaker.redeem(pair.agency));
         const buyerSeatP = seats.then(pair => inviteMaker.redeem(pair.buyer));
@@ -143,7 +137,6 @@ const auction = {
     // out auction seats in response to the offer.
     const sellerSeat = harden({
       offer(productPayment) {
-        E(timerP).tick('seller`s offer');
         return E(productAmount.label.issuer)
           .claimExactly(productAmount, productPayment, 'consignment')
           .then(consignment => {

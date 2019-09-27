@@ -20,7 +20,6 @@ function makeBidderMaker(E, host, log) {
       const bidder = harden({
         offerSeat(bidderSeatInviteP, termsP) {
           log('++ bidder.offerSeat starting');
-          E(timerP).tick();
           const inviteIssuerP = E(host).getInviteIssuer();
           const bidderSeatPaymentP = E(inviteIssuerP).claimAll(
             bidderSeatInviteP,
