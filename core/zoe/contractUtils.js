@@ -82,8 +82,8 @@ const vectorWithout = (strategies, leftQuantities, rightQuantities) =>
   );
 
 /**
- * `makeAPIMethod` allows contract developers to follow a very common
- * pattern without having to copy and paste.
+ * Make a function that implements a common invocation pattern for
+ * contract developers:
  * 1) Take an `escrowReceipt` as input.
  * 2) Validate it
  * 3) Check that the offer gotten from the `escrowReceipt` is valid

@@ -5,10 +5,10 @@ import { basicFungibleTokenOperations as operations } from '../../contractUtils'
 const { divide, mult, add, subtract } = operations;
 
 /**
- * `calculateSwap` contains the logic for calculating how many tokens
+ * `calculateSwapMath` contains the logic for calculating how many tokens
  * should be given back to the user in exchange for what they sent in.
  * It also calculates the fee as well as the new quantities of the
- * assets in the pool. `calculateSwap` is reused in several different
+ * assets in the pool. `calculateSwapMath` is reused in several different
  * places, including to check whether an offer is valid, getting the
  * current price for an asset on user request, and to do the actual
  * reallocation after an offer has been made. The `Q` in variable
@@ -43,7 +43,7 @@ const calculateSwapMath = (
   // different.
   return {
     tokenOutQ: tokenBQ,
-    // Since the fee is already be added to the pool, this property
+    // Since the fee is already added to the pool, this property
     // should only be used to report on fees and test.
     feeQ: feeTokenAQ,
     newTokenInPoolQ: add(newTokenAPoolQ, feeTokenAQ),
