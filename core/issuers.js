@@ -179,6 +179,7 @@ Description must be truthy: ${description}`;
       )`the amounts and names should have the same length`;
 
       const paymentMinusAmounts = amountsArray.reduce((soFar, amount) => {
+        amount = assay.coerce(amount);
         return assay.without(soFar, amount);
       }, paymentKeeper.getAmount(payment));
 
