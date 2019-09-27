@@ -69,7 +69,7 @@ tokens back by specifying a rule for the liquidity token slot with
 ## Making a swap offer
 
 Let's say that Bob wants to actually use the moola<->simolean autoswap
-to exchange 2 moola for 1 simolean. He escrows this with Zoe and
+to exchange 2 moola for 1 simolean. He escrows 2 moola with Zoe and
 receives an escrow receipt.
 
 ```js

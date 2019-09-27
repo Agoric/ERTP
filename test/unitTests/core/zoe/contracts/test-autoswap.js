@@ -7,8 +7,8 @@ import { setup } from '../setupBasicMints';
 
 test('autoSwap with valid offers', async t => {
   try {
-    const { issuers: originalIssuers, mints } = setup();
-    const issuers = originalIssuers.slice(0, 2);
+    const { issuers: defaultIssuers, mints } = setup();
+    const issuers = defaultIssuers.slice(0, 2);
     const zoe = makeZoe();
     const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
 

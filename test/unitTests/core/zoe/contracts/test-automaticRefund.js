@@ -7,8 +7,8 @@ import { setup } from '../setupBasicMints';
 test('zoe.makeInstance with automaticRefund', async t => {
   try {
     // Setup zoe and mints
-    const { issuers: originalIssuers, mints } = setup();
-    const issuers = originalIssuers.slice(0, 2);
+    const { issuers: defaultIssuers, mints } = setup();
+    const issuers = defaultIssuers.slice(0, 2);
     const zoe = makeZoe();
     const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
     const seatIssuer = zoe.getSeatIssuer();
@@ -162,8 +162,8 @@ test('zoe.makeInstance with automaticRefund', async t => {
 test('multiple zoeInstances for the same Zoe', async t => {
   try {
     // Setup zoe and mints
-    const { issuers: originalIssuers, mints } = setup();
-    const issuers = originalIssuers.slice(0, 2);
+    const { issuers: defaultIssuers, mints } = setup();
+    const issuers = defaultIssuers.slice(0, 2);
     const zoe = makeZoe();
 
     // Setup Alice
