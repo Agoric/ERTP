@@ -53,7 +53,6 @@ const agencyEscrow = {
           Promise.all([deposit.p, overbidAmount, secondPriceAmount]),
         ).then(splitDetails => {
           const [dep, overbidAmt, secondPriceAmt] = splitDetails;
-      const vouch = E(currencyIssuer.getAssay()).vouch(overbidAmt);
           return E(currencyIssuer)
             .split(dep, [secondPriceAmt, overbidAmt])
             .then(splitPurses => {

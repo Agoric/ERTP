@@ -28,7 +28,7 @@ const auctionGolden = [
   '@@ tick:5 @@',
   '@@ tick:6: BIDDER: seat  @@',
   '@@ tick:7 @@',
-  '@@schedule task for:15, currently: 8 @@',
+  '@@schedule task for:18, currently: 8 @@',
   '@@ tick:8: seller`s offer @@',
   '@@ tick:9: consignment @@',
   '@@ tick:10: newBidderSeat @@',
@@ -39,11 +39,17 @@ const auctionGolden = [
   '@@ tick:15: added bidder @@',
   '@@ tick:16: amount bid 900 @@',
   '@@ tick:17: added bidder @@',
-  '@@ tick:18: bestBids 1000, 900, 2, 2 @@',
-  '@@ tick:19: consummate @@',
-  '@@ tick:20: assigning purses @@',
+  '@@ tick:18: TIME to START @@',
+  '@@ tick:19: bestBids 1000, 900, 2, 2 @@',
+  '@@ tick:20: paidAmountPromise: [object Promise] @@',
+  '@@ tick:21: TIMER start 2 @@',
+  '@@ tick:22: consummate @@',
+  '@@ tick:23: SPLIT purses [Presence o-67], [Presence o-66] @@',
+  '@@ tick:24: assigning purses @@',
+  '@@ tick:25: CONSUMMATE results: [object Promise] @@',
   'auction earnings wins: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":null} refs: {"label":{"issuer":{},"description":"doubloons"},"quantity":900}',
-  '@@ tick:21: closed Auction at 900 @@',
+  '@@ tick:26: paidAmount: [object Object] @@',
+  '@@ tick:27: closed Auction at 900 @@',
   'auction earnings wins: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":"Salvator Mundi"} refs: {"label":{"issuer":{},"description":"doubloons"},"quantity":100}',
   'auction earnings wins: {"label":{"issuer":{},"description":"doubloons"},"quantity":900} refs: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":null}',
   '*** Alice sold her painting for 900. **',
@@ -56,7 +62,7 @@ test('2 bidder auction w/SES', async t => {
   t.end();
 });
 
-test.only('2 bidder auction', async t => {
+test('2 bidder auction', async t => {
   const dump = await main(false, 'auction', ['simple-auction']);
   t.deepEquals(dump.log, auctionGolden);
   t.end();
