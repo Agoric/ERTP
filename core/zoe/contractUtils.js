@@ -92,13 +92,13 @@ const vectorWithout = (strategies, leftQuantities, rightQuantities) =>
  * 5) Handle the valid offer
  * 6) Reallocate and eject the player.
  * @param  {} {zoeInstance - a zoeInstance
- * @param  {} isValidOfferF - a predicate that takes in an offerDesc
+ * @param  {} isValidOfferFn - a predicate that takes in an offerDesc
  * and returns whether it is a valid offer or not
  * @param  {} successMessage - the message that the promise should
  * resolve to if the offer is successful
  * @param  {} rejectMessage - the message that the promise should
  * reject with if the offer is not valid
- * @param  {} handleOfferF - the function to do custom logic before
+ * @param  {} handleOfferFn - the function to do custom logic before
  * reallocating and ejecting the user. The function takes in the
  * `offerId` and should return an object with `offerIds` and
  * `newQuantities` as properties
@@ -106,22 +106,22 @@ const vectorWithout = (strategies, leftQuantities, rightQuantities) =>
  */
 const makeAPIMethod = ({
   zoeInstance,
-  isValidOfferF,
+  isValidOfferFn,
   successMessage,
   rejectMessage,
-  handleOfferF,
+  handleOfferFn,
 }) => async escrowReceipt => {
   const result = makePromise();
   const { id, offerMade: offerMadeDesc } = await zoeInstance.burnEscrowReceipt(
     escrowReceipt,
   );
   // fail-fast if the offerDesc isn't valid
-  if (!isValidOfferF(offerMadeDesc)) {
+  if (!isValidOfferFn(offerMadeDesc)) {
     zoeInstance.complete(harden([id]));
     result.rej(`${rejectMessage}`);
     return result.p;
   }
-  const { offerIds, newQuantities, burnQuantities } = await handleOfferF(id);
+  const { offerIds, newQuantities, burnQuantities } = await handleOfferFn(id);
   if (burnQuantities !== undefined) {
     await zoeInstance.reallocateAndBurn(
       offerIds,

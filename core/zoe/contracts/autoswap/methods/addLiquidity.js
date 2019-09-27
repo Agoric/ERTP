@@ -89,10 +89,10 @@ const makeHandleOfferF = (
 const makeAddLiquidityMethod = (zoeInstance, liquidityMint, poolOfferId) =>
   makeAPIMethod({
     zoeInstance,
-    isValidOfferF: isValidOfferAddingLiquidity,
+    isValidOfferFn: isValidOfferAddingLiquidity,
     successMessage: 'Added liquidity.',
     rejectMessage: 'The offer to add liquidity was invalid.',
-    handleOfferF: makeHandleOfferF(zoeInstance, liquidityMint, poolOfferId),
+    handleOfferFn: makeHandleOfferF(zoeInstance, liquidityMint, poolOfferId),
   });
 
 harden(makeAddLiquidityMethod);

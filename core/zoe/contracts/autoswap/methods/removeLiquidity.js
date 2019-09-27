@@ -48,10 +48,10 @@ const isValidOfferRemoveLiquidity = makeHasOkRules([
 const makeRemoveLiquidityMethod = (zoeInstance, liquidityMint, poolOfferId) =>
   makeAPIMethod({
     zoeInstance,
-    isValidOfferF: isValidOfferRemoveLiquidity,
+    isValidOfferFn: isValidOfferRemoveLiquidity,
     successMessage: 'Liquidity successfully removed.',
     rejectMessage: 'The offer to remove liquidity was invalid',
-    handleOfferF: makeHandleOffer(zoeInstance, liquidityMint, poolOfferId),
+    handleOfferFn: makeHandleOffer(zoeInstance, liquidityMint, poolOfferId),
   });
 
 harden(makeRemoveLiquidityMethod);

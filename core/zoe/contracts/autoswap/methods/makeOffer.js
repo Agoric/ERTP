@@ -83,10 +83,10 @@ const makeIsValidOffer = (zoeInstance, poolOfferId) => newOffer => {
 const makeMakeOfferMethod = (zoeInstance, poolOfferId) =>
   makeAPIMethod({
     zoeInstance,
-    isValidOfferF: makeIsValidOffer(zoeInstance, poolOfferId),
+    isValidOfferFn: makeIsValidOffer(zoeInstance, poolOfferId),
     successMessage: 'Swap successfully completed.',
     rejectMessage: 'The offer to swap was invalid.',
-    handleOfferF: makeHandleOfferF(zoeInstance, poolOfferId),
+    handleOfferFn: makeHandleOfferF(zoeInstance, poolOfferId),
   });
 
 harden(makeMakeOfferMethod);
