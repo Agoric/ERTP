@@ -53,24 +53,10 @@ const agencyEscrow = {
             .split(dep, [secondPriceAmt, overbidAmt])
             .then(splitPurses => {
               const [proceedsP, overbidP] = splitPurses;
-              return E.resolve(
-                Promise.all([wonGoodsPayment, proceedsP, overbidP]),
-              ).then(
-                outPurses => {
-                  const [
-                    wonGoodsPaymentP,
-                    proceedsPaymentP,
-                    overbidPaymentP,
-                  ] = outPurses;
-                  earnings.res(proceedsPaymentP);
-                  winnings.res(wonGoodsPaymentP);
-                  refund.res(overbidPaymentP);
-                  return E(earnings.p).getBalance();
-                },
-                rej => {
-                  return rej;
-                },
-              );
+              earnings.res(proceedsP);
+              winnings.res(wonGoodsPayment);
+              refund.res(overbidP);
+              return E(earnings.p).getBalance();
             });
         });
       },

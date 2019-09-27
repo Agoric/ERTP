@@ -54,7 +54,7 @@ function makeBidderMaker(E, host, log) {
             bidderSeatP,
             myArtPurseP,
             myMoneyPurseP,
-            'auction earnings',
+            'bidder earnings',
           );
         },
       });

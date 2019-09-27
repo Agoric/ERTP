@@ -33,10 +33,10 @@ const auctionGolden = [
   '@@ tick:10: BIDDER: bid 1000 @@',
   '@@ tick:11: BIDDER: bid 900 @@',
   '&& running a task scheduled for 11. &&',
-  'auction earnings wins: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":null} refs: {"label":{"issuer":{},"description":"doubloons"},"quantity":900}',
-  'auction earnings wins: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":"Salvator Mundi"} refs: {"label":{"issuer":{},"description":"doubloons"},"quantity":100}',
+  'bidder earnings wins: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":null} refs: {"label":{"issuer":{},"description":"doubloons"},"quantity":900}',
   'auction earnings wins: {"label":{"issuer":{},"description":"doubloons"},"quantity":900} refs: ',
   '*** Alice sold her painting for 900. **',
+  'bidder earnings wins: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":"Salvator Mundi"} refs: {"label":{"issuer":{},"description":"doubloons"},"quantity":100}',
   '++ auction done: 900',
 ];
 
