@@ -42,7 +42,7 @@ const makeHandleOffer = (
 };
 
 const isValidOfferRemoveLiquidity = makeHasOkRules([
-  ['wantAtLeast', 'wantAtLeast', 'haveExactly'],
+  ['wantAtLeast', 'wantAtLeast', 'offerExactly'],
 ]);
 
 const makeRemoveLiquidityMethod = (zoeInstance, liquidityMint, poolOfferId) =>

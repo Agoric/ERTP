@@ -24,6 +24,11 @@ const setup = () => {
       simoleanIssuer.getStrategy(),
       bucksIssuer.getStrategy(),
     ],
+    labels: [
+      moolaIssuer.getLabel(),
+      simoleanIssuer.getLabel(),
+      bucksIssuer.getLabel(),
+    ],
   });
 };
 harden(setup);

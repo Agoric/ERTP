@@ -41,11 +41,11 @@ escrows them:
 ```js
 const aliceOffer = harden([
   {
-    rule: 'haveExactly',
+    rule: 'offerExactly',
     amount: allIssuers[0].makeAmount(10),
   },
   {
-    rule: 'haveExactly',
+    rule: 'offerExactly',
     amount: allIssuers[1].makeAmount(5),
   },
   {
@@ -75,7 +75,7 @@ receives an escrow receipt.
 ```js
  const bobMoolaForSimOfferDesc = harden([
   {
-    rule: 'haveExactly',
+    rule: 'offerExactly',
     amount: allIssuers[0].makeAmount(2),
   },
   {

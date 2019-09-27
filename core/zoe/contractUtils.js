@@ -7,8 +7,8 @@ import Nat from '@agoric/nat';
 import makePromise from '../../util/makePromise';
 
 // used to reduce boolean arrays
-const allTrue = (prev, curr) => prev && curr;
-const anyTrue = (prev, curr) => prev || curr;
+const bothTrue = (prev, curr) => prev && curr;
+const eitherTrue = (prev, curr) => prev || curr;
 
 // https://stackoverflow.com/questions/17428587/transposing-a-2d-array-in-javascript/41772644#41772644
 const transpose = matrix =>
@@ -32,11 +32,14 @@ const mapArrayOnArray = (array, arrayF) => array.map((x, i) => arrayF[i](x));
 
 const ruleEqual = (leftRule, rightRule) => leftRule.rule === rightRule.rule;
 
-const amountEqual = (assay, leftRule, rightRule) =>
-  assay.equals(leftRule.amount, rightRule.amount);
+const quantityEqual = (strategy, leftRule, rightRule) =>
+  strategy.equals(leftRule.amount.quantity, rightRule.amount.quantity);
+
+const issuerEqual = (leftRule, rightRule) =>
+  leftRule.amount.label.issuer === rightRule.amount.label.issuer;
 
 // Check that two offers are equal in both their rules and their amounts
-const offerEqual = (assays, leftOffer, rightOffer) => {
+const offerEqual = (strategies, leftOffer, rightOffer) => {
   const isLengthEqual = leftOffer.length === rightOffer.length;
   if (!isLengthEqual) {
     return false;
@@ -45,25 +48,16 @@ const offerEqual = (assays, leftOffer, rightOffer) => {
     .map(
       (leftRule, i) =>
         ruleEqual(leftRule, rightOffer[i]) &&
-        amountEqual(assays[i], leftRule, rightOffer[i]),
+        issuerEqual(leftRule, rightOffer[i]) &&
+        quantityEqual(strategies[i], leftRule, rightOffer[i]),
     )
-    .reduce(allTrue);
+    .reduce(bothTrue);
 };
 
-// Transform a quantitiesMatrix to a matrix of amounts given an array
-// of the associated assays.
-const toAmountMatrix = (assays, quantitiesMatrix) => {
-  const assayMakes = assays.map(assay => assay.make);
-  return mapArrayOnMatrix(quantitiesMatrix, assayMakes);
-};
-
-const amountsToQuantitiesArray = (assays, amountsArray) =>
-  assays.map((assay, i) => {
-    if (amountsArray[i] !== undefined) {
-      return assay.quantity(amountsArray[i]);
-    }
-    return assay.quantity(assay.empty());
-  });
+const amountsToQuantitiesArray = (strategies, amountsArray) =>
+  amountsArray.map((amount, i) =>
+    amount !== undefined ? amount.quantity : strategies[i].empty(),
+  );
 
 // an array of empty quantities per strategy
 const makeEmptyQuantities = strategies =>
@@ -71,9 +65,9 @@ const makeEmptyQuantities = strategies =>
 
 // validRules is an array of arrays where each row is the rules of a valid offer:
 // e.g. validRules =
-//     [['haveExactly', 'wantExactly'], ['wantExactly', 'haveExactly']]
+//     [['offerExactly', 'wantExactly'], ['wantExactly', 'offerExactly']]
 const makeHasOkRules = validRules => offer =>
-  validRules.map((rules, i) => rules[i] === offer[i].rule).reduce(anyTrue);
+  validRules.map((rules, i) => rules[i] === offer[i].rule).reduce(eitherTrue);
 
 // Vector addition of two quantity arrays
 const vectorWith = (strategies, leftQuantities, rightQuantities) =>
@@ -123,7 +117,7 @@ const makeAPIMethod = ({
   );
   // fail-fast if the offerDesc isn't valid
   if (!isValidOfferF(offerMadeDesc)) {
-    zoeInstance.eject(harden([id]));
+    zoeInstance.complete(harden([id]));
     result.rej(`${rejectMessage}`);
     return result.p;
   }
@@ -137,10 +131,26 @@ const makeAPIMethod = ({
   } else {
     zoeInstance.reallocate(offerIds, newQuantities);
   }
-  zoeInstance.eject(harden([id]));
+  zoeInstance.complete(harden([id]));
   result.res(`${successMessage}`);
   return result.p;
 };
+
+const makeAmount = (strategy, label, allegedQuantity) => {
+  strategy.insistKind(allegedQuantity);
+  return harden({
+    label,
+    quantity: allegedQuantity,
+  });
+};
+
+const makeOfferDesc = (strategies, labels, rules, quantities) =>
+  strategies.map((strategy, i) =>
+    harden({
+      rule: rules[i],
+      amount: makeAmount(strategy, labels[i], quantities[i]),
+    }),
+  );
 
 /**
  * These operations should be used for calculations with the
@@ -154,18 +164,19 @@ const basicFungibleTokenOperations = harden({
 });
 
 export {
-  allTrue,
-  anyTrue,
+  bothTrue,
+  eitherTrue,
   transpose,
   mapArrayOnMatrix,
   mapArrayOnArray,
   amountsToQuantitiesArray,
   offerEqual,
-  toAmountMatrix,
   makeEmptyQuantities,
   makeHasOkRules,
   vectorWith,
   vectorWithout,
   makeAPIMethod,
   basicFungibleTokenOperations,
+  makeAmount,
+  makeOfferDesc,
 };

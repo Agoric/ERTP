@@ -4,9 +4,9 @@ If I want to trade one kind of asset for another kind, I could send
 you the asset and ask you to send me the other kind back. But, you
 could choose to behave opportunistically: receive my asset and give
 nothing back. To solve this problem, swap contracts allow users to
-securely trade one kind of eright for another kind, leveraging Zoe
-for escrow and offer-safety. At no time does any user have the
-opportunity to behave opportunistically.
+securely trade one kind of eright for another kind, leveraging Zoe for
+escrow and offer-safety. At no time does any user have the ability to
+behave opportunistically.
 
 ## Simple Offer Swap
 
@@ -30,7 +30,7 @@ and a claimPayoff ERTP payment from which she can get her winnings:
 ```js
 const aliceOfferDesc = harden([
   {
-    rule: 'haveExactly',
+    rule: 'offerExactly',
     amount: moolaIssuer.makeAmount(3),
   },
   {
@@ -65,7 +65,7 @@ const bobOfferDesc = harden([
     amount: moolaIssuer.makeAmount(3),
   },
   {
-    rule: 'haveExactly',
+    rule: 'offerExactly',
     amount: simoleanIssuer.makeAmount(7),
   },
 ]);

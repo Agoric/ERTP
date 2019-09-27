@@ -1,5 +1,5 @@
-import { bothTrue } from '../contractUtils';
-import { insist } from '../../../util/insist';
+import { bothTrue } from './utils';
+import { insist } from '../../util/insist';
 
 /**
  * `isOfferSafeForPlayer` checks offer-safety for a single player.

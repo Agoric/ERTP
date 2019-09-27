@@ -2,15 +2,10 @@ import { test } from 'tape-promise/tape';
 
 import {
   bothTrue,
-  eitherTrue,
+  anyTrue,
   transpose,
-  mapArrayOnMatrix,
   offerEqual,
-  makeEmptyQuantities,
-  vectorWith,
-  makeAmount,
-  makeOfferDesc,
-} from '../../../../core/zoe/contractUtils';
+} from '../../../../core/zoe/utils';
 import { setup } from './setupBasicMints';
 
 test('bothTrue', t => {
@@ -26,12 +21,12 @@ test('bothTrue', t => {
   }
 });
 
-test('eitherTrue', t => {
+test('anyTrue', t => {
   try {
-    t.ok([1, 2].reduce(eitherTrue));
-    t.ok([false, 2].reduce(eitherTrue));
-    t.notOk([false, false].reduce(eitherTrue));
-    t.ok([true, true].reduce(eitherTrue));
+    t.ok([1, 2].reduce(anyTrue));
+    t.ok([false, 2].reduce(anyTrue));
+    t.notOk([false, false].reduce(anyTrue));
+    t.ok([true, true].reduce(anyTrue));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -49,35 +44,8 @@ test('transpose', t => {
   }
 });
 
-test('mapArrayOnMatrix', t => {
-  try {
-    const matrix = [[1, 2, 3], [4, 5, 6]];
-    const add2 = x => x + 2;
-    const subtract4 = x => x - 4;
-    const mult5 = x => x * 5;
-    const arrayF = [add2, subtract4, mult5];
-    t.deepEquals(mapArrayOnMatrix(matrix, arrayF), [[3, -2, 15], [6, 1, 30]]);
-  } catch (e) {
-    t.assert(false, e);
-  } finally {
-    t.end();
-  }
-});
-
-test('makeEmptyQuantities', t => {
-  try {
-    const { issuers } = setup();
-    const strategies = issuers.map(issuer => issuer.getStrategy());
-    t.deepEquals(makeEmptyQuantities(strategies), [0, 0, 0]);
-  } catch (e) {
-    t.assert(false, e);
-  } finally {
-    t.end();
-  }
-});
-
 test('offerEqual - offers are equal', t => {
-  const { issuers, strategies } = setup();
+  const { issuers, assays } = setup();
   try {
     const offer1 = [
       {
@@ -93,7 +61,7 @@ test('offerEqual - offers are equal', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.ok(offerEqual(strategies, offer1, offer1));
+    t.ok(offerEqual(assays, offer1, offer1));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -102,7 +70,7 @@ test('offerEqual - offers are equal', t => {
 });
 
 test('offerEqual - throws bc offers have different issuers', t => {
-  const { issuers, strategies } = setup();
+  const { issuers, assays } = setup();
   try {
     const offer1 = [
       {
@@ -132,7 +100,9 @@ test('offerEqual - throws bc offers have different issuers', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.notOk(offerEqual(strategies, offer1, offer2));
+    // This throws because the assay does not recognize the amounts
+    // for a different issuer
+    t.throws(() => offerEqual(assays, offer1, offer2), /Unrecognized label/);
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -141,7 +111,7 @@ test('offerEqual - throws bc offers have different issuers', t => {
 });
 
 test('offerEqual - returns false bc different quantity', t => {
-  const { issuers, strategies } = setup();
+  const { issuers, assays } = setup();
   try {
     const offer1 = [
       {
@@ -171,7 +141,7 @@ test('offerEqual - returns false bc different quantity', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.notOk(offerEqual(strategies, offer1, offer2));
+    t.notOk(offerEqual(assays, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -180,7 +150,7 @@ test('offerEqual - returns false bc different quantity', t => {
 });
 
 test('offerEqual - returns false bc different rule', t => {
-  const { issuers, strategies } = setup();
+  const { issuers, assays } = setup();
   try {
     const offer1 = [
       {
@@ -210,7 +180,7 @@ test('offerEqual - returns false bc different rule', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.notOk(offerEqual(strategies, offer1, offer2));
+    t.notOk(offerEqual(assays, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -219,7 +189,7 @@ test('offerEqual - returns false bc different rule', t => {
 });
 
 test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
-  const { issuers, strategies } = setup();
+  const { issuers, assays } = setup();
   try {
     const offer1 = [
       {
@@ -249,72 +219,7 @@ test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
         amount: issuers[2].makeAmount(7),
       },
     ];
-    t.notOk(offerEqual(strategies, offer1, offer2));
-  } catch (e) {
-    t.assert(false, e);
-  } finally {
-    t.end();
-  }
-});
-
-test('vectorWith', t => {
-  try {
-    const { strategies } = setup();
-    const leftQuantities = [4, 5, 6];
-    const rightQuantities = [3, 5, 10];
-    t.deepEquals(vectorWith(strategies, leftQuantities, rightQuantities), [
-      7,
-      10,
-      16,
-    ]);
-  } catch (e) {
-    t.assert(false, e);
-  } finally {
-    t.end();
-  }
-});
-
-test('makeAmount', t => {
-  try {
-    const { strategies, labels, issuers, mints } = setup();
-    const amount = makeAmount(strategies[0], labels[0], 10);
-    t.deepEquals(amount, issuers[0].makeAmount(10));
-    const purse = mints[0].mint(amount);
-    t.deepEquals(purse.getBalance(), amount);
-  } catch (e) {
-    t.assert(false, e);
-  } finally {
-    t.end();
-  }
-});
-
-test('makeOfferDesc', t => {
-  try {
-    const { strategies, labels, issuers } = setup();
-    const rules = ['offerExactly', 'offerAtMost', 'wantAtLeast'];
-    const quantities = [4, 6, 2];
-    const actualOfferDesc = makeOfferDesc(
-      strategies,
-      labels,
-      rules,
-      quantities,
-    );
-
-    const expectedOfferDesc = [
-      {
-        rule: 'offerExactly',
-        amount: issuers[0].makeAmount(4),
-      },
-      {
-        rule: 'offerAtMost',
-        amount: issuers[1].makeAmount(6),
-      },
-      {
-        rule: 'wantAtLeast',
-        amount: issuers[2].makeAmount(2),
-      },
-    ];
-    t.deepEquals(actualOfferDesc, expectedOfferDesc);
+    t.notOk(offerEqual(assays, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {

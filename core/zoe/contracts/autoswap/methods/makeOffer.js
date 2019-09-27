@@ -15,14 +15,14 @@ import {
  */
 
 const hasOkRules = makeHasOkRules([
-  ['haveExactly', 'wantAtLeast', 'wantAtLeast'],
-  ['wantAtLeast', 'haveExactly', 'wantAtLeast'],
+  ['offerExactly', 'wantAtLeast', 'wantAtLeast'],
+  ['wantAtLeast', 'offerExactly', 'wantAtLeast'],
 ]);
 
 // Make sure that the amount that would be returned if we performed
 // the swap is greater than or equal to the 'wantAtLeast' amount
 const fulfillsWantAtLeast = (poolQuantities, newOffer) => {
-  const tokenInIndex = newOffer[0].rule === 'haveExactly' ? 0 : 1;
+  const tokenInIndex = newOffer[0].rule === 'offerExactly' ? 0 : 1;
   const tokenOutIndex = 1 - tokenInIndex;
 
   const tokenInQ = newOffer[tokenInIndex].amount.quantity;

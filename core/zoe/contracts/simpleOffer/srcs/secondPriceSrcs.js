@@ -2,23 +2,35 @@ import harden from '@agoric/harden';
 
 import { makeHasOkRules } from '../../../contractUtils';
 
+// The issuer array is ordered such that the item issuer is first
+// and the price issuer is second. All of the related arrays
+// (assays, strategies, etc.) also use this same ordering.
+const ITEM_INDEX = 0;
+const PRICE_INDEX = 1;
+
+// We expect the first offer to be the creator of the auction
+const CREATOR_OFFER_ID_INDEX = 0;
+
 const hasOkRulesInitialOffer = makeHasOkRules([
-  ['haveExactly', 'wantAtLeast'], // The initial offer
+  ['offerExactly', 'wantAtLeast'], // The initial offer
 ]);
 
 const hasOkRulesBids = makeHasOkRules([
-  ['wantExactly', 'haveAtMost'], // Subsequent bids
+  ['wantExactly', 'offerAtMost'], // Subsequent bids
 ]);
 
 const isValidInitialOfferDesc = newOfferDesc =>
   hasOkRulesInitialOffer(newOfferDesc);
 
-const isValidBid = (assays, initialOffer, newBid) =>
+const isValidBid = (strategies, initialOffer, newBid) =>
   hasOkRulesBids(newBid) &&
-  assays[1].includes(newBid[1].amount, initialOffer[1].amount);
+  strategies[PRICE_INDEX].includes(
+    newBid[PRICE_INDEX].amount.quantity,
+    initialOffer[PRICE_INDEX].amount.quantity,
+  );
 
 const isValidOffer = (
-  assays,
+  strategies,
   offerIds,
   offerIdsToOfferDescs,
   offerMadeDesc,
@@ -27,12 +39,16 @@ const isValidOffer = (
   return (
     (isInitialOffer && isValidInitialOfferDesc(offerMadeDesc)) ||
     (!isInitialOffer &&
-      isValidBid(assays, offerIdsToOfferDescs.get(offerIds[0]), offerMadeDesc))
+      isValidBid(
+        strategies,
+        offerIdsToOfferDescs.get(offerIds[CREATOR_OFFER_ID_INDEX]),
+        offerMadeDesc,
+      ))
   );
 };
 
 // Iterate over all of the bids keeping the highest and second highest bid.
-const findWinnerAndPrice = (strategy, offerIds, bids) => {
+const findWinnerAndPrice = (strategy, bidOfferIds, bids) => {
   let highestBid = strategy.empty();
   let secondHighestBid = strategy.empty();
   let offerIdHighestBid;
@@ -40,7 +56,7 @@ const findWinnerAndPrice = (strategy, offerIds, bids) => {
   // bid.
   // Has side effects
   // eslint-disable-next-line array-callback-return
-  offerIds.map((offerId, i) => {
+  bidOfferIds.map((offerId, i) => {
     const bid = bids[i];
     if (strategy.includes(bid, highestBid)) {
       secondHighestBid = highestBid;
@@ -53,7 +69,7 @@ const findWinnerAndPrice = (strategy, offerIds, bids) => {
     }
   });
   return {
-    winner: offerIdHighestBid,
+    winnerOfferId: offerIdHighestBid,
     price: secondHighestBid,
   };
 };
@@ -61,37 +77,48 @@ const findWinnerAndPrice = (strategy, offerIds, bids) => {
 const reallocate = (
   strategies,
   offerIds,
-  offerIdsToOfferDescs,
+  _offerIdsToOfferDescs,
   getQuantitiesFor,
 ) => {
-  const bids = offerIds
-    .map(offerId => offerIdsToOfferDescs.get(offerId)[1].amount.quantity)
-    .slice(1);
-  const { winner, price } = findWinnerAndPrice(
-    strategies[1],
-    offerIds.slice(1),
+  // We can expect that the first offer created the auction, and
+  // subsequent offers are bids.
+  const creatorOfferId = offerIds[CREATOR_OFFER_ID_INDEX];
+  const bidOfferIds = harden(offerIds.slice(1));
+
+  const [creatorQuantities] = getQuantitiesFor(harden([creatorOfferId]));
+  const bids = getQuantitiesFor(bidOfferIds).map(
+    bidArray => bidArray[PRICE_INDEX],
+  );
+
+  const itemStrategy = strategies[ITEM_INDEX];
+  const priceStrategy = strategies[PRICE_INDEX];
+
+  const { winnerOfferId, price } = findWinnerAndPrice(
+    priceStrategy,
+    bidOfferIds,
     bids,
   );
 
-  const creator = offerIds[0];
-  const creatorQuantities = getQuantitiesFor(harden([creator]))[0];
-  const winnerQuantities = getQuantitiesFor(harden([winner]))[0];
+  const [winnerQuantities] = getQuantitiesFor(harden([winnerOfferId]));
 
   // The winner gets the assets put up for auction.
   // eslint-disable-next-line prefer-destructuring
-  winnerQuantities[0] = creatorQuantities[0];
-  creatorQuantities[0] = strategies[1].empty();
+  winnerQuantities[ITEM_INDEX] = creatorQuantities[ITEM_INDEX];
+  creatorQuantities[ITEM_INDEX] = itemStrategy.empty();
 
   // The person who created the auction gets the price paid.
-  creatorQuantities[1] = price;
+  creatorQuantities[PRICE_INDEX] = price;
 
-  // The winner gets to keep the difference between the their bid and
-  // the price paid.
-  winnerQuantities[1] = strategies[1].without(winnerQuantities[1], price);
+  // The winner gets to keep the difference between their bid and the
+  // price paid.
+  winnerQuantities[PRICE_INDEX] = priceStrategy.without(
+    winnerQuantities[PRICE_INDEX],
+    price,
+  );
 
   // Everyone else gets a refund so their quantities remain the same.
   return harden({
-    reallocOfferIds: [creator, winner],
+    reallocOfferIds: [creatorOfferId, winnerOfferId],
     reallocQuantities: [creatorQuantities, winnerQuantities],
   });
 };

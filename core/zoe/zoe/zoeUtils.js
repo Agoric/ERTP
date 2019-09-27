@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
 import makePromise from '../../../util/makePromise';
-import { makeEmptyQuantities, toAmountMatrix } from '../contractUtils';
+import { mapArrayOnMatrix } from '../contractUtils';
 
 // These utilities are used within Zoe itself. Importantly, there is
 // no ambient authority for these utilities. Any authority must be
@@ -31,15 +31,17 @@ const mintClaimPayoffPayment = (seatMint, addUseObj, offerDesc, result) => {
   return claimPayoffPaymentP;
 };
 
-const depositAll = async (purses, strategies, offerDesc, offerPayments) => {
+const escrowAllPayments = async (
+  purses,
+  strategies,
+  offerDesc,
+  offerPayments,
+) => {
   const quantitiesArrayPromises = purses.map(async (purse, i) => {
     // if the user's contractual understanding includes
-    // "haveExactly" or "haveAtMost", make sure that they have supplied a
+    // "offerExactly" or "offerAtMost", make sure that they have supplied a
     // payment with that exact balance
-    if (
-      offerDesc[i].rule === 'haveExactly' ||
-      offerDesc[i].rule === 'haveAtMost'
-    ) {
+    if (['offerExactly', 'offerAtMost'].includes(offerDesc[i].rule)) {
       const amount = await purse.depositExactly(
         offerDesc[i].amount,
         offerPayments[i],
@@ -52,21 +54,8 @@ const depositAll = async (purses, strategies, offerDesc, offerPayments) => {
   return quantitiesArray;
 };
 
-const escrowOffer = async (
-  adminState,
-  strategies,
-  offerDesc,
-  offerPayments,
-) => {
+const recordOffer = (adminState, offerDesc, quantitiesArray) => {
   const result = makePromise();
-
-  const quantitiesArray = await depositAll(
-    adminState.getPurses(),
-    strategies,
-    offerDesc,
-    offerPayments,
-  );
-
   const offerId = harden({});
 
   // has side effects
@@ -78,6 +67,34 @@ const escrowOffer = async (
   });
 };
 
+const escrowOffer = async (
+  adminState,
+  strategies,
+  offerDesc,
+  offerPayments,
+) => {
+  const quantitiesArray = await escrowAllPayments(
+    adminState.getPurses(),
+    strategies,
+    offerDesc,
+    offerPayments,
+  );
+
+  return recordOffer(adminState, offerDesc, quantitiesArray);
+};
+
+const escrowEmptyOffer = (adminState, assays, strategies) => {
+  const quantitiesArray = strategies.map(strategy => strategy.empty());
+
+  const offerDesc = assays.map(assay =>
+    harden({
+      rule: 'wantAtLeast',
+      amount: assay.empty(),
+    }),
+  );
+  return recordOffer(adminState, offerDesc, quantitiesArray);
+};
+
 const makePayments = (purses, amountsMatrix) =>
   amountsMatrix.map(row =>
     row.map((amount, i) => {
@@ -86,24 +103,11 @@ const makePayments = (purses, amountsMatrix) =>
     }),
   );
 
-const escrowEmptyOffer = (adminState, assays, strategies) => {
-  const result = makePromise();
-  const offerDesc = assays.map(assay =>
-    harden({
-      rule: 'wantAtLeast',
-      amount: assay.empty(),
-    }),
-  );
-  const offerId = harden({});
-
-  // has side effects
-  adminState.recordOffer(
-    offerId,
-    offerDesc,
-    makeEmptyQuantities(strategies),
-    result,
-  );
-  return offerId;
+// Transform a quantitiesMatrix to a matrix of amounts given an array
+// of the associated assays.
+const toAmountMatrix = (assays, quantitiesMatrix) => {
+  const assayMakes = assays.map(assay => assay.make);
+  return mapArrayOnMatrix(quantitiesMatrix, assayMakes);
 };
 
 const burnAll = async (purses, issuers, assays, burnQuantities) => {
@@ -123,4 +127,5 @@ export {
   mintEscrowReceiptPayment,
   mintClaimPayoffPayment,
   burnAll,
+  toAmountMatrix,
 };

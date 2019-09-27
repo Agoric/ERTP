@@ -48,7 +48,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     // 2: Alice escrows with the zoeInstance
     const aliceOfferDesc = harden([
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(1),
       },
       {
@@ -85,7 +85,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
         amount: issuers[0].makeAmount(1),
       },
       {
-        rule: 'haveAtMost',
+        rule: 'offerAtMost',
         amount: issuers[1].makeAmount(11),
       },
     ]);
@@ -118,7 +118,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
         amount: issuers[0].makeAmount(1),
       },
       {
-        rule: 'haveAtMost',
+        rule: 'offerAtMost',
         amount: issuers[1].makeAmount(7),
       },
     ]);
@@ -145,7 +145,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
         amount: issuers[0].makeAmount(1),
       },
       {
-        rule: 'haveAtMost',
+        rule: 'offerAtMost',
         amount: issuers[1].makeAmount(5),
       },
     ]);

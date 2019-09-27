@@ -48,11 +48,11 @@ test('autoSwap with valid offers', async t => {
     // aka 2 moola = 1 simolean
     const aliceOffer = harden([
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: allIssuers[0].makeAmount(10),
       },
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: allIssuers[1].makeAmount(5),
       },
       {
@@ -101,7 +101,7 @@ test('autoSwap with valid offers', async t => {
 
     const bobMoolaForSimOfferDesc = harden([
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: allIssuers[0].makeAmount(2),
       },
       {
@@ -153,7 +153,7 @@ test('autoSwap with valid offers', async t => {
         amount: issuers[0].makeAmount(6),
       },
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[1].makeAmount(3),
       },
       {
@@ -196,7 +196,7 @@ test('autoSwap with valid offers', async t => {
         amount: allIssuers[1].makeAmount(0),
       },
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: allIssuers[2].makeAmount(10),
       },
     ]);

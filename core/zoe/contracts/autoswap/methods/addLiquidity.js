@@ -10,7 +10,7 @@ import {
 const { divide, mult } = operations;
 
 const isValidOfferAddingLiquidity = makeHasOkRules([
-  ['haveExactly', 'haveExactly', 'wantAtLeast'],
+  ['offerExactly', 'offerExactly', 'wantAtLeast'],
 ]);
 
 const makeHandleOfferF = (
@@ -52,22 +52,14 @@ const makeHandleOfferF = (
   // that escrows the liquidity tokens, and then drop the result.
   const newPurse = liquidityMint.mint(liquidityQOut);
   const newPayment = newPurse.withdrawAll();
-  const assays = zoeInstance.getAssays();
 
-  const liquidityOfferDesc = [
-    {
-      rule: 'wantAtLeast',
-      amount: assays[0].empty(),
-    },
-    {
-      rule: 'wantAtLeast',
-      amount: assays[1].empty(),
-    },
-    {
-      rule: 'haveExactly',
-      amount: assays[2].make(liquidityQOut),
-    },
+  const rules = ['wantAtLeast', 'wantAtLeast', 'offerExactly'];
+  const quantities = [
+    strategies[0].empty(),
+    strategies[1].empty(),
+    liquidityQOut,
   ];
+  const liquidityOfferDesc = zoeInstance.makeOfferDesc(rules, quantities);
 
   const liquidityOfferId = await zoeInstance.escrowOffer(
     liquidityOfferDesc,
@@ -83,7 +75,7 @@ const makeHandleOfferF = (
       zoeInstance.makeEmptyQuantities(),
     ]),
   );
-  zoeInstance.eject(harden([liquidityOfferId]));
+  zoeInstance.complete(harden([liquidityOfferId]));
 
   // Reallocate, giving the liquidity tokens to the user, adding the
   // user's liquidity to the pool, and setting the liquidity offer

@@ -3,8 +3,8 @@ import harden from '@agoric/harden';
 import { makeHasOkRules, offerEqual } from '../../../contractUtils';
 
 const hasOkRules = makeHasOkRules([
-  ['haveExactly', 'wantExactly'],
-  ['wantExactly', 'haveExactly'],
+  ['offerExactly', 'wantExactly'],
+  ['wantExactly', 'offerExactly'],
 ]);
 
 const makeSecondOffer = firstOffer =>
@@ -20,11 +20,11 @@ const makeSecondOffer = firstOffer =>
   ]);
 
 const isValidFirstOfferDesc = newOfferDesc => hasOkRules(newOfferDesc);
-const isValidSecondOfferDesc = (assays, firstOffer, newOfferDesc) =>
-  offerEqual(assays, makeSecondOffer(firstOffer), newOfferDesc);
+const isValidSecondOfferDesc = (strategies, firstOffer, newOfferDesc) =>
+  offerEqual(strategies, makeSecondOffer(firstOffer), newOfferDesc);
 
 const isValidOffer = (
-  assays,
+  strategies,
   offerIds,
   offerIdsToOfferDescs,
   offerMadeDesc,
@@ -35,7 +35,7 @@ const isValidOffer = (
     (isFirstOffer && isValidFirstOfferDesc(offerMadeDesc)) ||
     (isSecondOffer &&
       isValidSecondOfferDesc(
-        assays,
+        strategies,
         offerIdsToOfferDescs.get(offerIds[0]),
         offerMadeDesc,
       ))

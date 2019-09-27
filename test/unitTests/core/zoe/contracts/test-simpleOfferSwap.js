@@ -35,7 +35,7 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     // 2: Alice escrows with the zoeInstance
     const aliceOfferDesc = harden([
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[0].makeAmount(3),
       },
       {
@@ -67,7 +67,7 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
         amount: issuers[0].makeAmount(3),
       },
       {
-        rule: 'haveExactly',
+        rule: 'offerExactly',
         amount: issuers[1].makeAmount(7),
       },
     ]);
