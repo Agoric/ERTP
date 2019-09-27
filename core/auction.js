@@ -34,8 +34,6 @@ const auction = {
     let bestPrice = 0;
     let secondPrice = 0;
     const currencyIssuer = currencyAmount.label.issuer;
-    const productIssuer = productAmount.label.issuer;
-
     const auctionComplete = makePromise();
 
     // If bidder is undefined, cancel all Bids, otherwise cancel all but bidder.
@@ -65,9 +63,7 @@ const auction = {
           escrowedGoods.p,
         );
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
-        sellerRefund.res(
-          E(E(productIssuer).makeEmptyPurse()).withdrawAll('empty'),
-        );
+        sellerRefund.res();
         E.resolve(paidAmountP).then(paidAmount => {
           auctionComplete.res(paidAmount.quantity);
         });
@@ -152,7 +148,6 @@ const auction = {
 
   // Only the bidders need to validate.
   checkAmount: (installation, allegedInviteAmount, expectedTerms, seat) => {
-    // TODO assert seat is known.
     mustBeSameStructure(allegedInviteAmount.quantity.seatDesc, seat);
     const allegedTerms = allegedInviteAmount.quantity.terms;
     mustBeSameStructure(allegedTerms, expectedTerms, 'Escrow checkAmount');

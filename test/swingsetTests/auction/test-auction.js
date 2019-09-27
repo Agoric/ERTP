@@ -35,7 +35,7 @@ const auctionGolden = [
   '&& running a task scheduled for 11. &&',
   'auction earnings wins: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":null} refs: {"label":{"issuer":{},"description":"doubloons"},"quantity":900}',
   'auction earnings wins: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":"Salvator Mundi"} refs: {"label":{"issuer":{},"description":"doubloons"},"quantity":100}',
-  'auction earnings wins: {"label":{"issuer":{},"description":"doubloons"},"quantity":900} refs: {"label":{"issuer":{},"description":"Christies Art Auctions"},"quantity":null}',
+  'auction earnings wins: {"label":{"issuer":{},"description":"doubloons"},"quantity":900} refs: ',
   '*** Alice sold her painting for 900. **',
   '++ auction done: 900',
 ];

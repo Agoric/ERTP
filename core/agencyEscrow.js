@@ -7,15 +7,15 @@ import { mustBeSameStructure } from '../util/sameStructure';
 // There are two parties to this transaction. The buyer is offering some amount
 // of currency (any fungible good) for a valuable item. The buyer will either
 // get the item, and possibly a return of some currency, or will get all their
-// offer back. The agency needs to see the offer before deciding whether to transact
-// determination. Only the amount is visible to the agency before an escrow seat
-// is received for the transaction.
+// offer back. The agency needs to see the offer before deciding whether to
+// transact. Only the amount is visible to the agency before an escrow seat is
+// received for the transaction.
 const agencyEscrow = {
   start: (terms, inviteMaker) => {
     const { left: currencyAmount, right: goodsAmount } = terms;
     const { issuer: goodsIssuer } = goodsAmount.label;
 
-    // We want to give the buyer a promise for the good, and for a refund. The
+    // We want to give the buyer a promise for the good and for a refund. The
     // refund will resolve either to all the buyer's deposit, or the portion of
     // the deposit that wasn't required. The agency will get an invite for a
     // seat that can ask the amount deposited, and then either cancel or provide
@@ -35,13 +35,10 @@ const agencyEscrow = {
     // winner the seller receives funds here.
     const earnings = makePromise();
 
-    // Seats
-
     const agencySeat = harden({
       // The agency can accept one offer and collect the buyer's price or less.
       // The buyer will receive their winnings through a trusted escrow.
       consummateDeal(bestPrice, secondPrice, goodsPayment) {
-
         const wonGoodsPayment = E(goodsIssuer).claimAll(goodsPayment, 'wins');
         const { issuer: currencyIssuer } = currencyAmount.label;
         const overbidAmount = E(currencyIssuer).makeAmount(
