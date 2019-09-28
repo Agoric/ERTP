@@ -7,45 +7,12 @@ import { auctionSrcs } from '../../../core/auction';
 import { makeMint } from '../../../core/issuers';
 import makePromise from '../../../util/makePromise';
 import { makeUniAssayConfigMaker } from '../../../core/config/uniAssayConfig';
+import buildManualTimer from '../../../tools/manualTimer';
 
 function build(E, log) {
-  function buildManualTimer(startValue = 0) {
-    let ticks = startValue;
-    const schedule = new Map();
-    return harden({
-      delayUntil(deadline, resolution = undefined) {
-        if (deadline <= ticks) {
-          log(`&& task was past its deadline when scheduled: ${deadline} &&`);
-          resolution.res(ticks);
-        }
-        log(`@@ schedule task for:${deadline}, currently: ${ticks} @@`);
-        const result = makePromise();
-        if (!schedule.has(deadline)) {
-          schedule.set(deadline, []);
-        }
-        schedule.get(deadline).push(result.res);
-        return result.p;
-      },
-      // This function will only be called in testing code to advance the clock.
-      tick(msg) {
-        ticks += 1;
-        log(`@@ tick:${ticks}${msg ? `: ${msg}` : ''} @@`);
-        if (schedule.has(ticks)) {
-          for (const p of schedule.get(ticks)) {
-            log(`&& running a task scheduled for ${ticks}. &&`);
-            p(ticks);
-          }
-        }
-      },
-      ticks() {
-        return ticks;
-      },
-    });
-  }
-
   // Alice will offer something and two bidders will compete for it.
   function auctionTestTwoBidders(host, aliceMakerP, bidderMakerP) {
-    const fakeTimer = buildManualTimer();
+    const fakeTimer = buildManualTimer(log);
 
     const agencyEscrowInstallationP = E(host).install(agencyEscrowSrcs);
     const auctionInstallationP = E(host).install(auctionSrcs);
