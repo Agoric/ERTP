@@ -38,19 +38,19 @@ const agencyEscrow = {
     const agencySeat = harden({
       // The agency can accept one offer and collect the buyer's price or less.
       // The buyer will receive their winnings through a trusted escrow.
-      consummateDeal(bestPrice, secondPrice, goodsPayment) {
+      consummateDeal(originalOffer, finalPrice, goodsPayment) {
         const wonGoodsPayment = E(goodsIssuer).claimAll(goodsPayment, 'wins');
         const { issuer: currencyIssuer } = currencyAmount.label;
         const overbidAmount = E(currencyIssuer).makeAmount(
-          bestPrice - secondPrice,
+          originalOffer - finalPrice,
         );
-        const secondPriceAmount = E(currencyIssuer).makeAmount(secondPrice);
+        const finalPriceAmount = E(currencyIssuer).makeAmount(finalPrice);
         return E.resolve(
-          Promise.all([deposit.p, overbidAmount, secondPriceAmount]),
+          Promise.all([deposit.p, overbidAmount, finalPriceAmount]),
         ).then(splitDetails => {
-          const [dep, overbidAmt, secondPriceAmt] = splitDetails;
+          const [dep, overbidAmt, finalPriceAmt] = splitDetails;
           return E(currencyIssuer)
-            .split(dep, [secondPriceAmt, overbidAmt])
+            .split(dep, [finalPriceAmt, overbidAmt])
             .then(splitPurses => {
               const [proceedsP, overbidP] = splitPurses;
               earnings.res(proceedsP);
