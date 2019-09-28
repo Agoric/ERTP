@@ -40,7 +40,7 @@ const auctionGolden = [
   '++ auction done: 900',
 ];
 
-test.only('2 bidder auction w/SES', async t => {
+test('2 bidder auction w/SES', async t => {
   const dump = await main(true, 'auction', ['simple-auction']);
   t.deepEquals(dump.log, auctionGolden);
   t.end();
