@@ -12,7 +12,7 @@ import { mustBeSameStructure } from '../util/sameStructure';
 // received for the transaction.
 const agencyEscrow = {
   start: (terms, inviteMaker) => {
-    const { left: currencyAmount, right: goodsAmount } = terms;
+    const { currencyAmount, goodsAmount } = terms;
     const { issuer: goodsIssuer } = goodsAmount.label;
 
     // We want to give the buyer a promise for the good and for a refund. The

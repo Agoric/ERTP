@@ -14,14 +14,14 @@ const auction = {
     const {
       agencyEscrowInstallationP,
       currencyAmount,
-      productAmount,
+      goodsAmount,
       timerP,
       deadline,
       minBidCount,
       minPrice,
     } = terms;
 
-    const escrowTerms = harden({ left: currencyAmount, right: productAmount });
+    const escrowTerms = harden({ currencyAmount, goodsAmount });
     const escrowedGoods = makePromise();
     const sellerWinnings = makePromise();
     const sellerRefund = makePromise();
@@ -124,8 +124,8 @@ const auction = {
     // out auction seats in response to the offer.
     const sellerSeat = harden({
       offer(productPayment) {
-        return E(productAmount.label.issuer)
-          .claimExactly(productAmount, productPayment, 'consignment')
+        return E(goodsAmount.label.issuer)
+          .claimExactly(goodsAmount, productPayment, 'consignment')
           .then(consignment => {
             escrowedGoods.res(consignment);
             return bidderMaker;
