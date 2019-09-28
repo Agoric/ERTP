@@ -20,7 +20,7 @@ function build(E, log) {
         }
         log(`@@ schedule task for:${deadline}, currently: ${ticks} @@`);
         const result = makePromise();
-        if (!schedule.get(deadline)) {
+        if (!schedule.has(deadline)) {
           schedule.set(deadline, []);
         }
         schedule.get(deadline).push(result.res);
@@ -30,7 +30,7 @@ function build(E, log) {
       tick(msg) {
         ticks += 1;
         log(`@@ tick:${ticks}${msg ? `: ${msg}` : ''} @@`);
-        if (schedule.get(ticks)) {
+        if (schedule.has(ticks)) {
           for (const p of schedule.get(ticks)) {
             log(`&& running a task scheduled for ${ticks}. &&`);
             p(ticks);
