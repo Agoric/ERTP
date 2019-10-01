@@ -2,7 +2,8 @@ import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
 import { makeSeatMint } from '../../../core/seatMint';
-import { makeMint } from '../../../core/issuers';
+import { offerEqual } from '../../../core/zoe/utils';
+import { setup } from './zoe/setupBasicMints';
 import { insist } from '../../../util/insist';
 
 /*
@@ -21,48 +22,6 @@ import { insist } from '../../../util/insist';
  * }
  *
  */
-
-const bothTrue = (prev, curr) => prev && curr;
-
-const ruleEqual = (leftRule, rightRule) => leftRule.rule === rightRule.rule;
-
-const amountEqual = (assay, leftRule, rightRule) =>
-  assay.equals(leftRule.amount, rightRule.amount);
-
-const offerEqual = (assays, leftOffer, rightOffer) => {
-  const isLengthEqual = leftOffer.length === rightOffer.length;
-  if (!isLengthEqual) {
-    return false;
-  }
-  return leftOffer
-    .map((leftRule, i) => {
-      return (
-        ruleEqual(leftRule, rightOffer[i]) &&
-        amountEqual(assays[i], leftRule, rightOffer[i])
-      );
-    })
-    .reduce(bothTrue);
-};
-
-const setup = () => {
-  const moolaMint = makeMint('moola');
-  const simoleanMint = makeMint('simoleans');
-  const bucksMint = makeMint('bucks');
-
-  const moolaIssuer = moolaMint.getIssuer();
-  const simoleanIssuer = simoleanMint.getIssuer();
-  const bucksIssuer = bucksMint.getIssuer();
-
-  const moolaAssay = moolaIssuer.getAssay();
-  const simoleanAssay = simoleanIssuer.getAssay();
-  const bucksAssay = bucksIssuer.getAssay();
-
-  return harden({
-    mints: [moolaMint, simoleanMint, bucksMint],
-    issuers: [moolaIssuer, simoleanIssuer, bucksIssuer],
-    assays: [moolaAssay, simoleanAssay, bucksAssay],
-  });
-};
 
 test('seatMint', async t => {
   const { assays } = setup();
@@ -92,7 +51,7 @@ test('seatMint', async t => {
   const purse1Quantity = harden({
     id: harden({}),
     offerToBeMade: [
-      { rule: 'haveExactly', amount: assays[0].make(8) },
+      { rule: 'offerExactly', amount: assays[0].make(8) },
       { rule: 'wantExactly', amount: assays[1].make(6) },
     ],
   });
@@ -113,7 +72,7 @@ test('seatMint', async t => {
   const purse2Quantity = harden({
     id: harden({}),
     offerMade: [
-      { rule: 'haveExactly', amount: assays[0].make(8) },
+      { rule: 'offerExactly', amount: assays[0].make(8) },
       { rule: 'wantExactly', amount: assays[1].make(6) },
     ],
   });
