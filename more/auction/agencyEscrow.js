@@ -2,7 +2,7 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { mustBeSameStructure } from '../util/sameStructure';
+import { mustBeSameStructure } from '../../util/sameStructure';
 
 // There are two parties to this transaction. The buyer is offering some amount
 // of currency (any fungible good) for a valuable item. The buyer will either

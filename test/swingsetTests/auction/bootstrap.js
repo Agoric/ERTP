@@ -2,8 +2,8 @@
 
 import harden from '@agoric/harden';
 
-import { agencyEscrowSrcs } from '../../../core/agencyEscrow';
-import { auctionSrcs } from '../../../core/auction';
+import { agencyEscrowSrcs } from '../../../more/auction/agencyEscrow';
+import { auctionSrcs } from '../../../more/auction/auction';
 import { makeMint } from '../../../core/issuers';
 import makePromise from '../../../util/makePromise';
 import { makeUniAssayConfigMaker } from '../../../core/config/uniAssayConfig';

@@ -2,7 +2,7 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { mustBeSameStructure } from '../util/sameStructure';
+import { mustBeSameStructure } from '../../util/sameStructure';
 
 // A Seller will provide a good to be auctioned and a possibly empty purse to
 // show the currency in which bids must be expressed. The Auctioneer will create
