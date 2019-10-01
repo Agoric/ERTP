@@ -1,4 +1,4 @@
-import { bothTrue, transpose } from './utils';
+import { transpose } from '../contractUtils';
 
 /**
  * The columns in a `quantities` matrix are per issuer, and the rows
@@ -10,9 +10,9 @@ import { bothTrue, transpose } from './utils';
  * player indexed by issuer
  */
 const sumByIssuer = (strategies, quantities) =>
-  transpose(quantities).map((quantitiesPerIssuer, i) => {
-    return quantitiesPerIssuer.reduce(strategies[i].with);
-  });
+  transpose(quantities).map((quantitiesPerIssuer, i) =>
+    quantitiesPerIssuer.reduce(strategies[i].with, strategies[i].empty()),
+  );
 
 /**
  * Does the left array of summed quantities equal the right array of
@@ -23,9 +23,10 @@ const sumByIssuer = (strategies, quantities) =>
  * indexed by issuer
  */
 const isEqualPerIssuer = (strategies, leftQuantities, rightQuantities) =>
-  leftQuantities
-    .map((leftQ, i) => strategies[i].equals(leftQ, rightQuantities[i]))
-    .reduce(bothTrue, true);
+  leftQuantities.every(
+    (leftQ, i) => strategies[i].equals(leftQ, rightQuantities[i]),
+    true,
+  );
 
 /**
  * `areRightsConserved` checks that the total quantity per issuer stays

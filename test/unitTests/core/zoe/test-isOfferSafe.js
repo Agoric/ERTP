@@ -3,7 +3,7 @@ import { test } from 'tape-promise/tape';
 import {
   isOfferSafeForPlayer,
   isOfferSafeForAll,
-} from '../../../../core/zoe/isOfferSafe';
+} from '../../../../core/zoe/zoe/isOfferSafe';
 import { setup } from './setupBasicMints';
 
 // The player must have offerDesc for each issuer
@@ -145,7 +145,7 @@ test('isOfferSafeForPlayer - gets offerExactly, no wantExactly', t => {
   }
 });
 
-// The user gets a refund *and* winnings. This is offer safe.
+// The user gets a refund *and* winnings. This is 'offer safe'.
 test('isOfferSafeForPlayer - refund and winnings', t => {
   try {
     const { strategies, assays } = setup();

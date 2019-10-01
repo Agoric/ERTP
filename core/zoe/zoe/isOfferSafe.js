@@ -1,5 +1,4 @@
-import { bothTrue } from './utils';
-import { insist } from '../../util/insist';
+import { insist } from '../../../util/insist';
 
 /**
  * `isOfferSafeForPlayer` checks offer-safety for a single player.
@@ -37,65 +36,55 @@ function isOfferSafeForPlayer(strategies, offerDesc, quantities) {
 
   // If we are refunding the player, are their allocated amounts
   // greater than or equal to what they said they had at the beginning?
-  const refundOk = offerDesc
-    .map((offerDescElem, i) => {
-      if (offerDescElem === null || offerDescElem === undefined) {
-        return true;
-      }
-      insist(
-        allowedRules.includes(offerDescElem.rule),
-      )`The rule ${offerDescElem.rule} was not recognized`;
-      // If the rule was 'offerExactly', we should make sure that the
-      // user gets it back exactly in a refund. If the rule is
-      // 'offerAtMost' we need to ensure that the user gets back the
-      // amount or greater. If the rule is something else, anything
-      // we give back is fine.
-      if (offerDescElem.rule === 'offerExactly') {
-        return strategies[i].equals(
-          quantities[i],
-          offerDescElem.amount.quantity,
-        );
-      }
-      if (offerDesc.rule === 'offerAtMost') {
-        return strategies[i].includes(
-          quantities[i],
-          offerDescElem.amount.quantity,
-        );
-      }
+  const refundOk = offerDesc.every((offerDescElem, i) => {
+    if (offerDescElem === null || offerDescElem === undefined) {
       return true;
-    })
-    .reduce(bothTrue, true);
+    }
+    insist(
+      allowedRules.includes(offerDescElem.rule),
+    )`The rule ${offerDescElem.rule} was not recognized`;
+    // If the rule was 'offerExactly', we should make sure that the
+    // user gets it back exactly in a refund. If the rule is
+    // 'offerAtMost' we need to ensure that the user gets back the
+    // amount or greater. If the rule is something else, anything
+    // we give back is fine.
+    if (offerDescElem.rule === 'offerExactly') {
+      return strategies[i].equals(quantities[i], offerDescElem.amount.quantity);
+    }
+    if (offerDesc.rule === 'offerAtMost') {
+      return strategies[i].includes(
+        quantities[i],
+        offerDescElem.amount.quantity,
+      );
+    }
+    return true;
+  }, true);
 
   // If we are not refunding the player, are their allocated amounts
   // greater than or equal to what they said they wanted at the beginning?
-  const winningsOk = offerDesc
-    .map((offerDescElem, i) => {
-      if (offerDescElem === null || offerDescElem === undefined) {
-        return true;
-      }
-      insist(
-        allowedRules.includes(offerDescElem.rule),
-      )`The rule ${offerDescElem.rule} was not recognized`;
-      // If the rule was 'wantExactly', we should make sure that the
-      // user gets exactly the amount specified in their winnings. If
-      // the rule is 'wantAtLeast', we need to ensure that the user
-      // gets back winnings that are equal or greater to the amount.
-      // If the rule is something else, anything we give back is fine.
-      if (offerDescElem.rule === 'wantExactly') {
-        return strategies[i].equals(
-          quantities[i],
-          offerDescElem.amount.quantity,
-        );
-      }
-      if (offerDescElem.rule === 'wantAtLeast') {
-        return strategies[i].includes(
-          quantities[i],
-          offerDescElem.amount.quantity,
-        );
-      }
+  const winningsOk = offerDesc.every((offerDescElem, i) => {
+    if (offerDescElem === null || offerDescElem === undefined) {
       return true;
-    })
-    .reduce(bothTrue, true);
+    }
+    insist(
+      allowedRules.includes(offerDescElem.rule),
+    )`The rule ${offerDescElem.rule} was not recognized`;
+    // If the rule was 'wantExactly', we should make sure that the
+    // user gets exactly the amount specified in their winnings. If
+    // the rule is 'wantAtLeast', we need to ensure that the user
+    // gets back winnings that are equal or greater to the amount.
+    // If the rule is something else, anything we give back is fine.
+    if (offerDescElem.rule === 'wantExactly') {
+      return strategies[i].equals(quantities[i], offerDescElem.amount.quantity);
+    }
+    if (offerDescElem.rule === 'wantAtLeast') {
+      return strategies[i].includes(
+        quantities[i],
+        offerDescElem.amount.quantity,
+      );
+    }
+    return true;
+  }, true);
 
   return refundOk || winningsOk;
 }
@@ -110,10 +99,10 @@ function isOfferSafeForPlayer(strategies, offerDesc, quantities) {
  * get, in the same order as the corresponding issuers.
  */
 const isOfferSafeForAll = (strategies, offerDescMatrix, quantitiesMatrix) =>
-  offerDescMatrix
-    .map((offerDesc, i) =>
+  offerDescMatrix.every(
+    (offerDesc, i) =>
       isOfferSafeForPlayer(strategies, offerDesc, quantitiesMatrix[i]),
-    )
-    .reduce(bothTrue, true);
+    true,
+  );
 
 export { isOfferSafeForPlayer, isOfferSafeForAll };

@@ -1,0 +1,159 @@
+/**
+ * This is returned by a call to `makeInstance` on Zoe.
+ */
+struct UserFacetAndGoverningContract ( ) {
+  zoeInstance :ZoeUserFacet;
+  governingContract :CustomGoverningContract;
+}
+
+/**
+ * This is returned by a call to `escrow` on the zoeInstance userFacet.
+ * An escrowReceipt is an ERTP payment which acts as proof of escrow
+ * and is normally passed in to a governingContract method. A
+ * claimPayoff ERTP payment is what can be unwrapped to claim the
+ * payoff of involvement with a contract. 
+ */
+struct EscrowReceiptAndClaimPayoff ( ) {
+  escrowReceipt :Payment;
+  claimPayoff :Payment;
+}
+
+/**
+ * Zoe is a long-lived and well-trusted contract that enforces
+ * offer-safety for the contracts that use it. Zoe has a single
+ * `seatIssuer` and a single `escrowReceiptIssuer` for the entirety of its
+ * lifetime. By having a reference to Zoe, a user can get the `seatIssuer`
+ * or `escrowReceiptIssuer` and thus validate any `seat` or `escrowReceipt`
+ * they receive from someone else. 
+ */
+
+interface Zoe {
+  /** 
+   * Zoe is long-lived, but we want to create individual zoeInstances
+   * that are instantiated with a particular governingContract and
+   * particular issuers. For example, a zoeInstance may be instantiated
+   * with a swap contract and an array of the issuers for moola and
+   * simoleans. We get back an object that has the user facet for the
+   * zoeInstance and the governing contract facet. `makeContract` is a
+   * function that takes a zoeInstance.
+   */
+  makeInstance(makeContract :Object, issuers :List(Issuer)) -> (UserFacetAndGoverningContract);
+
+  /**
+   * Get the long-lived seatIssuer. The mint associated with the
+   * seatIssuer creates the ERTP payments that represent the right to
+   * claim the payoffs of involvement in a contract.
+   */
+  getSeatIssuer() -> (Issuer);
+
+  /**
+   * Get the long-lived escrowReceiptIssuer. The mint associated
+   * with the escrowReceiptIssuer creates the ERTP payments that
+   * represent proof of escrow and may be passed into a
+   * governingContract method.
+   */
+  getEscrowReceiptIssuer() -> (Issuer);
+
+}
+
+/**
+ * An offer description is an array of OfferDescElements. The possible
+ * rules are 'offerExactly', 'offerAtMost', 'wantExactly', and 
+ * 'wantAtLeast'.
+ */
+struct OfferDescElement ( ) {
+  rule :Rule;
+  amount :Amount;
+}
+
+interface ZoeUserFacet {
+
+  /** 
+   * To escrow, the user must provide an `offerDesc` which is a list of
+   * objects with a rule property (such as 'offerExactly') and an amount
+   * property. The objects in the `offerDesc` must be in the same order
+   * as the issuers array. That is, the amount in index 0 of `offerDesc`
+   * should be an amount for the issuer in index 0 of the issuers array.
+   * `payments` is an array of the actual payments to be escrowed,
+   * following the rules in the offerDesc. If the offerDesc rule is
+   * 'offerExactly' or 'offerAtMost', then a payment matching the amount is
+   * expected. If the offerDesc rule is 'wantAtLeast' or 'wantExactly'
+   * then the payment will be ignored and should be undefined.
+   */
+  escrow (offerDesc :List(OfferDescElement), payments :List(Payment)) -> (EscrowReceiptAndClaimPayoff);
+
+  /**
+   * Returns the zoeInstance's array of issuers. This is helpful in 
+   * the case that the user has forgotten the order.
+   */
+  getIssuers() -> (List(Issuer));
+
+}
+
+interface ZoeGoverningContractFacet () {
+
+  /** 
+   * Instruct Zoe to try reallocating for the given offerIds.
+   * Reallocation is a matrix (array of arrays) where the rows are the
+   * quantities to be paid to the player who made the offer at the same
+   * index in the offerIds array. The reallocation will only happen if
+   * 'offer safety' and conservation of rights are true, as enforced by Zoe.
+   */
+  reallocate (offerIds :List(Object), reallocation :List(List(Quantity)));
+
+  /** 
+   * Eject the offer, taking the current allocation for that offer and
+   * creating payments to be returned to the user. The payments can be
+   * claimed by the user by taking the `claimPayoff` ERTP payment
+   * received after escrowing, calling `unwrap` and calling the `getPayoff`
+   * method on the resulting use object. No 'offer safety' checks are
+   * done here because any previous reallocation performed those checks.
+   */
+  complete (offerIds :List(Object));
+
+  /**
+   * Create an empty offer for recordkeeping purposes (Autoswap uses
+   * this to create the liquidity pool). 
+   */
+  escrowEmptyOffer ( ) -> (offerId);
+  
+  /**
+   * Escrow an offer created by the governing contract. Autoswap uses
+   * this to mint liquidity tokens and add them to the rights managed by
+   * the zoeInstance.
+   */
+  escrowOffer (offerDesc :List(OfferDescElem), offerPayments :List(Payment)) -> (offerId);
+
+  /** Burn and validate an escrowReceipt received from the user. */
+  burnEscrowReceipt (escrowReceipt :Payment) -> (Quantity);
+
+  ////// The methods below are pure and have no side-effects. ////////
+
+  /**
+   * Create an array of empty quantities per issuer. Note that if the 
+   * mint is not a basic fungible mint, this may be something other than 0. 
+   */
+  makeEmptyQuantities ( ) -> (List(Quantity));
+
+  /** Get the array of strategies, the logic from the assays */
+  getStrategies ( ) -> (List(Strategy));
+
+  /** 
+   * Pass in an array of offerIds and get a matrix (array of arrays)
+   * containing the quantities, in the same order as the offerIds array.
+   */
+  getQuantitiesFor (offerIds :List(Object)) -> (List(List(Quantity)));
+
+  /** 
+   * Pass in an array of offerIds and get a matrix (array of arrays)
+   * containing the offer descriptions for the offers, in the same 
+   * order as the offerIds array.
+   */
+  getOfferDescsFor (offerIds :List(Object)) -> (List(OfferDesc));
+
+  /** Get the Zoe seatIssuer */
+  getSeatIssuer ( ) -> (Issuer);
+
+  /** Get the Zoe escrowReceiptIssuer */
+  getEscrowReceiptIssuer ( ) -> (Issuer);
+}
