@@ -112,12 +112,12 @@ const makeZoe = () => {
           )`Rights are not conserved in the proposed reallocation`;
 
           // 2) ensure 'offer safety' for each player
-          const amounts = toAmountMatrix(
-            readOnlyState.getAssays(),
-            reallocation,
-          );
           insist(
-            isOfferSafeForAll(readOnlyState.getAssays(), offerDescs, amounts),
+            isOfferSafeForAll(
+              readOnlyState.getStrategies(),
+              offerDescs,
+              reallocation,
+            ),
           )`The proposed reallocation was not offer safe`;
 
           // 3) save the reallocation
