@@ -1,16 +1,18 @@
 Part of the Agoric strategy for providing security is based on the
-[Formal Methods](https://agoric.com/papers/#formal-reasoning) literature, which has developed tools
-for proving that programs follow their specifications. There have been interesting advances in this
-area including the development of [seL4](https://sel4.systems/Info/FAQ/proof.pml) and the
-[proof of its correctness](https://sel4.systems/Info/FAQ/proof.pml). We have been collaborating with
-a research group at Victoria University who are investigating how to apply these techniques to
-secure distributed programs.
+[Formal Methods](https://agoric.com/papers/#formal-reasoning) literature, which has developed
+tools for proving that programs follow their specifications. There have been interesting
+advances in this area including the development of
+[seL4](https://sel4.systems/Info/FAQ/proof.pml) and the
+[proof of its correctness](https://sel4.systems/Info/FAQ/proof.pml). We have been collaborating
+with a group of researchers from Imperial College of London, Victoria University of Wellington,
+and UNSW who are investigating how to apply these techniques to secure distributed programs.
 
 The work with Victoria University
 [Reasoning about Risk and Trust in an Open World](https://ai.google/research/pubs/pub44272) has
-resulted in development of a specification language, Chainmail, which is intended to allow programs
-to be described with enough formality to investigate their security properties. We have used a
-variant of the language to describe some of the core modules of
+resulted in development of a specification language, Chainmail, which is intended to allow
+programs to be described with enough formality to investigate their security properties. We are
+using the same name here for an IDL (Interface Definition Language) based on a syntactic subset
+of Cap'n Proto to describe some of the core modules of
 ERTP. [assays](https://github.com/Agoric/ERTP/blob/master/core/assays.chainmail),
 [contractHost](https://github.com/Agoric/ERTP/blob/master/core/contractHost.chainmail),
 [issuers](https://github.com/Agoric/ERTP/blob/master/core/issuers.chainmail).
