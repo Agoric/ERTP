@@ -219,13 +219,20 @@ Description must be truthy: ${description}`;
     },
 
     burnExactly(amount, srcPaymentP) {
-      const sinkPurse = coreIssuer.makeEmptyPurse('sink purse');
-      return sinkPurse.depositExactly(amount, srcPaymentP);
+      return Promise.resolve(srcPaymentP).then(srcPayment => {
+        insistAmountEqualsPaymentBalance(amount, srcPayment);
+        const paymentAmount = paymentKeeper.getAmount(srcPayment);
+        paymentKeeper.remove(srcPayment);
+        return paymentAmount;
+      });
     },
 
     burnAll(srcPaymentP) {
-      const sinkPurse = coreIssuer.makeEmptyPurse('sink purse');
-      return sinkPurse.depositAll(srcPaymentP);
+      return Promise.resolve(srcPaymentP).then(srcPayment => {
+        const amount = paymentKeeper.getAmount(srcPayment);
+        paymentKeeper.remove(srcPayment);
+        return amount;
+      });
     },
   });
 
