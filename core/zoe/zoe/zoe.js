@@ -1,4 +1,5 @@
 import harden from '@agoric/harden';
+import { E } from '@agoric/eventual-send';
 
 import { insist } from '../../../util/insist';
 import { isOfferSafeForAll } from './isOfferSafe';
@@ -28,7 +29,7 @@ import { makeSimpleOfferMaker } from '../contracts/simpleOffer/simpleOffer';
 import { makeSecondPriceSrcs } from '../contracts/simpleOffer/srcs/secondPriceSrcs';
 import { swapSrcs } from '../contracts/simpleOffer/srcs/swapSrcs';
 
-const makeZoe = () => {
+const makeZoe = async () => {
   // The seatIssuer and escrowReceiptIssuer are long-lived identities
   // over many contract instances
   const { seatMint, seatIssuer, addUseObj } = makeSeatMint('zoeSeats');
@@ -45,7 +46,7 @@ const makeZoe = () => {
     simpleOfferSwap: makeSimpleOfferMaker(swapSrcs),
   });
 
-  const { adminState, readOnlyState } = makeState();
+  const { adminState, readOnlyState } = await makeState();
 
   // Zoe has two different facets: the public facet and the
   // governingContract facet. Neither facet should give direct access
@@ -114,13 +115,13 @@ const makeZoe = () => {
      * invariants hold.
      * @param  {object[]} offerIds - an array of offerIds
      */
-    complete: (instanceId, offerIds) => {
+    complete: async (instanceId, offerIds) => {
       const quantities = readOnlyState.getQuantitiesFor(offerIds);
-      const amounts = toAmountMatrix(
-        readOnlyState.getAssays(instanceId),
-        quantities,
-      );
-      const payments = makePayments(adminState.getPurses(instanceId), amounts);
+      const strategies = readOnlyState.getStrategies(instanceId);
+      const labels = readOnlyState.getLabels(instanceId);
+      const amounts = toAmountMatrix(strategies, labels, quantities);
+      const purses = adminState.getPurses(instanceId);
+      const payments = makePayments(purses, amounts);
       const results = adminState.getResultsFor(offerIds);
       results.map((result, i) => result.res(payments[i]));
       adminState.removeOffers(offerIds);
@@ -151,7 +152,7 @@ const makeZoe = () => {
       // promise object and only passing the offerId
       const { offerId } = await escrowOffer(
         adminState.recordOffer,
-        adminState.getPurseForIssuer,
+        adminState.getOrMakePurseForIssuer,
         offerDesc,
         offerPayments,
       );
@@ -162,7 +163,7 @@ const makeZoe = () => {
       const amount = await escrowReceiptIssuer.burnAll(escrowReceipt);
       const { id } = amount.quantity;
       const offerIds = harden([id]);
-      fillInUndefinedQuantities(
+      await fillInUndefinedQuantities(
         adminState,
         readOnlyState,
         offerIds,
@@ -190,7 +191,8 @@ const makeZoe = () => {
   const publicFacet = harden({
     getSeatIssuer: () => seatIssuer,
     getEscrowReceiptIssuer: () => escrowReceiptIssuer,
-    getIssuersForInstance: instanceId => readOnlyState.getIssuers(instanceId),
+    getIssuersForInstance: instanceId =>
+      Promise.all(readOnlyState.getIssuers(instanceId)),
 
     /**
      * Installs a governing contract and returns a reference to the
@@ -203,11 +205,11 @@ const makeZoe = () => {
      * description elements and offer payments accepted by the
      * governing contract.
      */
-    makeInstance: (libraryName, issuers) => {
+    makeInstance: async (libraryName, issuers) => {
       const makeContractFn = contractLib[libraryName];
       const instanceId = harden({});
       const instance = makeContractFn(governingContractFacet, instanceId);
-      adminState.addInstance(instanceId, instance, libraryName, issuers);
+      await adminState.addInstance(instanceId, instance, libraryName, issuers);
       return harden({
         instance,
         instanceId,
@@ -238,7 +240,7 @@ const makeZoe = () => {
     escrow: async (offerDesc, offerPayments) => {
       const { offerId, result } = await escrowOffer(
         adminState.recordOffer,
-        adminState.getPurseForIssuer,
+        adminState.getOrMakePurseForIssuer,
         offerDesc,
         offerPayments,
       );

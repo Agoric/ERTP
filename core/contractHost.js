@@ -11,7 +11,7 @@ import {
   mustBeSameStructure,
   sameStructure,
 } from '../util/sameStructure';
-import { makeUniAssayConfigMaker } from './config/uniAssayConfig';
+import { makeInviteConfig } from './config/inviteConfig';
 import { makeMint } from './issuers';
 import makePromise from '../util/makePromise';
 

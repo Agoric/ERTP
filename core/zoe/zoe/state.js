@@ -1,4 +1,7 @@
 import harden from '@agoric/harden';
+import { E } from '@agoric/eventual-send';
+
+import { strategyLib } from '../../config/strategyLib';
 
 const makeState = () => {
   const offerIdToQuantities = new WeakMap();
@@ -9,13 +12,16 @@ const makeState = () => {
   const issuerToPurse = new WeakMap();
   const instanceIdToAssays = new WeakMap();
   const instanceIdToStrategies = new WeakMap();
+  const instanceIdToLabels = new WeakMap();
   const instanceIdToIssuers = new WeakMap();
+  const instanceIdToPurses = new WeakMap();
 
   const readOnlyState = harden({
     // per instance id
     getIssuers: instanceId => instanceIdToIssuers.get(instanceId),
     getAssays: instanceId => instanceIdToAssays.get(instanceId),
     getStrategies: instanceId => instanceIdToStrategies.get(instanceId),
+    getLabels: instanceId => instanceIdToLabels.get(instanceId),
 
     // per offerIds array
     getQuantitiesFor: offerIds =>
@@ -26,26 +32,41 @@ const makeState = () => {
 
   // The adminState should never leave Zoe and should be closely held
   const adminState = harden({
-    addInstance: (instanceId, instance, libraryName, issuers) => {
+    addInstance: async (instanceId, instance, libraryName, issuers) => {
       instanceIdToInstance.set(instanceId, instance);
       instanceIdToLibraryName.set(instanceId, libraryName);
       instanceIdToIssuers.set(instanceId, issuers);
 
-      const assays = issuers.map(issuer => issuer.getAssay());
+      const assays = await Promise.all(
+        issuers.map(issuer => E(issuer).getAssay()),
+      );
       instanceIdToAssays.set(instanceId, assays);
 
-      const strategies = issuers.map(issuer => issuer.getStrategy());
+      const strategies = await Promise.all(
+        issuers.map(async issuer => {
+          const strategyName = await E(issuer).getStrategyName();
+          return strategyLib[strategyName];
+        }),
+      );
       instanceIdToStrategies.set(instanceId, strategies);
+
+      const labels = await Promise.all(
+        issuers.map(issuer => E(issuer).getLabel()),
+      );
+      instanceIdToLabels.set(instanceId, labels);
+
+      const purses = await Promise.all(
+        issuers.map(issuer => adminState.getOrMakePurseForIssuer(issuer)),
+      );
+      instanceIdToPurses.set(instanceId, purses);
     },
     getInstance: instanceId => instanceIdToInstance.get(instanceId),
     getLibraryName: instanceId => instanceIdToLibraryName.get(instanceId),
-    getPurses: instanceId =>
-      readOnlyState
-        .getIssuers(instanceId)
-        .map(issuer => adminState.getPurseForIssuer(issuer)),
-    getPurseForIssuer: issuer => {
+    getPurses: instanceId => instanceIdToPurses.get(instanceId),
+    getOrMakePurseForIssuer: async issuer => {
       if (!issuerToPurse.has(issuer)) {
-        issuerToPurse.set(issuer, issuer.makeEmptyPurse());
+        const purse = await E(issuer).makeEmptyPurse();
+        issuerToPurse.set(issuer, purse);
       }
       return issuerToPurse.get(issuer);
     },

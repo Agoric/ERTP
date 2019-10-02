@@ -1,4 +1,5 @@
 import harden from '@agoric/harden';
+import { E } from '@agoric/eventual-send';
 
 import makePromise from '../../../util/makePromise';
 import { insist } from '../../../util/insist';
@@ -32,7 +33,7 @@ const mintClaimPayoffPayment = (seatMint, addUseObj, offerDesc, result) => {
 };
 
 const escrowAllPayments = async (
-  getPurseForIssuer,
+  getOrMakePurseForIssuer,
   offerDesc,
   offerPayments,
 ) => {
@@ -42,8 +43,8 @@ const escrowAllPayments = async (
     // payment with that exact balance
     if (['offerExactly', 'offerAtMost'].includes(offerDescElement.rule)) {
       const { issuer } = offerDescElement.amount.label;
-      const purse = getPurseForIssuer(issuer);
-      const amount = await purse.depositExactly(
+      const purse = await getOrMakePurseForIssuer(issuer);
+      const amount = await E(purse).depositExactly(
         offerDesc[i].amount,
         offerPayments[i],
       );
@@ -59,14 +60,14 @@ const escrowAllPayments = async (
 
 const escrowOffer = async (
   recordOffer,
-  getPurseForIssuer,
+  getOrMakePurseForIssuer,
   offerDesc,
   offerPayments,
 ) => {
   const result = makePromise();
 
   const quantitiesArray = await escrowAllPayments(
-    getPurseForIssuer,
+    getOrMakePurseForIssuer,
     offerDesc,
     offerPayments,
   );
@@ -99,20 +100,17 @@ const escrowEmptyOffer = (recordOffer, length) => {
 
 const makePayments = (purses, amountsMatrix) =>
   amountsMatrix.map(row =>
-    row.map((amount, i) => {
-      const payment = purses[i].withdraw(amount, 'payout');
-      return payment;
-    }),
+    row.map((amount, i) => E(purses[i]).withdraw(amount, 'payout')),
   );
 
-const fillInUndefinedQuantities = (
+const fillInUndefinedQuantities = async (
   adminState,
   readOnlyState,
   offerIds,
   instanceId,
 ) => {
   const [quantities] = readOnlyState.getQuantitiesFor(offerIds);
-  const strategies = readOnlyState.getStrategies(instanceId);
+  const strategies = await Promise.all(readOnlyState.getStrategies(instanceId));
   const filledInQuantities = quantities.map((quantity, i) =>
     quantity === undefined ? strategies[i].empty() : quantity,
   );

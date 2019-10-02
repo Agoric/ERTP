@@ -7,6 +7,8 @@ import { insist } from '../util/insist';
 import { makeBasicFungibleConfig } from './config/basicFungibleConfig';
 import { makeAssay } from './assay';
 
+import { importManager } from '../more/imports/importManager';
+
 /**
  * makeMint takes in a string description as well as a function to
  * make a configuration. This configuration can be used to add custom
@@ -30,7 +32,7 @@ Description must be truthy: ${description}`;
     makePurseTrait,
     makeMintTrait,
     makeMintKeeper,
-    strategy,
+    strategyName,
   } = makeConfig();
 
   // Methods like depositExactly() pass in an amount which is supposed
@@ -129,8 +131,8 @@ Description must be truthy: ${description}`;
       return assay;
     },
 
-    getStrategy() {
-      return assay.getStrategy();
+    getStrategyName() {
+      return assay.getStrategyName();
     },
 
     makeAmount(quantity) {
@@ -241,7 +243,7 @@ Description must be truthy: ${description}`;
 
   const label = harden({ issuer, description });
 
-  const assay = makeAssay(label, strategy);
+  const assay = makeAssay(label, strategyName);
   const mintKeeper = makeMintKeeper(assay);
   const { purseKeeper, paymentKeeper } = mintKeeper;
 

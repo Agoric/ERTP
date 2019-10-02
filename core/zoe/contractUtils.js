@@ -44,13 +44,6 @@ const offerEqual = (strategies, leftOffer, rightOffer) => {
   );
 };
 
-// Transform a quantitiesMatrix to a matrix of amounts given an array
-// of the associated assays.
-const toAmountMatrix = (assays, quantitiesMatrix) => {
-  const assayMakes = assays.map(assay => assay.make);
-  return mapArrayOnMatrix(quantitiesMatrix, assayMakes);
-};
-
 // an array of empty quantities per strategy
 const makeEmptyQuantities = strategies =>
   strategies.map(strategy => strategy.empty());
@@ -138,6 +131,15 @@ const makeAmount = (strategy, label, allegedQuantity) => {
     quantity: allegedQuantity,
   });
 };
+
+// Transform a quantitiesMatrix to a matrix of amounts given an array
+// of the associated assays.
+const toAmountMatrix = (strategies, labels, quantitiesMatrix) =>
+  quantitiesMatrix.map(quantities =>
+    quantities.map((quantity, i) =>
+      makeAmount(strategies[i], labels[i], quantity),
+    ),
+  );
 
 const makeOfferDesc = (strategies, labels, rules, quantities) =>
   strategies.map((strategy, i) =>
