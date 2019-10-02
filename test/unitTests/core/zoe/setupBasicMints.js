@@ -11,12 +11,14 @@ const setup = () => {
   const issuers = mints.map(mint => mint.getIssuer());
   const assays = issuers.map(issuer => issuer.getAssay());
   const strategies = issuers.map(issuer => issuer.getStrategy());
+  const labels = issuers.map(issuer => issuer.getLabel());
 
   return harden({
     mints,
     issuers,
     assays,
     strategies,
+    labels,
   });
 };
 harden(setup);

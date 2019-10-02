@@ -1,3 +1,8 @@
+import harden from '@agoric/harden';
+import Nat from '@agoric/nat';
+
+import makePromise from '../../util/makePromise';
+
 // These utilities are likely to be helpful to developers writing
 // governing contracts.
 
@@ -61,12 +66,105 @@ const vectorWith = (strategies, leftQuantities, rightQuantities) =>
     strategies[i].with(leftQ, rightQuantities[i]),
   );
 
+// Vector subtraction of two quantity arrays
+const vectorWithout = (strategies, leftQuantities, rightQuantities) =>
+  leftQuantities.map((leftQ, i) =>
+    strategies[i].without(leftQ, rightQuantities[i]),
+  );
+
+/**
+ * Make a function that implements a common invocation pattern for
+ * contract developers:
+ * 1) Take an `escrowReceipt` as input.
+ * 2) Validate it
+ * 3) Check that the offer gotten from the `escrowReceipt` is valid
+ *    for this particular contract
+ * 4) Fail-fast if the offer isn't valid
+ * 5) Handle the valid offer
+ * 6) Reallocate and eject the player.
+ * @param  {} {zoeInstance - a zoeInstance
+ * @param  {} isValidOfferFn - a predicate that takes in an offerDesc
+ * and returns whether it is a valid offer or not
+ * @param  {} successMessage - the message that the promise should
+ * resolve to if the offer is successful
+ * @param  {} rejectMessage - the message that the promise should
+ * reject with if the offer is not valid
+ * @param  {} handleOfferFn - the function to do custom logic before
+ * reallocating and ejecting the user. The function takes in the
+ * `offerId` and should return an object with `offerIds` and
+ * `newQuantities` as properties
+ * @param  {} }
+ */
+const makeAPIMethod = ({
+  zoeInstance,
+  isValidOfferFn,
+  successMessage,
+  rejectMessage,
+  handleOfferFn,
+}) => async escrowReceipt => {
+  const result = makePromise();
+  const { id, offerMade: offerMadeDesc } = await zoeInstance.burnEscrowReceipt(
+    escrowReceipt,
+  );
+  // fail-fast if the offerDesc isn't valid
+  if (!isValidOfferFn(offerMadeDesc)) {
+    zoeInstance.complete(harden([id]));
+    result.rej(`${rejectMessage}`);
+    return result.p;
+  }
+  const { offerIds, newQuantities, burnQuantities } = await handleOfferFn(id);
+  if (burnQuantities !== undefined) {
+    await zoeInstance.reallocateAndBurn(
+      offerIds,
+      newQuantities,
+      burnQuantities,
+    );
+  } else {
+    zoeInstance.reallocate(offerIds, newQuantities);
+  }
+  zoeInstance.complete(harden([id]));
+  result.res(`${successMessage}`);
+  return result.p;
+};
+
+const makeAmount = (strategy, label, allegedQuantity) => {
+  strategy.insistKind(allegedQuantity);
+  return harden({
+    label,
+    quantity: allegedQuantity,
+  });
+};
+
+const makeOfferDesc = (strategies, labels, rules, quantities) =>
+  strategies.map((strategy, i) =>
+    harden({
+      rule: rules[i],
+      amount: makeAmount(strategy, labels[i], quantities[i]),
+    }),
+  );
+
+/**
+ * These operations should be used for calculations with the
+ * quantities of basic fungible tokens.
+ */
+const basicFungibleTokenOperations = harden({
+  add: (x, y) => Nat(x + y),
+  subtract: (x, y) => Nat(x - y),
+  multiply: (x, y) => Nat(x * y),
+  divide: (x, y) => Nat(Math.floor(x / y)),
+});
+
 export {
   transpose,
   mapArrayOnMatrix,
   offerEqual,
-  toAmountMatrix,
   makeEmptyQuantities,
   makeHasOkRules,
   vectorWith,
+  vectorWithout,
+  makeAPIMethod,
+  basicFungibleTokenOperations,
+  makeAmount,
+  makeOfferDesc,
+  toAmountMatrix,
 };
