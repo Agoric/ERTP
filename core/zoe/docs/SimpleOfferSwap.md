@@ -14,18 +14,17 @@ In the "Simple Offer" swap, the governing contract is the
 `simpleOffer` interface with the `swapSrcs` installed. 
 
 Let's say that Alice wants to create a swap that anyone can be the
-counter-party for. She creates the zoeInstance:
+counter-party for. She creates a swap instance:
 
 ```js
-const makeSimpleSwap = makeSimpleOfferMaker(swapSrcs);
-const { zoeInstance, governingContract: simpleSwap } = zoe.makeInstance(
-  makeSimpleSwap,
+const { instance: aliceSwap, instanceId } = zoe.makeInstance(
+  'simpleOfferSwap',
   issuers,
 );
 ```
 
-Then escrows her offer with the zoeInstance and gets an escrowReceipt
-and a claimPayoff ERTP payment from which she can get her winnings:
+Then escrows her offer with Zoe and gets an escrowReceipt
+and a claimPayoff ERTP payment from which she can get her payoff:
 
 ```js
 const aliceOfferDesc = harden([
@@ -38,40 +37,59 @@ const aliceOfferDesc = harden([
     amount: simoleanIssuer.makeAmount(7),
   },
 ]);
-const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment];
+const alicePayments = [aliceMoolaPayment, undefined];
 const {
   escrowReceipt: allegedAliceEscrowReceipt,
   claimPayoff: aliceClaimPayoff,
-} = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
+} = await zoe.escrow(aliceOfferDesc, alicePayments);
 ```
 
 And then makes an offer using the escrowReceipt and tries to collect her winnings:
 
 ```js
-const aliceOfferResultP = simpleSwap.makeOffer(aliceEscrowReceipt);
+const aliceOfferResultP = aliceSwap.makeOffer(aliceEscrowReceipt);
 const aliceSeat = await aliceClaimPayoff.unwrap();
-const aliceWinningsP = aliceSeat.getPayoff();
+const alicePayoffP = aliceSeat.getPayoff();
 
 ```
 
-She then spreads the zoe instance widely, and Bob decides to be the
-counter-party. He also escrows his payment and makes an offer in the
-same way as alice, but his offer description is the opposite of Alice's:
+She then spreads the `instanceId` widely. Bob hears about Alice's
+contract and he decides to look up the `instanceId` to see if it
+matches Alice's claims.
+
+```js
+const { instance: bobSwap, libraryName } = zoe.getInstance(instanceId);
+t.equals(libraryName, 'simpleOfferSwap');
+const bobIssuers = zoe.getIssuersForInstance(instanceId);
+t.deepEquals(bobIssuers, issuers);
+```
+
+Bob decides to be the counter-party. He also escrows his payment and
+makes an offer in the same way as Alice, but his offer description is
+the opposite of Alice's:
 
 ```js
 const bobOfferDesc = harden([
   {
     rule: 'wantExactly',
-    amount: moolaIssuer.makeAmount(3),
+    amount: bobIssuers[0].makeAmount(3),
   },
   {
     rule: 'offerExactly',
-    amount: simoleanIssuer.makeAmount(7),
+    amount: bobIssuers[1].makeAmount(7),
   },
 ]);
+const bobPayments = [undefined, bobSimoleanPayment];
+
+const {
+  escrowReceipt: bobEscrowReceipt,
+  claimPayoff: bobClaimPayoff,
+} = await zoe.escrow(bobOfferDesc, bobPayments);
+
+const bobOfferResult = await bobSwap.makeOffer(bobEscrowReceipt);
 ```
 
-Now that Bob has made his offer, `aliceWinningsP` resolves to an array
+Now that Bob has made his offer, `alicePayoffP` resolves to an array
 of ERTP payments `[moolaPayment, simoleanPayment]` where the
 moolaPayment is empty, and the simoleanPayment has a balance of 7. 
 

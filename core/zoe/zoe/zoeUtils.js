@@ -32,16 +32,17 @@ const mintClaimPayoffPayment = (seatMint, addUseObj, offerDesc, result) => {
 };
 
 const escrowAllPayments = async (
-  purses,
-  strategies,
+  getPurseForIssuer,
   offerDesc,
   offerPayments,
 ) => {
-  const quantitiesArrayPromises = purses.map(async (purse, i) => {
+  const quantitiesArrayPromises = offerDesc.map(async (offerDescElement, i) => {
     // if the user's contractual understanding includes
     // "offerExactly" or "offerAtMost", make sure that they have supplied a
     // payment with that exact balance
-    if (['offerExactly', 'offerAtMost'].includes(offerDesc[i].rule)) {
+    if (['offerExactly', 'offerAtMost'].includes(offerDescElement.rule)) {
+      const { issuer } = offerDescElement.amount.label;
+      const purse = getPurseForIssuer(issuer);
       const amount = await purse.depositExactly(
         offerDesc[i].amount,
         offerPayments[i],
@@ -51,23 +52,21 @@ const escrowAllPayments = async (
     insist(
       offerPayments[i] === undefined,
     )`payment was included, but the rule was ${offerDesc[i].rule}`;
-    return strategies[i].empty();
+    return undefined;
   });
-  const quantitiesArray = Promise.all(quantitiesArrayPromises);
-  return quantitiesArray;
+  return Promise.all(quantitiesArrayPromises);
 };
 
 const escrowOffer = async (
-  adminState,
-  strategies,
+  recordOffer,
+  getPurseForIssuer,
   offerDesc,
   offerPayments,
 ) => {
   const result = makePromise();
 
   const quantitiesArray = await escrowAllPayments(
-    adminState.getPurses(),
-    strategies,
+    getPurseForIssuer,
     offerDesc,
     offerPayments,
   );
@@ -75,7 +74,7 @@ const escrowOffer = async (
   const offerId = harden({});
 
   // has side effects
-  adminState.recordOffer(offerId, offerDesc, quantitiesArray, result);
+  recordOffer(offerId, offerDesc, quantitiesArray, result);
 
   return harden({
     offerId,
@@ -83,16 +82,19 @@ const escrowOffer = async (
   });
 };
 
-const escrowEmptyOffer = (adminState, assays, strategies) => {
-  const offerPayments = assays.map(_assay => undefined);
+const escrowEmptyOffer = (recordOffer, length) => {
+  const offerId = harden({});
+  const offerDesc = Array(length).fill(undefined);
+  const quantitiesArray = Array(length).fill(undefined);
+  const result = makePromise();
 
-  const offerDesc = assays.map(assay =>
-    harden({
-      rule: 'wantAtLeast',
-      amount: assay.empty(),
-    }),
-  );
-  return escrowOffer(adminState, strategies, offerDesc, offerPayments);
+  // has side effects
+  recordOffer(offerId, offerDesc, quantitiesArray, result);
+
+  return harden({
+    offerId,
+    result,
+  });
 };
 
 const makePayments = (purses, amountsMatrix) =>
@@ -103,10 +105,25 @@ const makePayments = (purses, amountsMatrix) =>
     }),
   );
 
+const fillInUndefinedQuantities = (
+  adminState,
+  readOnlyState,
+  offerIds,
+  instanceId,
+) => {
+  const [quantities] = readOnlyState.getQuantitiesFor(offerIds);
+  const strategies = readOnlyState.getStrategies(instanceId);
+  const filledInQuantities = quantities.map((quantity, i) =>
+    quantity === undefined ? strategies[i].empty() : quantity,
+  );
+  adminState.setQuantitiesFor(offerIds, harden([filledInQuantities]));
+};
+
 export {
   makePayments,
   escrowEmptyOffer,
   escrowOffer,
   mintEscrowReceiptPayment,
   mintClaimPayoffPayment,
+  fillInUndefinedQuantities,
 };

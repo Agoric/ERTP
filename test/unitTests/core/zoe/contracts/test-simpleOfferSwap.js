@@ -2,11 +2,9 @@ import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
 import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
-import { makeSimpleOfferMaker } from '../../../../../core/zoe/contracts/simpleOffer/simpleOffer';
-import { swapSrcs } from '../../../../../core/zoe/contracts/simpleOffer/srcs/swapSrcs';
 import { setup } from '../setupBasicMints';
 
-test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
+test('zoe.makeInstance - simpleOfferSwap', async t => {
   try {
     const { issuers: originalIssuers, mints } = setup();
     const issuers = originalIssuers.slice(0, 2);
@@ -24,13 +22,12 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a simpleSwap instance
-    const makeSimpleSwap = makeSimpleOfferMaker(swapSrcs);
-    const { zoeInstance, governingContract: simpleSwap } = zoe.makeInstance(
-      makeSimpleSwap,
+    const { instance: aliceSwap, instanceId } = zoe.makeInstance(
+      'simpleOfferSwap',
       issuers,
     );
 
-    // 2: Alice escrows with the zoeInstance
+    // 2: Alice escrows with zoe
     const aliceOfferDesc = harden([
       {
         rule: 'offerExactly',
@@ -45,7 +42,7 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
       claimPayoff: aliceClaimPayoff,
-    } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
+    } = await zoe.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. It's
     // unnecessary if she trusts Zoe but we will do it for the tests.
@@ -54,28 +51,34 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     );
 
     // 4: Alice initializes the swap with her escrow receipt
-    const aliceOfferResult = await simpleSwap.makeOffer(aliceEscrowReceipt);
+    const aliceOfferResult = await aliceSwap.makeOffer(aliceEscrowReceipt);
 
-    // 5: Alice spreads the zoeInstance and simpleSwap far and wide with instructions
-    // on how to use it and Bob decides he wants to be the counter-party.
+    // 5: Alice spreads the instanceId far and wide with instructions
+    // on how to use it and Bob decides he wants to be the
+    // counter-party.
+
+    const { instance: bobSwap, libraryName } = zoe.getInstance(instanceId);
+    t.equals(libraryName, 'simpleOfferSwap');
+    const bobIssuers = zoe.getIssuersForInstance(instanceId);
+    t.deepEquals(bobIssuers, issuers);
 
     const bobOfferDesc = harden([
       {
         rule: 'wantExactly',
-        amount: issuers[0].makeAmount(3),
+        amount: bobIssuers[0].makeAmount(3),
       },
       {
         rule: 'offerExactly',
-        amount: issuers[1].makeAmount(7),
+        amount: bobIssuers[1].makeAmount(7),
       },
     ]);
     const bobPayments = [undefined, bobSimoleanPayment];
 
-    // 6: Bob escrows with the zoeInstance
+    // 6: Bob escrows with zoe
     const {
       escrowReceipt: allegedBobEscrowReceipt,
       claimPayoff: bobClaimPayoff,
-    } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
+    } = await zoe.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment. This is
     // unnecessary but we will do it anyways for the test
@@ -84,7 +87,7 @@ test('zoe.makeInstance with simpleOffer with swapSrcs', async t => {
     );
 
     // 8: Bob makes an offer with his escrow receipt
-    const bobOfferResult = await simpleSwap.makeOffer(bobEscrowReceipt);
+    const bobOfferResult = await bobSwap.makeOffer(bobEscrowReceipt);
 
     t.equals(
       bobOfferResult,
