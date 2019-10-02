@@ -7,9 +7,11 @@ const makeState = issuers => {
   const purses = issuers.map(issuer => issuer.makeEmptyPurse());
   const assays = issuers.map(issuer => issuer.getAssay());
   const strategies = issuers.map(issuer => issuer.getStrategy());
+  const labels = issuers.map(issuer => issuer.getLabel());
 
   const readOnlyState = harden({
     getIssuers: () => issuers,
+    getLabels: () => labels,
     getAssays: () => assays,
     getStrategies: () => strategies,
     getQuantitiesFor: objIds => objIds.map(objId => quantities.get(objId)),

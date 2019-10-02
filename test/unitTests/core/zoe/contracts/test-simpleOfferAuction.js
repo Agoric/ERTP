@@ -8,8 +8,8 @@ import { setup } from '../setupBasicMints';
 
 test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
   try {
-    const { issuers: originalIssuers, mints, assays } = setup();
-    const issuers = originalIssuers.slice(0, 2);
+    const { issuers: defaultIssuers, mints, assays } = setup();
+    const issuers = defaultIssuers.slice(0, 2);
     const zoe = makeZoe();
     const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
 

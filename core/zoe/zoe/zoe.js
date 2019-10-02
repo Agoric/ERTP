@@ -3,14 +3,16 @@ import harden from '@agoric/harden';
 import { insist } from '../../../util/insist';
 import { isOfferSafeForAll } from './isOfferSafe';
 import { areRightsConserved } from './areRightsConserved';
-import { toAmountMatrix, makeEmptyQuantities } from '../contractUtils';
+import { makeEmptyQuantities, makeOfferDesc } from '../contractUtils';
 
 import {
   makePayments,
   escrowEmptyOffer,
   escrowOffer,
+  burnAll,
   mintEscrowReceiptPayment,
   mintClaimPayoffPayment,
+  toAmountMatrix,
 } from './zoeUtils';
 
 import { makeState } from './state';
@@ -98,7 +100,7 @@ const makeZoe = () => {
          * with one array of quantities per offerId. This is likely
          * a subset of the full quantitiesMatrix.
          */
-        reallocate: (offerIds, reallocation) => {
+        reallocate: (offerIds, reallocation, burnQuantities) => {
           const offerDescs = readOnlyState.getOfferDescsFor(offerIds);
           const currentQuantities = readOnlyState.getQuantitiesFor(offerIds);
 
@@ -122,6 +124,14 @@ const makeZoe = () => {
 
           // 3) save the reallocation
           adminState.setQuantitiesFor(offerIds, reallocation);
+
+          // 4) burn the quantities specified in burnQuantities
+          return burnAll(
+            adminState.getPurses(),
+            issuers,
+            readOnlyState.getAssays(),
+            burnQuantities,
+          );
         },
 
         /**
@@ -150,10 +160,10 @@ const makeZoe = () => {
          *  represent a pool, the governing contract can create an
          *  empty offer and then reallocate other quantities to this offer.
          */
-        escrowEmptyOffer: async () => {
+        escrowEmptyOffer: () => {
           // attenuate the authority by not passing along the result
           // promise object and only passing the offerId
-          const { offerId } = await escrowEmptyOffer(
+          const { offerId } = escrowEmptyOffer(
             adminState,
             readOnlyState.getAssays(),
             readOnlyState.getStrategies(),
@@ -188,10 +198,18 @@ const makeZoe = () => {
         makeEmptyQuantities: () =>
           makeEmptyQuantities(readOnlyState.getStrategies()),
         getStrategies: readOnlyState.getStrategies,
+        getLabels: readOnlyState.getLabels,
         getQuantitiesFor: readOnlyState.getQuantitiesFor,
         getOfferDescsFor: readOnlyState.getOfferDescsFor,
         getSeatIssuer: () => seatIssuer,
         getEscrowReceiptIssuer: () => escrowReceiptIssuer,
+        makeOfferDesc: (rules, quantities) =>
+          makeOfferDesc(
+            readOnlyState.getStrategies(),
+            readOnlyState.getLabels(),
+            rules,
+            quantities,
+          ),
       });
 
       return harden({

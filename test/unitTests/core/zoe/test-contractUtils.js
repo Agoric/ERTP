@@ -7,6 +7,8 @@ import {
   toAmountMatrix,
   makeEmptyQuantities,
   vectorWith,
+  makeAmount,
+  makeOfferDesc,
 } from '../../../../core/zoe/contractUtils';
 import { setup } from './setupBasicMints';
 
@@ -253,6 +255,54 @@ test('vectorWith', t => {
       10,
       16,
     ]);
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('makeAmount', t => {
+  try {
+    const { strategies, labels, issuers, mints } = setup();
+    const amount = makeAmount(strategies[0], labels[0], 10);
+    t.deepEquals(amount, issuers[0].makeAmount(10));
+    const purse = mints[0].mint(amount);
+    t.deepEquals(purse.getBalance(), amount);
+  } catch (e) {
+    t.assert(false, e);
+  } finally {
+    t.end();
+  }
+});
+
+test('makeOfferDesc', t => {
+  try {
+    const { strategies, labels, issuers } = setup();
+    const rules = ['offerExactly', 'offerAtMost', 'wantAtLeast'];
+    const quantities = [4, 6, 2];
+    const actualOfferDesc = makeOfferDesc(
+      strategies,
+      labels,
+      rules,
+      quantities,
+    );
+
+    const expectedOfferDesc = [
+      {
+        rule: 'offerExactly',
+        amount: issuers[0].makeAmount(4),
+      },
+      {
+        rule: 'offerAtMost',
+        amount: issuers[1].makeAmount(6),
+      },
+      {
+        rule: 'wantAtLeast',
+        amount: issuers[2].makeAmount(2),
+      },
+    ];
+    t.deepEquals(actualOfferDesc, expectedOfferDesc);
   } catch (e) {
     t.assert(false, e);
   } finally {

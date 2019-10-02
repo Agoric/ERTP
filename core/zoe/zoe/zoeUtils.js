@@ -2,6 +2,7 @@ import harden from '@agoric/harden';
 
 import makePromise from '../../../util/makePromise';
 import { insist } from '../../../util/insist';
+import { mapArrayOnMatrix } from '../contractUtils';
 
 // These utilities are used within Zoe itself. Importantly, there is
 // no ambient authority for these utilities. Any authority must be
@@ -103,10 +104,29 @@ const makePayments = (purses, amountsMatrix) =>
     }),
   );
 
+// Transform a quantitiesMatrix to a matrix of amounts given an array
+// of the associated assays.
+const toAmountMatrix = (assays, quantitiesMatrix) => {
+  const assayMakes = assays.map(assay => assay.make);
+  return mapArrayOnMatrix(quantitiesMatrix, assayMakes);
+};
+
+const burnAll = async (purses, issuers, assays, burnQuantities) => {
+  const burnMatrix = harden([burnQuantities]);
+  const amountsMatrix = toAmountMatrix(assays, burnMatrix);
+  const payments = makePayments(purses, amountsMatrix);
+  const burnedAmountsP = issuers.map((issuer, i) =>
+    issuer.burnAll(payments[0][i]),
+  );
+  return Promise.all(burnedAmountsP);
+};
+
 export {
   makePayments,
   escrowEmptyOffer,
   escrowOffer,
   mintEscrowReceiptPayment,
   mintClaimPayoffPayment,
+  burnAll,
+  toAmountMatrix,
 };
