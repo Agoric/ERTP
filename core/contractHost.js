@@ -11,7 +11,7 @@ import {
   mustBeSameStructure,
   sameStructure,
 } from '../util/sameStructure';
-import { makeUniAssayConfigMaker } from './config/uniAssayConfig';
+import { makeUniConfig } from './config/uniConfig';
 import { makeMint } from './issuers';
 import makePromise from '../util/makePromise';
 
@@ -23,15 +23,7 @@ function makeContractHost(E, evaluate) {
   const seatDescriptions = makePrivateName();
   // from installation to source code string
   const installationSources = makePrivateName();
-
-  function descriptionCoercer(allegedDescription) {
-    const seatDesc = seatDescriptions.get(allegedDescription.seatIdentity);
-    mustBeSameStructure(seatDesc, allegedDescription);
-    return seatDesc;
-  }
-
-  const makeUniAssayConfig = makeUniAssayConfigMaker(descriptionCoercer);
-  const inviteMint = makeMint('contract host', makeUniAssayConfig);
+  const inviteMint = makeMint('contract host', makeUniConfig);
   const inviteIssuer = inviteMint.getIssuer();
   const inviteAssay = inviteIssuer.getAssay();
 

@@ -1,6 +1,7 @@
 import harden from '@agoric/harden';
 
 import { mustBeSameStructure, mustBeComparable } from '../util/sameStructure';
+import { strategyLib } from './config/strategyLib';
 
 // This module treats labels as black boxes. It is not aware
 // of issuers, and so can handle labels whose issuers are merely
@@ -20,8 +21,10 @@ import { mustBeSameStructure, mustBeComparable } from '../util/sameStructure';
 // passed. Rather, we expect each vat that needs to operate on amounts
 // will have its own local assay to do so.
 
-function makeAssay(label, strategy) {
+function makeAssay(label, strategyName) {
   mustBeComparable(label);
+
+  const strategy = strategyLib[strategyName];
 
   // The brand represents recognition of the amount as authorized.
   const brand = new WeakSet();
@@ -31,8 +34,8 @@ function makeAssay(label, strategy) {
       return label;
     },
 
-    getStrategy() {
-      return strategy;
+    getStrategyName() {
+      return strategyName;
     },
 
     // Given the raw quantity that this kind of amount would label, return
