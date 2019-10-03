@@ -161,9 +161,11 @@ No invites left`;
     // host, redeem it for the associated seat. Else error. Redeeming
     // consumes the invite payment and also transfers the use rights.
     redeem(allegedInvitePaymentP) {
-      return Promise.resolve(allegedInvitePaymentP).then(allegedInvitePayment => {
-        return redeem(allegedInvitePayment);
-      });
+      return Promise.resolve(allegedInvitePaymentP).then(
+        allegedInvitePayment => {
+          return redeem(allegedInvitePayment);
+        },
+      );
     },
   });
   return contractHost;
