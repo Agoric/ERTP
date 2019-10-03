@@ -45,20 +45,18 @@ function makeAliceMaker(E, host, log) {
           const verifiedInvitePaymentP = E(allegedInvitePaymentP)
             .getBalance()
             .then(allegedInviteAmount => {
-              return Promise.resolve(Promise.all([clams10P, fudco7P])).then(
-                terms => {
-                  const [left, right] = terms;
-                  return E(escrowExchangeInstallationP)
-                    .checkAmount(allegedInviteAmount, { left, right }, 'left')
-                    .then(() => {
-                      return E(inviteIssuerP).claimExactly(
-                        allegedInviteAmount,
-                        allegedInvitePaymentP,
-                        'verified invite',
-                      );
-                    });
-                },
-              );
+              return Promise.all([clams10P, fudco7P]).then(terms => {
+                const [left, right] = terms;
+                return E(escrowExchangeInstallationP)
+                  .checkAmount(allegedInviteAmount, { left, right }, 'left')
+                  .then(() => {
+                    return E(inviteIssuerP).claimExactly(
+                      allegedInviteAmount,
+                      allegedInvitePaymentP,
+                      'verified invite',
+                    );
+                  });
+              });
             });
 
           return Promise.resolve(
