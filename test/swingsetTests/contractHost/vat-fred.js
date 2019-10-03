@@ -35,17 +35,19 @@ function makeFredMaker(E, host, log) {
                 return E(escrowExchangeInstallationP)
                   .checkPartialAmount(allegedInviteAmount, f55, 'left')
                   .then(coveredCallAmount =>
-                    Promise.resolve(Promise.all(coveredCallTermsP)).then(terms => {
-                      return E(coveredCallInstallationP)
-                        .checkAmount(coveredCallAmount, terms)
-                        .then(() => {
-                          return E(inviteIssuerP).claimExactly(
-                            allegedInviteAmount,
-                            allegedSaleInvitePaymentP,
-                            'verified sale invite',
-                          );
-                        });
-                    }),
+                    Promise.resolve(Promise.all(coveredCallTermsP)).then(
+                      terms => {
+                        return E(coveredCallInstallationP)
+                          .checkAmount(coveredCallAmount, terms)
+                          .then(() => {
+                            return E(inviteIssuerP).claimExactly(
+                              allegedInviteAmount,
+                              allegedSaleInvitePaymentP,
+                              'verified sale invite',
+                            );
+                          });
+                      },
+                    ),
                   );
               });
             });

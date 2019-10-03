@@ -54,7 +54,7 @@ test('toAmountMatrix', t => {
 
 test('makeEmptyQuantities', t => {
   try {
-    const { issuers, strategies } = setup();
+    const { strategies } = setup();
     t.deepEquals(makeEmptyQuantities(strategies), [0, 0, 0]);
   } catch (e) {
     t.assert(false, e);

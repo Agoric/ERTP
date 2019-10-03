@@ -1,6 +1,5 @@
 import { importManager } from '../../more/imports/importManager';
 
-import { makeListStrategy } from './strategies/listStrategy';
 import { natStrategy } from './strategies/natStrategy';
 import { seatStrategy } from './strategies/seatStrategy';
 import { makeUniStrategy } from './strategies/uniStrategy';

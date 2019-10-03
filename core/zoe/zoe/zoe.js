@@ -1,5 +1,4 @@
 import harden from '@agoric/harden';
-import { E } from '@agoric/eventual-send';
 
 import { insist } from '../../../util/insist';
 import { isOfferSafeForAll } from './isOfferSafe';

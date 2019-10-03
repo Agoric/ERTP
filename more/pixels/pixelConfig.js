@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import { makePixelMintKeeper } from './pixelMintKeeper';
-import { makePixelStrategy } from './pixelStrategy';
 import { makeMint } from '../../core/issuers';
 
 /**
