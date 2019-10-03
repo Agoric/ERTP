@@ -121,7 +121,7 @@ const makeZoe = async () => {
       const labels = readOnlyState.getLabels(instanceId);
       const amounts = toAmountMatrix(strategies, labels, quantities);
       const purses = adminState.getPurses(instanceId);
-      const payments = makePayments(purses, amounts);
+      const payments = await makePayments(purses, amounts);
       const results = adminState.getResultsFor(offerIds);
       results.map((result, i) => result.res(payments[i]));
       adminState.removeOffers(offerIds);
@@ -191,8 +191,7 @@ const makeZoe = async () => {
   const publicFacet = harden({
     getSeatIssuer: () => seatIssuer,
     getEscrowReceiptIssuer: () => escrowReceiptIssuer,
-    getIssuersForInstance: instanceId =>
-      Promise.all(readOnlyState.getIssuers(instanceId)),
+    getIssuersForInstance: instanceId => readOnlyState.getIssuers(instanceId),
 
     /**
      * Installs a governing contract and returns a reference to the

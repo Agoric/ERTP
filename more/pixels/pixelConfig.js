@@ -153,7 +153,7 @@ function makePixelConfigMaker(
       makeMintTrait,
       makeIssuerTrait,
       makeMintKeeper: makePixelMintKeeper,
-      strategy: makePixelStrategy(canvasSize),
+      strategyName: 'pixelStrategy10',
     });
   }
   return makePixelConfig;

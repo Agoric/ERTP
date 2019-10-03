@@ -17,7 +17,7 @@ Let's say that Alice wants to create a swap that anyone can be the
 counter-party for. She creates a swap instance:
 
 ```js
-const { instance: aliceSwap, instanceId } = zoe.makeInstance(
+const { instance: aliceSwap, instanceId } = await zoe.makeInstance(
   'simpleOfferSwap',
   issuers,
 );

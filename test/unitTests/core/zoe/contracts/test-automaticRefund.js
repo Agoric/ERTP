@@ -8,7 +8,7 @@ test('zoe.makeInstance with automaticRefund', async t => {
     // Setup zoe and mints
     const { issuers: defaultIssuers, mints } = setup();
     const issuers = defaultIssuers.slice(0, 2);
-    const zoe = makeZoe();
+    const zoe = await makeZoe();
     const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
     const seatIssuer = zoe.getSeatIssuer();
 
@@ -23,10 +23,10 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates an automatic refund instance
-    const { instance: aliceAutomaticRefund, instanceId } = zoe.makeInstance(
-      'automaticRefund',
-      issuers,
-    );
+    const {
+      instance: aliceAutomaticRefund,
+      instanceId,
+    } = await zoe.makeInstance('automaticRefund', issuers);
     // The issuers in the instance are now defined
     t.deepEquals(zoe.getIssuersForInstance(instanceId), issuers);
 
@@ -173,7 +173,7 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     // Setup zoe and mints
     const { issuers: originalIssuers, mints } = setup();
     const issuers = originalIssuers.slice(0, 2);
-    const zoe = makeZoe();
+    const zoe = await makeZoe();
 
     // Setup Alice
     const aliceMoolaPurse = mints[0].mint(issuers[0].makeAmount(30));
@@ -186,17 +186,17 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     ]);
 
     // 1: Alice creates 3 automatic refund instances
-    const { instance: automaticRefund1 } = zoe.makeInstance(
+    const { instance: automaticRefund1 } = await zoe.makeInstance(
       'automaticRefund',
       issuers,
     );
 
-    const { instance: automaticRefund2 } = zoe.makeInstance(
+    const { instance: automaticRefund2 } = await zoe.makeInstance(
       'automaticRefund',
       issuers,
     );
 
-    const { instance: automaticRefund3 } = zoe.makeInstance(
+    const { instance: automaticRefund3 } = await zoe.makeInstance(
       'automaticRefund',
       issuers,
     );

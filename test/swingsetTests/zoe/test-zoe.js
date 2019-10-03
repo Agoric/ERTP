@@ -29,13 +29,23 @@ const expectedAutomaticRefundOkLog = [
 ];
 
 test('zoe - automaticRefund - valid inputs - with SES', async t => {
-  const dump = await main(true, 'zoe', ['automaticRefundOk']);
-  t.deepEquals(dump.log, expectedAutomaticRefundOkLog);
-  t.end();
+  try {
+    const dump = await main(true, 'zoe', ['automaticRefundOk']);
+    t.deepEquals(dump.log, expectedAutomaticRefundOkLog);
+  } catch (e) {
+    t.isNot(e, e, 'unexpected exception');
+  } finally {
+    t.end();
+  }
 });
 
-test.only('zoe - automaticRefund - valid inputs - no SES', async t => {
-  const dump = await main(false, 'zoe', ['automaticRefundOk']);
-  t.deepEquals(dump.log, expectedAutomaticRefundOkLog);
-  t.end();
+test('zoe - automaticRefund - valid inputs - no SES', async t => {
+  try {
+    const dump = await main(false, 'zoe', ['automaticRefundOk']);
+    t.deepEquals(dump.log, expectedAutomaticRefundOkLog);
+  } catch (e) {
+    t.isNot(e, e, 'unexpected exception');
+  } finally {
+    t.end();
+  }
 });

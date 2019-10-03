@@ -8,7 +8,7 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
   try {
     const { issuers: originalIssuers, mints, assays } = setup();
     const issuers = originalIssuers.slice(0, 2);
-    const zoe = makeZoe();
+    const zoe = await makeZoe();
     const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
 
     // Setup Alice
@@ -33,7 +33,7 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
 
     // 1: Alice creates a secondPriceAuction instance
 
-    const { instance: aliceAuction, instanceId } = zoe.makeInstance(
+    const { instance: aliceAuction, instanceId } = await zoe.makeInstance(
       'secondPriceAuction3Bids',
       issuers,
     );

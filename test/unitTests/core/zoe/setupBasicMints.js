@@ -1,6 +1,7 @@
 import harden from '@agoric/harden';
 
 import { makeMint } from '../../../../core/issuers';
+import { strategyLib } from '../../../../core/config/strategyLib';
 
 const setup = () => {
   const moolaMint = makeMint('moola');
@@ -10,7 +11,9 @@ const setup = () => {
   const mints = [moolaMint, simoleanMint, bucksMint];
   const issuers = mints.map(mint => mint.getIssuer());
   const assays = issuers.map(issuer => issuer.getAssay());
-  const strategies = issuers.map(issuer => issuer.getStrategy());
+  const strategies = issuers.map(
+    issuer => strategyLib[issuer.getStrategyName()],
+  );
   const labels = issuers.map(issuer => issuer.getLabel());
 
   return harden({

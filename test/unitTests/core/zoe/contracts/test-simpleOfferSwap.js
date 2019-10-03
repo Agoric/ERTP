@@ -8,7 +8,7 @@ test('zoe.makeInstance - simpleOfferSwap', async t => {
   try {
     const { issuers: originalIssuers, mints } = setup();
     const issuers = originalIssuers.slice(0, 2);
-    const zoe = makeZoe();
+    const zoe = await makeZoe();
     const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
 
     // Setup Alice
@@ -22,7 +22,7 @@ test('zoe.makeInstance - simpleOfferSwap', async t => {
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a simpleSwap instance
-    const { instance: aliceSwap, instanceId } = zoe.makeInstance(
+    const { instance: aliceSwap, instanceId } = await zoe.makeInstance(
       'simpleOfferSwap',
       issuers,
     );

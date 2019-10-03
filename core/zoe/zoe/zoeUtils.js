@@ -98,10 +98,15 @@ const escrowEmptyOffer = (recordOffer, length) => {
   });
 };
 
-const makePayments = (purses, amountsMatrix) =>
-  amountsMatrix.map(row =>
-    row.map((amount, i) => E(purses[i]).withdraw(amount, 'payout')),
-  );
+const makePayments = (purses, amountsMatrix) => {
+  const paymentsMatrix = amountsMatrix.map(row => {
+    const payments = Promise.all(
+      row.map((amount, i) => E(purses[i]).withdraw(amount, 'payout')),
+    );
+    return payments;
+  });
+  return Promise.all(paymentsMatrix);
+};
 
 const fillInUndefinedQuantities = async (
   adminState,

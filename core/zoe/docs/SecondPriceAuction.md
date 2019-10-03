@@ -19,7 +19,7 @@ allowed before the auction is closed.
 Alice can create an auction by doing:
 
 ```js
-const { instance: aliceAuction, instanceId } = zoe.makeInstance(
+const { instance: aliceAuction, instanceId } = await zoe.makeInstance(
   'secondPriceAuction3Bids',
   issuers,
 );
