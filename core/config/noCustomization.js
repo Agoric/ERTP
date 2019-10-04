@@ -7,19 +7,19 @@ import harden from '@agoric/harden';
 // These methods must be paired with a mintKeeper and Assay to be a
 // full configuration that can be passed into `makeMint`.
 
-function* makePaymentTrait(_superPayment) {
+function* makePaymentTrait(_corePayment) {
   yield harden({});
 }
 
-function* makePurseTrait(_superPurse) {
+function* makePurseTrait(_corePurse) {
   yield harden({});
 }
 
-function* makeMintTrait(_superMint) {
+function* makeMintTrait(_coreMint) {
   yield harden({});
 }
 
-function* makeIssuerTrait(_superIssuer) {
+function* makeIssuerTrait(_coreIssuer) {
   yield harden({});
 }
 
