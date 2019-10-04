@@ -127,12 +127,13 @@ So we're good, right? Well, almost.
 
 Sometimes, we want to burn the payment in the custom method. That
 caused a problem because with normal functions we don't actually have
-access to the payment! We only have access to the `corePayment` that
+access to the full payment, the one which is built by adding methods to the
+`corePayment`. We only have access to the `corePayment` that
 is passed in as a parameter. When we call `issuer.burnAll(payment)`,
 the payment gets looked up in a WeakMap of all the payments and their
 current balances. However, the corePayment won't be in that WeakMap.
-The finished payment (the corePayment plus the custom methods) is
-what is in the WeakMap. So we must have access to *that* payment. 
+The finished payment (the corePayment plus the custom methods) is what
+is in the WeakMap. So we must have access to *that* payment. 
 
 There's a contradiction there. We wanted to ensure that the custom
 code couldn't override or mess with the core methods, but now we're
