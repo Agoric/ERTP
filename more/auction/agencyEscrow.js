@@ -45,20 +45,20 @@ const agencyEscrow = {
           originalOffer - finalPrice,
         );
         const finalPriceAmount = E(currencyIssuer).makeAmount(finalPrice);
-        return E.resolve(
-          Promise.all([deposit.p, overbidAmount, finalPriceAmount]),
-        ).then(splitDetails => {
-          const [dep, overbidAmt, finalPriceAmt] = splitDetails;
-          return E(currencyIssuer)
-            .split(dep, [finalPriceAmt, overbidAmt])
-            .then(splitPurses => {
-              const [proceedsP, overbidP] = splitPurses;
-              earnings.res(proceedsP);
-              winnings.res(wonGoodsPayment);
-              refund.res(overbidP);
-              return E(earnings.p).getBalance();
-            });
-        });
+        return Promise.all([deposit.p, overbidAmount, finalPriceAmount]).then(
+          splitDetails => {
+            const [dep, overbidAmt, finalPriceAmt] = splitDetails;
+            return E(currencyIssuer)
+              .split(dep, [finalPriceAmt, overbidAmt])
+              .then(splitPurses => {
+                const [proceedsP, overbidP] = splitPurses;
+                earnings.res(proceedsP);
+                winnings.res(wonGoodsPayment);
+                refund.res(overbidP);
+                return E(earnings.p).getBalance();
+              });
+          },
+        );
       },
       getWinnings() {
         return earnings.p;
