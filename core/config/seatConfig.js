@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import { makeCoreMintKeeper } from './coreMintKeeper';
-import { seatStrategy } from './strategies/seatStrategy';
 
 /**
  * `makeSeatConfigMaker` exists in order to pass in two makeUseObj
@@ -17,7 +16,7 @@ import { seatStrategy } from './strategies/seatStrategy';
  */
 function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
   function makeSeatConfig() {
-    function* makePaymentTrait(_superPayment, issuer) {
+    function* makePaymentTrait(_corePayment, issuer) {
       const payment = yield harden({
         // This creates a new use object which destroys the payment
         unwrap: () => makeUseObjForPayment(issuer, payment),
@@ -25,7 +24,7 @@ function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
       return payment;
     }
 
-    function* makePurseTrait(_superPurse, issuer) {
+    function* makePurseTrait(_corePurse, issuer) {
       const purse = yield harden({
         // This creates a new use object which empties the purse
         unwrap: () => makeUseObjForPurse(issuer, purse),
@@ -33,11 +32,11 @@ function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
       return purse;
     }
 
-    function* makeMintTrait(_superMint) {
+    function* makeMintTrait(_coreMint) {
       return yield harden({});
     }
 
-    function* makeIssuerTrait(_superIssuer) {
+    function* makeIssuerTrait(_coreIssuer) {
       return yield harden({});
     }
 
@@ -47,7 +46,7 @@ function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
       makeMintTrait,
       makeIssuerTrait,
       makeMintKeeper: makeCoreMintKeeper,
-      strategy: seatStrategy,
+      strategyName: 'seatStrategy',
     });
   }
   return makeSeatConfig;

@@ -44,13 +44,6 @@ const offerEqual = (strategies, leftOffer, rightOffer) => {
   );
 };
 
-// Transform a quantitiesMatrix to a matrix of amounts given an array
-// of the associated assays.
-const toAmountMatrix = (assays, quantitiesMatrix) => {
-  const assayMakes = assays.map(assay => assay.make);
-  return mapArrayOnMatrix(quantitiesMatrix, assayMakes);
-};
-
 // an array of empty quantities per strategy
 const makeEmptyQuantities = strategies =>
   strategies.map(strategy => strategy.empty());
@@ -82,47 +75,51 @@ const vectorWithout = (strategies, leftQuantities, rightQuantities) =>
  * 4) Fail-fast if the offer isn't valid
  * 5) Handle the valid offer
  * 6) Reallocate and eject the player.
- * @param  {} {zoeInstance - a zoeInstance
- * @param  {} isValidOfferFn - a predicate that takes in an offerDesc
+ * @param  {object} zoe - the governing contract facet of zoe
+ * @param  {function} isValidOfferFn - a predicate that takes in an offerDesc
  * and returns whether it is a valid offer or not
- * @param  {} successMessage - the message that the promise should
+ * @param  {string} successMessage - the message that the promise should
  * resolve to if the offer is successful
- * @param  {} rejectMessage - the message that the promise should
+ * @param  {string} rejectMessage - the message that the promise should
  * reject with if the offer is not valid
- * @param  {} handleOfferFn - the function to do custom logic before
+ * @param  {function} handleOfferFn - the function to do custom logic before
  * reallocating and ejecting the user. The function takes in the
  * `offerId` and should return an object with `offerIds` and
  * `newQuantities` as properties
+ * @param {object} instanceId - the id for the governing contract instance
  * @param  {} }
  */
 const makeAPIMethod = ({
-  zoeInstance,
+  zoe,
   isValidOfferFn,
   successMessage,
   rejectMessage,
   handleOfferFn,
+  instanceId,
 }) => async escrowReceipt => {
   const result = makePromise();
-  const { id, offerMade: offerMadeDesc } = await zoeInstance.burnEscrowReceipt(
+  const { id, offerMade: offerMadeDesc } = await zoe.burnEscrowReceipt(
+    instanceId,
     escrowReceipt,
   );
   // fail-fast if the offerDesc isn't valid
   if (!isValidOfferFn(offerMadeDesc)) {
-    zoeInstance.complete(harden([id]));
+    zoe.complete(instanceId, harden([id]));
     result.rej(`${rejectMessage}`);
     return result.p;
   }
   const { offerIds, newQuantities, burnQuantities } = await handleOfferFn(id);
   if (burnQuantities !== undefined) {
-    await zoeInstance.reallocateAndBurn(
+    await zoe.reallocateAndBurn(
+      instanceId,
       offerIds,
       newQuantities,
       burnQuantities,
     );
   } else {
-    zoeInstance.reallocate(offerIds, newQuantities);
+    zoe.reallocate(instanceId, offerIds, newQuantities);
   }
-  zoeInstance.complete(harden([id]));
+  zoe.complete(instanceId, harden([id]));
   result.res(`${successMessage}`);
   return result.p;
 };
@@ -134,6 +131,15 @@ const makeAmount = (strategy, label, allegedQuantity) => {
     quantity: allegedQuantity,
   });
 };
+
+// Transform a quantitiesMatrix to a matrix of amounts given an array
+// of the associated assays.
+const toAmountMatrix = (strategies, labels, quantitiesMatrix) =>
+  quantitiesMatrix.map(quantities =>
+    quantities.map((quantity, i) =>
+      makeAmount(strategies[i], labels[i], quantity),
+    ),
+  );
 
 const makeOfferDesc = (strategies, labels, rules, quantities) =>
   strategies.map((strategy, i) =>

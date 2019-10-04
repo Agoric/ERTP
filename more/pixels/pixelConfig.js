@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import { makePixelMintKeeper } from './pixelMintKeeper';
-import { makePixelStrategy } from './pixelStrategy';
 import { makeMint } from '../../core/issuers';
 
 /**
@@ -58,20 +57,20 @@ function makePixelConfigMaker(
       return childIssuer.makeAmount(quantity);
     }
 
-    function* makePaymentTrait(superPayment, issuer) {
+    function* makePaymentTrait(corePayment, issuer) {
       yield harden({
         // This creates a new use object on every call. Please see
         // the gallery for the definition of the use object that is
         // created here by calling `makeUseObj`
         getUse() {
-          return makeUseObj(issuer, superPayment);
+          return makeUseObj(issuer, corePayment);
         },
         // Revoke all descendants of this payment and mint a new
         // payment from the child mint with the same quantity as the
         // original payment
         claimChild() {
           prepareChildMint(issuer);
-          const childAmount = getChildAmount(issuer, superPayment.getBalance());
+          const childAmount = getChildAmount(issuer, corePayment.getBalance());
           // Remove the amount of this payment from the purses and
           // payments of the childMint. Removes recursively down the
           // chain until it fails to find a childMint.
@@ -81,20 +80,20 @@ function makePixelConfigMaker(
         },
       });
     }
-    function* makePurseTrait(superPurse, issuer) {
+    function* makePurseTrait(corePurse, issuer) {
       yield harden({
         // This creates a new use object on every call. Please see
         // the gallery for the definition of the use object that is
         // created here by calling `makeUseObj`
         getUse() {
-          return makeUseObj(issuer, superPurse);
+          return makeUseObj(issuer, corePurse);
         },
         // Revoke all descendants of this purse and mint a new purse
         // from the child mint with the same quantity as the
         // original purse
         claimChild() {
           prepareChildMint(issuer);
-          const childAmount = getChildAmount(issuer, superPurse.getBalance());
+          const childAmount = getChildAmount(issuer, corePurse.getBalance());
           // Remove the amount of this payment from the purses and
           // payments of the childMint. Removes recursively down the
           // chain until it fails to find a childMint.
@@ -103,7 +102,7 @@ function makePixelConfigMaker(
         },
       });
     }
-    function* makeMintTrait(_superMint, issuer, assay, mintKeeper) {
+    function* makeMintTrait(_coreMint, issuer, assay, mintKeeper) {
       yield harden({
         // revoke destroys the amount from this mint and calls
         // revoke on the childMint with an amount of the same
@@ -122,7 +121,7 @@ function makePixelConfigMaker(
         },
       });
     }
-    function* makeIssuerTrait(superIssuer) {
+    function* makeIssuerTrait(coreIssuer) {
       yield harden({
         // The parent issuer is one level up in the chain of
         // issuers.
@@ -131,7 +130,7 @@ function makePixelConfigMaker(
         },
         // The child issuer is one level down in the chain of issuers.
         getChildIssuer() {
-          prepareChildMint(superIssuer);
+          prepareChildMint(coreIssuer);
           return childIssuer;
         },
         // Returns true if the alleged descendant issuer is either a
@@ -153,7 +152,7 @@ function makePixelConfigMaker(
       makeMintTrait,
       makeIssuerTrait,
       makeMintKeeper: makePixelMintKeeper,
-      strategy: makePixelStrategy(canvasSize),
+      strategyName: 'pixelStrategy10',
     });
   }
   return makePixelConfig;

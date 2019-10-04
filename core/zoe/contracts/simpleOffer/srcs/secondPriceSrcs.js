@@ -84,8 +84,6 @@ const reallocate = (
   // subsequent offers are bids.
   const creatorOfferId = offerIds[CREATOR_OFFER_ID_INDEX];
   const bidOfferIds = harden(offerIds.slice(1));
-
-  const [creatorQuantities] = getQuantitiesFor(harden([creatorOfferId]));
   const bids = getQuantitiesFor(bidOfferIds).map(
     bidArray => bidArray[PRICE_INDEX],
   );
@@ -98,28 +96,32 @@ const reallocate = (
     bidOfferIds,
     bids,
   );
+  const [oldCreatorQuantities, oldWinnerQuantities] = getQuantitiesFor(
+    harden([creatorOfferId, winnerOfferId]),
+  );
 
-  const [winnerQuantities] = getQuantitiesFor(harden([winnerOfferId]));
+  const newCreatorQuantities = [];
+  const newWinnerQuantities = [];
 
   // The winner gets the assets put up for auction.
   // eslint-disable-next-line prefer-destructuring
-  winnerQuantities[ITEM_INDEX] = creatorQuantities[ITEM_INDEX];
-  creatorQuantities[ITEM_INDEX] = itemStrategy.empty();
+  newWinnerQuantities[ITEM_INDEX] = oldCreatorQuantities[ITEM_INDEX];
+  newCreatorQuantities[ITEM_INDEX] = itemStrategy.empty();
 
   // The person who created the auction gets the price paid.
-  creatorQuantities[PRICE_INDEX] = price;
+  newCreatorQuantities[PRICE_INDEX] = price;
 
   // The winner gets to keep the difference between their bid and the
   // price paid.
-  winnerQuantities[PRICE_INDEX] = priceStrategy.without(
-    winnerQuantities[PRICE_INDEX],
+  newWinnerQuantities[PRICE_INDEX] = priceStrategy.without(
+    oldWinnerQuantities[PRICE_INDEX],
     price,
   );
 
   // Everyone else gets a refund so their quantities remain the same.
   return harden({
     reallocOfferIds: [creatorOfferId, winnerOfferId],
-    reallocQuantities: [creatorQuantities, winnerQuantities],
+    reallocQuantities: [newCreatorQuantities, newWinnerQuantities],
   });
 };
 

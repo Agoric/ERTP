@@ -6,18 +6,19 @@ import harden from '@agoric/harden';
  * AutomaticRefund then burns the `escrowReceipt` and then completes the
  * offer. Other governing contracts will use these same steps, but
  * they will have more sophisticated logic and interfaces.
- * @param {governingContractFacet} zoeInstance - the governing
- * contract facet of a zoeInstance
+ * @param {governingContractFacet} zoe - the governing
+ * contract facet of zoe
  */
-const makeAutomaticRefund = zoeInstance => {
+const makeAutomaticRefund = (zoe, instanceId) => {
   let count = 0;
   return harden({
     makeOffer: async escrowReceipt => {
-      const { id, offerMade } = await zoeInstance.burnEscrowReceipt(
+      const { id, offerMade } = await zoe.burnEscrowReceipt(
+        instanceId,
         escrowReceipt,
       );
       count += 1;
-      zoeInstance.complete(harden([id]));
+      zoe.complete(instanceId, harden([id]));
       return offerMade;
     },
     getOffersCount: () => count,

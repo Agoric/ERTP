@@ -39,9 +39,9 @@ test('mapArrayOnMatrix', t => {
 
 test('toAmountMatrix', t => {
   try {
-    const { assays } = setup();
+    const { strategies, labels, assays } = setup();
     const matrix = [[1, 2, 3], [4, 5, 6]];
-    t.deepEquals(toAmountMatrix(assays, matrix), [
+    t.deepEquals(toAmountMatrix(strategies, labels, matrix), [
       [assays[0].make(1), assays[1].make(2), assays[2].make(3)],
       [assays[0].make(4), assays[1].make(5), assays[2].make(6)],
     ]);
@@ -54,8 +54,7 @@ test('toAmountMatrix', t => {
 
 test('makeEmptyQuantities', t => {
   try {
-    const { issuers } = setup();
-    const strategies = issuers.map(issuer => issuer.getStrategy());
+    const { strategies } = setup();
     t.deepEquals(makeEmptyQuantities(strategies), [0, 0, 0]);
   } catch (e) {
     t.assert(false, e);

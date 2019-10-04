@@ -19,16 +19,14 @@ allowed before the auction is closed.
 Alice can create an auction by doing:
 
 ```js
-const secondPriceSrcs = makeSecondPriceSrcs(3); // numBids = 3
-const makeSecondPriceAuction = makeSimpleOfferMaker(secondPriceSrcs);
-const { zoeInstance, governingContract: auction } = zoe.makeInstance(
-  makeSecondPriceAuction,
+const { instance: aliceAuction, instanceId } = await zoe.makeInstance(
+  'secondPriceAuction3Bids',
   issuers,
 );
 ```
 
-She can put up something at auction by escrowing it with zoe and
-calling `makeOffer` on the auction instance.
+She can put up something at auction by escrowing it with Zoe and
+calling `makeOffer` on the auction instance with her escrow receipt.
 
 ```js
 const aliceOfferDesc = harden([
@@ -41,19 +39,40 @@ const aliceOfferDesc = harden([
     amount: simoleanIssuer.makeAmount(3),
   },
 ]);
-const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment];
+const alicePayments = [aliceMoolaPayment, undefined];
 const {
   escrowReceipt: allegedAliceEscrowReceipt,
   claimPayoff: aliceClaimPayoff,
-} = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
+} = await zoe.escrow(aliceOfferDesc, alicePayments);
+
+const aliceOfferResult = await aliceAuction.makeOffer(aliceEscrowReceipt);
 ```
 
 Note that in this implementation, the item that will be auctioned is
 described at index 0, and Alice's minimum bid amount is at index 1 in
 the offer description. 
 
-Now Alice can spread her auction instance far and wide and see if
-there are any bidders. Let's say that Bob decides to bid:
+Now Alice can spread her auction `instanceId` far and wide and see if
+there are any bidders. Let's say that Bob gets the instanceId and
+wants to see if it is the kind of contract that he wants to join. He
+can check that the libraryName installed is the auction he is expecting.
+
+```js
+const { instance: bobAuction, libraryName } = zoe.getInstance(instanceId);
+t.equals(libraryName, 'secondPriceAuction3Bids');
+```
+He can also check that the item up for sale is the kind that he wants,
+as well as checking what Alice wants in return. (In this
+implementation, Alice will have to tell Bob out of band what the
+minimum bid in simoleans is.)
+
+```js
+const bobIssuers = zoe.getIssuersForInstance(instanceId);
+t.deepEquals(bobIssuers, issuers);
+```
+
+Bob decides to join the contract and
+makes an offer:
 
 ```js
 const bobOfferDesc = harden([
@@ -66,11 +85,13 @@ const bobOfferDesc = harden([
     amount: simoleanIssuer.makeAmount(11),
   },
 ]);
-const bobPayments = [bobMoolaPayment, bobSimoleanPayment];
+const bobPayments = [undefined, bobSimoleanPayment];
 const {
   escrowReceipt: allegedBobEscrowReceipt,
   claimPayoff: bobClaimPayoff,
-} = await zoeInstance.escrow(bobOfferDesc, bobPayments);
+} = await zoe.escrow(bobOfferDesc, bobPayments);
+
+const bobOfferResult = await bobAuction.makeOffer(bobEscrowReceipt);
 ```
 
 And let's say that Carol and Dave also decide to bid in the same way

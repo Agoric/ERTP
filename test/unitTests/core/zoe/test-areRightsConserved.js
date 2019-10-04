@@ -6,8 +6,7 @@ import { setup } from './setupBasicMints';
 // rights are conserved for Nat quantities
 test(`areRightsConserved - true for nat quantities`, t => {
   try {
-    const { issuers } = setup();
-    const strategies = issuers.map(issuer => issuer.getStrategy());
+    const { strategies } = setup();
     const oldQuantities = [[0, 1, 0], [4, 1, 0], [6, 3, 0]];
     const newQuantities = [[1, 2, 0], [3, 1, 0], [6, 2, 0]];
 
@@ -22,8 +21,7 @@ test(`areRightsConserved - true for nat quantities`, t => {
 // rights are *not* conserved for Nat quantities
 test(`areRightsConserved - false for nat quantities`, t => {
   try {
-    const { issuers } = setup();
-    const strategies = issuers.map(issuer => issuer.getStrategy());
+    const { strategies } = setup();
     const oldQuantities = [[0, 1, 4], [4, 1, 0], [6, 3, 0]];
     const newQuantities = [[1, 2, 0], [3, 1, 0], [6, 2, 0]];
 
@@ -37,8 +35,7 @@ test(`areRightsConserved - false for nat quantities`, t => {
 
 test(`areRightsConserved - empty arrays`, t => {
   try {
-    const { issuers } = setup();
-    const strategies = issuers.map(issuer => issuer.getStrategy());
+    const { strategies } = setup();
     const oldQuantities = [[], [], []];
     const newQuantities = [[], [], []];
 

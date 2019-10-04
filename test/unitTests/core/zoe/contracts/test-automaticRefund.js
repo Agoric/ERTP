@@ -1,7 +1,6 @@
 import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
-import { makeAutomaticRefund } from '../../../../../core/zoe/contracts/automaticRefund';
 import { setup } from '../setupBasicMints';
 
 test('zoe.makeInstance with automaticRefund', async t => {
@@ -9,7 +8,7 @@ test('zoe.makeInstance with automaticRefund', async t => {
     // Setup zoe and mints
     const { issuers: defaultIssuers, mints } = setup();
     const issuers = defaultIssuers.slice(0, 2);
-    const zoe = makeZoe();
+    const zoe = await makeZoe();
     const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
     const seatIssuer = zoe.getSeatIssuer();
 
@@ -25,14 +24,13 @@ test('zoe.makeInstance with automaticRefund', async t => {
 
     // 1: Alice creates an automatic refund instance
     const {
-      zoeInstance,
-      governingContract: automaticRefund,
-    } = zoe.makeInstance(makeAutomaticRefund, issuers);
+      instance: aliceAutomaticRefund,
+      instanceId,
+    } = await zoe.makeInstance('automaticRefund', issuers);
+    // The issuers in the instance are now defined
+    t.deepEquals(zoe.getIssuersForInstance(instanceId), issuers);
 
-    // The issuers in the zoeInstance are now defined
-    t.deepEquals(zoeInstance.getIssuers(), issuers);
-
-    // 2: Alice escrows with the zoeInstance
+    // 2: Alice escrows with zoe
     const aliceOfferDesc = harden([
       {
         rule: 'offerExactly',
@@ -53,7 +51,7 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
       claimPayoff: allegedAliceClaimPayoff,
-    } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
+    } = await zoe.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. (This is
     // unnecessary if she trusts zoe, but we will do it in the tests.)
@@ -66,12 +64,23 @@ test('zoe.makeInstance with automaticRefund', async t => {
     // In the 'automaticRefund' trivial contract, you just get your
     // offerDesc back when you make an offer. The effect of calling
     // makeOffer will vary widely depending on the governing contract.
-    const aliceOfferMadeDesc = await automaticRefund.makeOffer(
+    const aliceOfferMadeDesc = await aliceAutomaticRefund.makeOffer(
       aliceEscrowReceipt,
     );
 
-    // 5: Imagine that Alice has shared the zoeInstance and
-    // automaticRefund with Bob
+    // 5: Imagine that Alice has shared the instanceId with Bob.
+    // He will do a lookup on Zoe to get the automaticRefund instance
+    // and make sure the library that he wants is installed.
+
+    const { instance: bobAutomaticRefund, libraryName } = zoe.getInstance(
+      instanceId,
+    );
+    t.equals(libraryName, 'automaticRefund');
+
+    // bob wants to know what issuers this contract is about and in
+    // what order. Is it what he expects?
+    const bobIssuers = zoe.getIssuersForInstance(instanceId);
+    t.deepEquals(bobIssuers, issuers);
 
     // 6: Bob also wants to get an automaticRefund (why? we don't
     // know) so he escrows his offer and his offer payments.
@@ -79,11 +88,11 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const bobOfferDesc = harden([
       {
         rule: 'wantExactly',
-        amount: issuers[0].makeAmount(15),
+        amount: bobIssuers[0].makeAmount(15),
       },
       {
         rule: 'offerExactly',
-        amount: issuers[1].makeAmount(17),
+        amount: bobIssuers[1].makeAmount(17),
       },
     ]);
     const bobPayments = [undefined, bobSimoleanPayment];
@@ -93,7 +102,7 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const {
       escrowReceipt: allegedBobEscrowReceipt,
       claimPayoff: allegedBobClaimPayoff,
-    } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
+    } = await zoe.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment
     const bobEscrowReceipt = await escrowReceiptIssuer.claimAll(
@@ -101,7 +110,9 @@ test('zoe.makeInstance with automaticRefund', async t => {
     );
 
     // 8: Bob makes an offer with his escrow receipt
-    const bobOfferMadeDesc = await automaticRefund.makeOffer(bobEscrowReceipt);
+    const bobOfferMadeDesc = await bobAutomaticRefund.makeOffer(
+      bobEscrowReceipt,
+    );
 
     t.equals(bobOfferMadeDesc, bobOfferDesc);
     t.equals(aliceOfferMadeDesc, aliceOfferDesc);
@@ -157,12 +168,12 @@ test('zoe.makeInstance with automaticRefund', async t => {
   }
 });
 
-test('multiple zoeInstances for the same Zoe', async t => {
+test('multiple instances of automaticRefund for the same Zoe', async t => {
   try {
     // Setup zoe and mints
-    const { issuers: defaultIssuers, mints } = setup();
-    const issuers = defaultIssuers.slice(0, 2);
-    const zoe = makeZoe();
+    const { issuers: originalIssuers, mints } = setup();
+    const issuers = originalIssuers.slice(0, 2);
+    const zoe = await makeZoe();
 
     // Setup Alice
     const aliceMoolaPurse = mints[0].mint(issuers[0].makeAmount(30));
@@ -175,22 +186,22 @@ test('multiple zoeInstances for the same Zoe', async t => {
     ]);
 
     // 1: Alice creates 3 automatic refund instances
-    const {
-      zoeInstance: zoeInstance1,
-      governingContract: automaticRefund1,
-    } = zoe.makeInstance(makeAutomaticRefund, issuers);
+    const { instance: automaticRefund1 } = await zoe.makeInstance(
+      'automaticRefund',
+      issuers,
+    );
 
-    const {
-      zoeInstance: zoeInstance2,
-      governingContract: automaticRefund2,
-    } = zoe.makeInstance(makeAutomaticRefund, issuers);
+    const { instance: automaticRefund2 } = await zoe.makeInstance(
+      'automaticRefund',
+      issuers,
+    );
 
-    const {
-      zoeInstance: zoeInstance3,
-      governingContract: automaticRefund3,
-    } = zoe.makeInstance(makeAutomaticRefund, issuers);
+    const { instance: automaticRefund3 } = await zoe.makeInstance(
+      'automaticRefund',
+      issuers,
+    );
 
-    // 2: Alice escrows with zoeInstance1
+    // 2: Alice escrows with zoe
     const aliceOfferDesc = harden([
       {
         rule: 'offerExactly',
@@ -204,28 +215,19 @@ test('multiple zoeInstances for the same Zoe', async t => {
     const {
       escrowReceipt: aliceEscrowReceipt1,
       claimPayoff: aliceClaimPayoff1,
-    } = await zoeInstance1.escrow(aliceOfferDesc, [
-      aliceMoolaPayments[0],
-      undefined,
-    ]);
+    } = await zoe.escrow(aliceOfferDesc, [aliceMoolaPayments[0], undefined]);
 
-    // 3: Alice escrows with zoeInstance2
+    // 3: Alice escrows with zoe
     const {
       escrowReceipt: aliceEscrowReceipt2,
       claimPayoff: aliceClaimPayoff2,
-    } = await zoeInstance2.escrow(aliceOfferDesc, [
-      aliceMoolaPayments[1],
-      undefined,
-    ]);
+    } = await zoe.escrow(aliceOfferDesc, [aliceMoolaPayments[1], undefined]);
 
-    // 4: Alice escrows with zoeInstance3
+    // 4: Alice escrows with zoe
     const {
       escrowReceipt: aliceEscrowReceipt3,
       claimPayoff: aliceClaimPayoff3,
-    } = await zoeInstance3.escrow(aliceOfferDesc, [
-      aliceMoolaPayments[2],
-      undefined,
-    ]);
+    } = await zoe.escrow(aliceOfferDesc, [aliceMoolaPayments[2], undefined]);
 
     // 5: Alice makes an offer with each of her escrow receipts
     await automaticRefund1.makeOffer(aliceEscrowReceipt1);

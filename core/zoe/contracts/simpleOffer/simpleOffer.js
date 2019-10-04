@@ -2,28 +2,28 @@ import harden from '@agoric/harden';
 
 import makePromise from '../../../../util/makePromise';
 
-const makeSimpleOfferMaker = srcs => zoeInstance => {
+const makeSimpleOfferMaker = srcs => (zoe, instanceId) => {
   const offerIdsToOfferDescs = new WeakMap();
   const offerIds = [];
 
   return harden({
     makeOffer: async escrowReceipt => {
       const status = makePromise();
-      const {
-        id,
-        offerMade: offerMadeDesc,
-      } = await zoeInstance.burnEscrowReceipt(escrowReceipt);
+      const { id, offerMade: offerMadeDesc } = await zoe.burnEscrowReceipt(
+        instanceId,
+        escrowReceipt,
+      );
 
       // Eject if the offer is invalid
       if (
         !srcs.isValidOffer(
-          zoeInstance.getStrategies(),
+          zoe.getStrategies(instanceId),
           offerIds,
           offerIdsToOfferDescs,
           offerMadeDesc,
         )
       ) {
-        zoeInstance.complete(harden([id]));
+        zoe.complete(instanceId, harden([id]));
         status.rej('The offer was invalid. Please check your refund.');
         return status.p;
       }
@@ -35,13 +35,13 @@ const makeSimpleOfferMaker = srcs => zoeInstance => {
       // Check if we can reallocate and reallocate.
       if (srcs.canReallocate(offerIds, offerIdsToOfferDescs)) {
         const { reallocOfferIds, reallocQuantities } = srcs.reallocate(
-          zoeInstance.getStrategies(),
+          zoe.getStrategies(instanceId),
           offerIds,
           offerIdsToOfferDescs,
-          zoeInstance.getQuantitiesFor,
+          zoe.getQuantitiesFor,
         );
-        zoeInstance.reallocate(reallocOfferIds, reallocQuantities);
-        zoeInstance.complete(offerIds);
+        zoe.reallocate(instanceId, reallocOfferIds, reallocQuantities);
+        zoe.complete(instanceId, offerIds);
       }
 
       status.res(

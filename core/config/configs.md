@@ -16,21 +16,21 @@ Our custom configuration will look like this:
 ```js
 const makeTotalSupplyConfig = () => {
 
-  function* makePaymentTrait(_superPayment) {
+  function* makePaymentTrait(_corePayment) {
     yield harden({});
   }
 
-  function* makePurseTrait(_superPurse) {
+  function* makePurseTrait(_corePurse) {
     yield harden({});
   }
 
-  function* makeMintTrait(_superMint, _issuer, _assay, mintKeeper) {
+  function* makeMintTrait(_coreMint, _issuer, _assay, mintKeeper) {
     return yield harden({
       getTotalSupply: () => mintKeeper.getTotalSupply(),
     });
   }
 
-  function* makeIssuerTrait(_superIssuer) {
+  function* makeIssuerTrait(_coreIssuer) {
     yield harden({});
   }
 
@@ -54,12 +54,12 @@ supply for us (more on this in separate documentation).
 Let's take a look into how we are able to add new methods to mints,
 issuers, purses, and payments. 
 
-In `makePaymentTrait`, we take `superPayment` as a parameter. The
-`superPayment` is constructed in `issuers.js` and has all of the
+In `makePaymentTrait`, we take `corePayment` as a parameter. The
+`corePayment` is constructed in `issuers.js` and has all of the
 methods we are familiar with:
 
 ```js
-const superPayment = harden({
+const corePayment = harden({
   getIssuer() {
     return issuer;
   },
@@ -73,12 +73,12 @@ const superPayment = harden({
 ```
 
 Our custom code, `makePaymentTrait`, returns an object with custom methods.
-These methods will be added to the `superPayment`. For this particular
+These methods will be added to the `corePayment`. For this particular
 customization, we want to leave payments alone, so we will create a
 generator function that yields an empty object:
 
 ```js
-function* makePaymentTrait(_superPayment) {
+function* makePaymentTrait(_corePayment) {
   yield harden({});
 }
 ```
@@ -87,7 +87,7 @@ However, we do want to add an extra method to mints. So,
 `makeMintTrait` is defined as:
 
 ```js
-function* makeMintTrait(_superMint, _issuer, _assay, mintKeeper) {
+function* makeMintTrait(_coreMint, _issuer, _assay, mintKeeper) {
   return yield harden({
     getTotalSupply: () => mintKeeper.getTotalSupply(),
   });
@@ -110,32 +110,30 @@ makeMintTraitIter.next(mint);
 
 ## The Trait Pattern
 
-As a general rule, we do not want the customization code to be able to
-override the methods already on the mints, issuers, purses or
-payments. It would hardly be a standard if the standard methods acted
-entirely differently! On the other hand, we do know that there is a
-genuine need to have slightly different purposes expressed. 
+We want the core behavior of mints, issuers, purses and payments to be
+consistent and reliable across different types of assets. On the other
+hand, we do know that there is a genuine need to have slightly
+different purposes expressed.
 
 This is why we've chosen to use the [Trait
-pattern](https://traitsjs.github.io/traits.js-website/), in which
-custom behavior can be defined and recombined easily. (Note: We don't
-currently use the Trait.js infrastructure, but the philosophy is the
-same.) Furthermore, if we always combine the methods such that the
-"core" methods are last, they cannot be overridden by the custom
-methods. 
+pattern](https://en.wikipedia.org/wiki/Trait_(computer_programming)),
+in which custom behavior can be defined and recombined easily.
+Furthermore, if we always combine the methods such that the "core"
+methods are last, they cannot be overridden by the custom methods. 
 
 So we're good, right? Well, almost.
 
 ## Why generator functions?
 
 Sometimes, we want to burn the payment in the custom method. That
-caused a problem, because without generators, we don't actually have
-access to the payment! We only have access to the `superPayment` that
+caused a problem because with normal functions we don't actually have
+access to the full payment, the one which is built by adding methods to the
+`corePayment`. We only have access to the `corePayment` that
 is passed in as a parameter. When we call `issuer.burnAll(payment)`,
 the payment gets looked up in a WeakMap of all the payments and their
-current balances. However, the superPayment won't be in that WeakMap.
-The finished payment (the superPayment plus the custom methods) is
-what is in the WeakMap. So we must have access to *that* payment. 
+current balances. However, the corePayment won't be in that WeakMap.
+The finished payment (the corePayment plus the custom methods) is what
+is in the WeakMap. So we must have access to *that* payment. 
 
 There's a contradiction there. We wanted to ensure that the custom
 code couldn't override or mess with the core methods, but now we're

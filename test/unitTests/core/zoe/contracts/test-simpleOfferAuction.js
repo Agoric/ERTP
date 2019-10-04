@@ -2,15 +2,13 @@ import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
 import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
-import { makeSimpleOfferMaker } from '../../../../../core/zoe/contracts/simpleOffer/simpleOffer';
-import { makeSecondPriceSrcs } from '../../../../../core/zoe/contracts/simpleOffer/srcs/secondPriceSrcs';
 import { setup } from '../setupBasicMints';
 
-test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
+test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
   try {
-    const { issuers: defaultIssuers, mints, assays } = setup();
-    const issuers = defaultIssuers.slice(0, 2);
-    const zoe = makeZoe();
+    const { issuers: originalIssuers, mints, assays } = setup();
+    const issuers = originalIssuers.slice(0, 2);
+    const zoe = await makeZoe();
     const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
 
     // Setup Alice
@@ -34,14 +32,13 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     const daveSimoleanPayment = daveSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a secondPriceAuction instance
-    const secondPriceSrcs = makeSecondPriceSrcs(3);
-    const makeSecondPriceAuction = makeSimpleOfferMaker(secondPriceSrcs);
-    const { zoeInstance, governingContract: auction } = zoe.makeInstance(
-      makeSecondPriceAuction,
+
+    const { instance: aliceAuction, instanceId } = await zoe.makeInstance(
+      'secondPriceAuction3Bids',
       issuers,
     );
 
-    // 2: Alice escrows with the zoeInstance
+    // 2: Alice escrows with zoe
     const aliceOfferDesc = harden([
       {
         rule: 'offerExactly',
@@ -56,7 +53,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
       claimPayoff: aliceClaimPayoff,
-    } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
+    } = await zoe.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. It's
     // unnecessary if she trusts Zoe but we will do it for the tests.
@@ -65,16 +62,24 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     );
 
     // 4: Alice initializes the auction with her escrow receipt
-    const aliceOfferResult = await auction.makeOffer(aliceEscrowReceipt);
+    const aliceOfferResult = await aliceAuction.makeOffer(aliceEscrowReceipt);
 
     t.equals(
       aliceOfferResult,
       'The offer has been accepted. Once the contract has been completed, please check your winnings',
     );
 
-    // 5: Alice spreads the zoeInstance and auction far and wide with
+    // 5: Alice spreads the instanceId far and wide with
     // instructions on how to use it and Bob decides he wants to
     // participate in the auction.
+    const { instance: bobAuction, libraryName } = zoe.getInstance(instanceId);
+    t.equals(libraryName, 'secondPriceAuction3Bids');
+
+    // bob wants to know what issuers this contract is about and in
+    // what order. Is it what he expects?
+    const bobIssuers = zoe.getIssuersForInstance(instanceId);
+    t.deepEquals(bobIssuers, issuers);
+
     const bobOfferDesc = harden([
       {
         rule: 'wantExactly',
@@ -87,11 +92,11 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     ]);
     const bobPayments = [undefined, bobSimoleanPayment];
 
-    // 6: Bob escrows with the zoeInstance
+    // 6: Bob escrows with zoe
     const {
       escrowReceipt: allegedBobEscrowReceipt,
       claimPayoff: bobClaimPayoff,
-    } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
+    } = await zoe.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment. This is
     // unnecessary but we will do it anyways for the test
@@ -100,7 +105,7 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     );
 
     // 8: Bob makes an offer with his escrow receipt
-    const bobOfferResult = await auction.makeOffer(bobEscrowReceipt);
+    const bobOfferResult = await bobAuction.makeOffer(bobEscrowReceipt);
 
     t.equals(
       bobOfferResult,
@@ -108,6 +113,11 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     );
 
     // 9: Carol decides to bid for the one moola
+    const {
+      instance: carolAuction,
+      libraryName: carolLibraryName,
+    } = zoe.getInstance(instanceId);
+    t.equals(carolLibraryName, 'secondPriceAuction3Bids');
     const carolOfferDesc = harden([
       {
         rule: 'wantExactly',
@@ -120,14 +130,14 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     ]);
     const carolPayments = [undefined, carolSimoleanPayment];
 
-    // 10: Carol escrows with the zoeInstance
+    // 10: Carol escrows with zoe
     const {
       escrowReceipt: carolEscrowReceipt,
       claimPayoff: carolClaimPayoff,
-    } = await zoeInstance.escrow(carolOfferDesc, carolPayments);
+    } = await zoe.escrow(carolOfferDesc, carolPayments);
 
     // 11: Carol makes an offer with her escrow receipt
-    const carolOfferResult = await auction.makeOffer(carolEscrowReceipt);
+    const carolOfferResult = await carolAuction.makeOffer(carolEscrowReceipt);
 
     t.equals(
       carolOfferResult,
@@ -135,6 +145,11 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     );
 
     // 12: Dave decides to bid for the one moola
+    const {
+      instance: daveAuction,
+      libraryName: daveLibraryName,
+    } = zoe.getInstance(instanceId);
+    t.equals(daveLibraryName, 'secondPriceAuction3Bids');
     const daveOfferDesc = harden([
       {
         rule: 'wantExactly',
@@ -147,14 +162,14 @@ test('zoe.makeInstance with simpleOffer with secondPriceSrcs', async t => {
     ]);
     const davePayments = [undefined, daveSimoleanPayment];
 
-    // 13: Dave escrows with the zoeInstance
+    // 13: Dave escrows with zoe
     const {
       escrowReceipt: daveEscrowReceipt,
       claimPayoff: daveClaimPayoff,
-    } = await zoeInstance.escrow(daveOfferDesc, davePayments);
+    } = await zoe.escrow(daveOfferDesc, davePayments);
 
     // 14: Dave makes an offer with his escrow receipt
-    const daveOfferResult = await auction.makeOffer(daveEscrowReceipt);
+    const daveOfferResult = await daveAuction.makeOffer(daveEscrowReceipt);
 
     t.equals(
       daveOfferResult,
