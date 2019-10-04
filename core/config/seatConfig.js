@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import { makeCoreMintKeeper } from './coreMintKeeper';
-import { seatStrategy } from './strategies/seatStrategy';
 
 /**
  * `makeSeatConfigMaker` exists in order to pass in two makeUseObj
@@ -47,7 +46,7 @@ function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
       makeMintTrait,
       makeIssuerTrait,
       makeMintKeeper: makeCoreMintKeeper,
-      strategy: seatStrategy,
+      strategyName: 'seatStrategy',
     });
   }
   return makeSeatConfig;

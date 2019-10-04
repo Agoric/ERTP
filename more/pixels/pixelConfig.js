@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import { makePixelMintKeeper } from './pixelMintKeeper';
-import { makePixelStrategy } from './pixelStrategy';
 import { makeMint } from '../../core/issuers';
 
 /**
@@ -153,7 +152,7 @@ function makePixelConfigMaker(
       makeMintTrait,
       makeIssuerTrait,
       makeMintKeeper: makePixelMintKeeper,
-      strategy: makePixelStrategy(canvasSize),
+      strategyName: 'pixelStrategy10',
     });
   }
   return makePixelConfig;
