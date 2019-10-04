@@ -1,0 +1,140 @@
+import { test } from 'tape-promise/tape';
+import harden from '@agoric/harden';
+
+import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
+import { setup } from '../setupBasicMints';
+
+test('zoe.makeInstance - simpleOfferSwap', async t => {
+  try {
+    const { issuers: originalIssuers, mints } = setup();
+    const issuers = originalIssuers.slice(0, 2);
+    const zoe = await makeZoe();
+    const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
+
+    // Setup Alice
+    const aliceMoolaPurse = mints[0].mint(issuers[0].makeAmount(3));
+    const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
+    const aliceSimoleanPurse = mints[1].mint(issuers[1].makeAmount(0));
+
+    // Setup Bob
+    const bobMoolaPurse = mints[0].mint(issuers[0].makeAmount(0));
+    const bobSimoleanPurse = mints[1].mint(issuers[1].makeAmount(7));
+    const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
+
+    // 1: Alice creates a simpleSwap instance
+    const { instance: aliceSwap, instanceId } = await zoe.makeInstance(
+      'simpleOfferSwap',
+      issuers,
+    );
+
+    // 2: Alice escrows with zoe
+    const aliceOfferDesc = harden([
+      {
+        rule: 'offerExactly',
+        amount: issuers[0].makeAmount(3),
+      },
+      {
+        rule: 'wantExactly',
+        amount: issuers[1].makeAmount(7),
+      },
+    ]);
+    const alicePayments = [aliceMoolaPayment, undefined];
+    const {
+      escrowReceipt: allegedAliceEscrowReceipt,
+      claimPayoff: aliceClaimPayoff,
+    } = await zoe.escrow(aliceOfferDesc, alicePayments);
+
+    // 3: Alice does a claimAll on the escrowReceipt payment. It's
+    // unnecessary if she trusts Zoe but we will do it for the tests.
+    const aliceEscrowReceipt = await escrowReceiptIssuer.claimAll(
+      allegedAliceEscrowReceipt,
+    );
+
+    // 4: Alice initializes the swap with her escrow receipt
+    const aliceOfferResult = await aliceSwap.makeOffer(aliceEscrowReceipt);
+
+    // 5: Alice spreads the instanceId far and wide with instructions
+    // on how to use it and Bob decides he wants to be the
+    // counter-party.
+
+    const { instance: bobSwap, libraryName } = zoe.getInstance(instanceId);
+    t.equals(libraryName, 'simpleOfferSwap');
+    const bobIssuers = zoe.getIssuersForInstance(instanceId);
+    t.deepEquals(bobIssuers, issuers);
+
+    const bobOfferDesc = harden([
+      {
+        rule: 'wantExactly',
+        amount: bobIssuers[0].makeAmount(3),
+      },
+      {
+        rule: 'offerExactly',
+        amount: bobIssuers[1].makeAmount(7),
+      },
+    ]);
+    const bobPayments = [undefined, bobSimoleanPayment];
+
+    // 6: Bob escrows with zoe
+    const {
+      escrowReceipt: allegedBobEscrowReceipt,
+      claimPayoff: bobClaimPayoff,
+    } = await zoe.escrow(bobOfferDesc, bobPayments);
+
+    // 7: Bob does a claimAll on the escrowReceipt payment. This is
+    // unnecessary but we will do it anyways for the test
+    const bobEscrowReceipt = await escrowReceiptIssuer.claimAll(
+      allegedBobEscrowReceipt,
+    );
+
+    // 8: Bob makes an offer with his escrow receipt
+    const bobOfferResult = await bobSwap.makeOffer(bobEscrowReceipt);
+
+    t.equals(
+      bobOfferResult,
+      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+    );
+    t.equals(
+      aliceOfferResult,
+      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+    );
+
+    // 9: Alice unwraps the claimPayoff to get her seat
+    const aliceSeat = await aliceClaimPayoff.unwrap();
+
+    // 10: Bob unwraps his claimPayoff to get his seat
+    const bobSeat = await bobClaimPayoff.unwrap();
+
+    // 11: Alice claims her portion of the outcome (what Bob paid in)
+    const aliceResult = await aliceSeat.getPayoff();
+
+    // 12: Bob claims his position of the outcome (what Alice paid in)
+    const bobResult = await bobSeat.getPayoff();
+
+    // Alice gets back what she wanted
+    t.deepEquals(aliceResult[1].getBalance(), aliceOfferDesc[1].amount);
+
+    // Alice didn't get any of what she put in
+    t.equals(aliceResult[0].getBalance().quantity, 0);
+
+    // 13: Alice deposits her winnings to ensure she can
+    await aliceMoolaPurse.depositAll(aliceResult[0]);
+    await aliceSimoleanPurse.depositAll(aliceResult[1]);
+
+    // 14: Bob deposits his original payments to ensure he can
+    await bobMoolaPurse.depositAll(bobResult[0]);
+    await bobSimoleanPurse.depositAll(bobResult[1]);
+
+    // Assert that the correct winnings were received.
+    // Alice had 3 moola and 0 simoleans.
+    // Bob had 0 moola and 7 simoleans.
+    t.equals(aliceMoolaPurse.getBalance().quantity, 0);
+    t.equals(aliceSimoleanPurse.getBalance().quantity, 7);
+    t.equals(bobMoolaPurse.getBalance().quantity, 3);
+    t.equals(bobSimoleanPurse.getBalance().quantity, 0);
+  } catch (e) {
+    t.assert(false, e);
+    console.log(e);
+  } finally {
+    t.end();
+  }
+});
