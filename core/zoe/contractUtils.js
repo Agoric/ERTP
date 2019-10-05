@@ -160,6 +160,12 @@ const basicFungibleTokenOperations = harden({
   divide: (x, y) => Nat(Math.floor(x / y)),
 });
 
+// reproduced, got lost in merge, not sure if correct
+const amountsToQuantitiesArray = (strategies, amounts) =>
+  amounts.map((amount, i) =>
+    amount === undefined ? strategies[i].empty() : amount.quantity,
+  );
+
 export {
   transpose,
   mapArrayOnMatrix,
@@ -173,4 +179,5 @@ export {
   makeAmount,
   makeOfferDesc,
   toAmountMatrix,
+  amountsToQuantitiesArray,
 };

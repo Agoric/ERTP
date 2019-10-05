@@ -5,7 +5,7 @@ import makePromise from '../../../util/makePromise';
 import { makeStateMachine } from '../utils/stateMachine';
 import { makeSeatMint } from '../../seatMint';
 
-const makeSwapMaker = govC => zoeInstance => {
+const makeCoveredCallMaker = govC => zoeInstance => {
   const makeOfferKeeper = () => {
     const validOfferIdsToDescs = new WeakMap();
     const validOfferIds = [];
@@ -116,4 +116,4 @@ const makeSwapMaker = govC => zoeInstance => {
   });
   return institution;
 };
-export { makeSwapMaker };
+export { makeCoveredCallMaker };

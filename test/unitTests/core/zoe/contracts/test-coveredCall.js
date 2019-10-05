@@ -1,8 +1,8 @@
 import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 
-import { makeZoe } from '../../../../../core/zoe/zoe';
-import { makeSimpleSwap } from '../../../../../core/zoe/contracts/simpleSwap';
+import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
+import { makeCoveredCallMaker } from '../../../../../core/zoe/contracts/coveredCall';
 import { makeMint } from '../../../../../core/issuers';
 
 const setup = () => {
@@ -42,7 +42,7 @@ test('zoe.makeInstance with simpleSwap', async t => {
 
     // 1: Alice creates a simpleSwap instance
     const { zoeInstance, governingContract: simpleSwap } = zoe.makeInstance(
-      makeSimpleSwap,
+      makeCoveredCallMaker,
       issuers,
     );
 
