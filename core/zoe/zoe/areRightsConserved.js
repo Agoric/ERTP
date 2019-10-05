@@ -1,48 +1,48 @@
 import { transpose } from '../contractUtils';
 
 /**
- * The columns in a `quantities` matrix are per issuer, and the rows
+ * The columns in a `extents` matrix are per assay, and the rows
  * are per player. We want to transpose the matrix such that each
- * row is per issuer so we can do 'with' on the array to get a total
- * per issuer and make sure the rights are conserved.
- * @param  {strategy[]} strategies - an array of strategies per issuer
- * @param  {quantity[]} quantities - an array of arrays with a row per
- * player indexed by issuer
+ * row is per assay so we can do 'with' on the array to get a total
+ * per assay and make sure the rights are conserved.
+ * @param  {extentOps[]} extentOps - an array of extentOps per assay
+ * @param  {extent[]} extents - an array of arrays with a row per
+ * player indexed by assay
  */
-const sumByIssuer = (strategies, quantities) =>
-  transpose(quantities).map((quantitiesPerIssuer, i) =>
-    quantitiesPerIssuer.reduce(strategies[i].with, strategies[i].empty()),
+const sumByAssay = (extentOps, extents) =>
+  transpose(extents).map((extentsPerAssay, i) =>
+    extentsPerAssay.reduce(extentOps[i].with, extentOps[i].empty()),
   );
 
 /**
- * Does the left array of summed quantities equal the right array of
- * summed quantities?
- * @param  {strategy[]} strategies - an array of strategies per issuer
- * @param  {quantity[]} leftQuantities - an array of total quantities per issuer
- * @param  {quantity[]} rightQuantities - an array of total quantities per issuer
- * indexed by issuer
+ * Does the left array of summed extents equal the right array of
+ * summed extents?
+ * @param  {extentOps[]} extentOps - an array of extentOps per assay
+ * @param  {extent[]} leftExtents - an array of total extents per assay
+ * @param  {extent[]} rightExtents - an array of total extents per assay
+ * indexed by assay
  */
-const isEqualPerIssuer = (strategies, leftQuantities, rightQuantities) =>
-  leftQuantities.every(
-    (leftQ, i) => strategies[i].equals(leftQ, rightQuantities[i]),
+const isEqualPerAssay = (extentOps, leftExtents, rightExtents) =>
+  leftExtents.every(
+    (leftQ, i) => extentOps[i].equals(leftQ, rightExtents[i]),
     true,
   );
 
 /**
- * `areRightsConserved` checks that the total quantity per issuer stays
+ * `areRightsConserved` checks that the total extent per assay stays
  * the same regardless of the reallocation.
- * @param  {strategy[]} strategies - an array of strategies per issuer
- * @param  {quantity[][]} previousQuantities - array of arrays where a row
- * is the array of quantities for a particular player, per
- * issuer
- * @param  {quantity[][]} newQuantities - array of arrays where a row
- * is the array of reallocated quantities for a particular player, per
- * issuer
+ * @param  {extentOps[]} extentOps - an array of extentOps per assay
+ * @param  {extent[][]} previousExtents - array of arrays where a row
+ * is the array of extents for a particular player, per
+ * assay
+ * @param  {extent[][]} newExtents - array of arrays where a row
+ * is the array of reallocated extents for a particular player, per
+ * assay
  */
-function areRightsConserved(strategies, prevQuantities, newQuantities) {
-  const sumsPrevQuantities = sumByIssuer(strategies, prevQuantities);
-  const sumsNewQuantities = sumByIssuer(strategies, newQuantities);
-  return isEqualPerIssuer(strategies, sumsPrevQuantities, sumsNewQuantities);
+function areRightsConserved(extentOps, prevExtents, newExtents) {
+  const sumsPrevExtents = sumByAssay(extentOps, prevExtents);
+  const sumsNewExtents = sumByAssay(extentOps, newExtents);
+  return isEqualPerAssay(extentOps, sumsPrevExtents, sumsNewExtents);
 }
 
 export { areRightsConserved };

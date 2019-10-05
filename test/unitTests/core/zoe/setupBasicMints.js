@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
-import { makeMint } from '../../../../core/issuers';
-import { strategyLib } from '../../../../core/config/strategyLib';
+import { makeMint } from '../../../../core/mint';
+import { extentOpsLib } from '../../../../core/config/extentOpsLib';
 
 const setup = () => {
   const moolaMint = makeMint('moola');
@@ -9,18 +9,16 @@ const setup = () => {
   const bucksMint = makeMint('bucks');
 
   const mints = [moolaMint, simoleanMint, bucksMint];
-  const issuers = mints.map(mint => mint.getIssuer());
-  const assays = issuers.map(issuer => issuer.getAssay());
-  const strategies = issuers.map(
-    issuer => strategyLib[issuer.getStrategyName()],
-  );
-  const labels = issuers.map(issuer => issuer.getLabel());
+  const assays = mints.map(mint => mint.getAssay());
+  const descOps = assays.map(assay => assay.getDescOps());
+  const extentOps = assays.map(assay => extentOpsLib[assay.getExtentOpsName()]);
+  const labels = assays.map(assay => assay.getLabel());
 
   return harden({
     mints,
-    issuers,
     assays,
-    strategies,
+    descOps,
+    extentOps,
     labels,
   });
 };

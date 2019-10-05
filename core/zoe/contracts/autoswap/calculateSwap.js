@@ -7,18 +7,18 @@ const { divide, multiply, add, subtract } = operations;
 /**
  * `calculateSwapMath` contains the logic for calculating how many tokens
  * should be given back to the user in exchange for what they sent in.
- * It also calculates the fee as well as the new quantities of the
+ * It also calculates the fee as well as the new extents of the
  * assets in the pool. `calculateSwapMath` is reused in several different
  * places, including to check whether an offer is valid, getting the
  * current price for an asset on user request, and to do the actual
  * reallocation after an offer has been made. The `Q` in variable
- * names stands for quantity. The names Token A and Token B are
+ * names stands for extent. The names Token A and Token B are
  * internal names to make this function more understandable.
- * @param  {number} tokenAPoolQ - the quantity in the liquidity pool
+ * @param  {number} tokenAPoolQ - the extent in the liquidity pool
  * of the kind of token (A) that was sent in.
- * @param  {number} tokenBPoolQ - the quantity in the liquidity pool
+ * @param  {number} tokenBPoolQ - the extent in the liquidity pool
  * of the other kind of token (B, the kind that will be sent out).
- * @param  {number} tokenAQ - the quantity that was sent in to be
+ * @param  {number} tokenAQ - the extent that was sent in to be
  * exchanged (A)
  * @param  {number} feeInTenthOfPercent=3 - the fee taken in tenths of
  * a percent. The default is 0.3%. The fee is taken in terms of token
@@ -39,7 +39,7 @@ const calculateSwapMath = (
   );
   const tokenBQ = subtract(tokenBPoolQ, newTokenBPoolQ);
 
-  // Note: We add the fee to the pool quantity, but could do something
+  // Note: We add the fee to the pool extent, but could do something
   // different.
   return {
     tokenOutQ: tokenBQ,
@@ -51,18 +51,16 @@ const calculateSwapMath = (
   };
 };
 
-const getTokenIndices = playerQuantities => {
-  const index0Positive = playerQuantities[0] > 0;
-  const index1Positive = playerQuantities[1] > 0;
+const getTokenIndices = playerExtents => {
+  const index0Positive = playerExtents[0] > 0;
+  const index1Positive = playerExtents[1] > 0;
 
   if (index0Positive && index1Positive) {
-    throw new Error('Both index 0 and index 1 have quantities greater than 0');
+    throw new Error('Both index 0 and index 1 have extents greater than 0');
   }
 
   if (!index0Positive && !index1Positive) {
-    throw new Error(
-      'Neither index 0 and index 1 have quantities greater than 0',
-    );
+    throw new Error('Neither index 0 and index 1 have extents greater than 0');
   }
 
   const tokenInIndex = index0Positive ? 0 : 1;
@@ -76,20 +74,20 @@ const getTokenIndices = playerQuantities => {
 
 /**
  * `calculateSwap` is a wrapper for `calculateSwapMath` that turns
- * `poolQuantities` and `playerQuantities` into the correct parameters for
+ * `poolExtents` and `playerExtents` into the correct parameters for
  * `calculateSwapMath`
- * @param  {array} poolQuantities - the array of quantities per issuer
+ * @param  {array} poolExtents - the array of extents per assay
  * for the liquidity pool
- * @param  {array} playerQuantities - the array of quantities per
- * issuer that the user has escrowed with Zoe and made an offer with
+ * @param  {array} playerExtents - the array of extents per
+ * assay that the user has escrowed with Zoe and made an offer with
  */
-const calculateSwap = (poolQuantities, playerQuantities) => {
-  const { tokenInIndex, tokenOutIndex } = getTokenIndices(playerQuantities);
+const calculateSwap = (poolExtents, playerExtents) => {
+  const { tokenInIndex, tokenOutIndex } = getTokenIndices(playerExtents);
 
-  const tokenInQ = playerQuantities[tokenInIndex];
+  const tokenInQ = playerExtents[tokenInIndex];
   return calculateSwapMath(
-    poolQuantities[tokenInIndex],
-    poolQuantities[tokenOutIndex],
+    poolExtents[tokenInIndex],
+    poolExtents[tokenOutIndex],
     tokenInQ,
   );
 };

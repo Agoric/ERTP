@@ -1,24 +1,24 @@
 import harden from '@agoric/harden';
 
-import { makeMint } from '../../../core/issuers';
+import { makeMint } from '../../../core/mint';
 
 const setupBasicMints = () => {
   const moolaMint = makeMint('moola');
   const simoleanMint = makeMint('simoleans');
   const bucksMint = makeMint('bucks');
 
-  const moolaIssuer = moolaMint.getIssuer();
-  const simoleanIssuer = simoleanMint.getIssuer();
-  const bucksIssuer = bucksMint.getIssuer();
+  const moolaAssay = moolaMint.getAssay();
+  const simoleanAssay = simoleanMint.getAssay();
+  const bucksAssay = bucksMint.getAssay();
 
-  const moolaAssay = moolaIssuer.getAssay();
-  const simoleanAssay = simoleanIssuer.getAssay();
-  const bucksAssay = bucksIssuer.getAssay();
+  const moolaDescOps = moolaAssay.getDescOps();
+  const simoleanDescOps = simoleanAssay.getDescOps();
+  const bucksDescOps = bucksAssay.getDescOps();
 
   return harden({
     mints: [moolaMint, simoleanMint, bucksMint],
-    issuers: [moolaIssuer, simoleanIssuer, bucksIssuer],
     assays: [moolaAssay, simoleanAssay, bucksAssay],
+    descOps: [moolaDescOps, simoleanDescOps, bucksDescOps],
   });
 };
 
@@ -30,16 +30,16 @@ function build(E, log) {
         const zoe = await E(vats.zoe).getZoe();
         const aliceMaker = await E(vats.alice).makeAliceMaker(zoe);
         const bobMaker = await E(vats.bob).makeBobMaker(zoe);
-        const { mints, issuers } = setupBasicMints();
+        const { mints, assays } = setupBasicMints();
 
         // Setup Alice
-        const aliceMoolaPurse = mints[0].mint(issuers[0].makeAmount(3));
-        const aliceSimoleanPurse = mints[1].mint(issuers[1].makeAmount(0));
+        const aliceMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(3));
+        const aliceSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(0));
         const aliceP = E(aliceMaker).make(aliceMoolaPurse, aliceSimoleanPurse);
 
         // Setup Bob
-        const bobMoolaPurse = mints[0].mint(issuers[0].makeAmount(0));
-        const bobSimoleanPurse = mints[1].mint(issuers[1].makeAmount(17));
+        const bobMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(0));
+        const bobSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(17));
         const bobP = E(bobMaker).make(bobMoolaPurse, bobSimoleanPurse);
 
         log(`=> alice and bob are setup`);

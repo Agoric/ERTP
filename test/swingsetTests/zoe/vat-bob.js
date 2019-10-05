@@ -4,8 +4,8 @@ import { insist } from '../../../util/insist';
 const makeBobMaker = async (E, log, zoe) => {
   const showPaymentBalance = async (paymentP, name) => {
     try {
-      const amount = await E(paymentP).getBalance();
-      log(name, ': balance ', amount);
+      const assetDesc = await E(paymentP).getBalance();
+      log(name, ': balance ', assetDesc);
     } catch (err) {
       console.error(err);
     }
@@ -23,30 +23,28 @@ const makeBobMaker = async (E, log, zoe) => {
             libraryName === 'automaticRefund',
           )`Alice was misrepresenting the contract she wanted bob to join`;
 
-          const moolaIssuer = await E(moolaPurse).getIssuer();
-          const simoleanIssuer = await E(simoleanPurse).getIssuer();
+          const moolaAssay = await E(moolaPurse).getAssay();
+          const simoleanAssay = await E(simoleanPurse).getAssay();
 
-          const issuers = [moolaIssuer, simoleanIssuer];
+          const assays = [moolaAssay, simoleanAssay];
 
-          const contractIssuers = await E(zoe).getIssuersForInstance(
-            instanceId,
-          );
+          const contractAssays = await E(zoe).getAssaysForInstance(instanceId);
           insist(
-            contractIssuers[0] === moolaIssuer,
-          )`The first issuer should be the moola issuer`;
+            contractAssays[0] === moolaAssay,
+          )`The first assay should be the moola assay`;
           insist(
-            contractIssuers[1] === simoleanIssuer,
-          )`The second issuer should be the simolean issuer`;
+            contractAssays[1] === simoleanAssay,
+          )`The second assay should be the simolean assay`;
 
           // 1. Bob escrows his offer
           const bobOfferDesc = harden([
             {
               rule: 'wantExactly',
-              amount: await E(issuers[0]).makeAmount(15),
+              assetDesc: await E(assays[0]).makeAssetDesc(15),
             },
             {
               rule: 'offerExactly',
-              amount: await E(issuers[1]).makeAmount(17),
+              assetDesc: await E(assays[1]).makeAssetDesc(17),
             },
           ]);
 

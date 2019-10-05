@@ -9,7 +9,7 @@ Zoe introduces two new rights:
    representing the winnings and/or the refund.
 
 
-The quantity of both an `escrowReceipt` and a `claimPayoff` ERTP
+The extent of both an `escrowReceipt` and a `claimPayoff` ERTP
 payment has the following format, showing that an offer has been made
 and escrowed:
 

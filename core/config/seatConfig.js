@@ -16,18 +16,18 @@ import { makeCoreMintKeeper } from './coreMintKeeper';
  */
 function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
   function makeSeatConfig() {
-    function* makePaymentTrait(_corePayment, issuer) {
+    function* makePaymentTrait(_corePayment, assay) {
       const payment = yield harden({
         // This creates a new use object which destroys the payment
-        unwrap: () => makeUseObjForPayment(issuer, payment),
+        unwrap: () => makeUseObjForPayment(assay, payment),
       });
       return payment;
     }
 
-    function* makePurseTrait(_corePurse, issuer) {
+    function* makePurseTrait(_corePurse, assay) {
       const purse = yield harden({
         // This creates a new use object which empties the purse
-        unwrap: () => makeUseObjForPurse(issuer, purse),
+        unwrap: () => makeUseObjForPurse(assay, purse),
       });
       return purse;
     }
@@ -36,7 +36,7 @@ function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
       return yield harden({});
     }
 
-    function* makeIssuerTrait(_coreIssuer) {
+    function* makeAssayTrait(_coreAssay) {
       return yield harden({});
     }
 
@@ -44,9 +44,9 @@ function makeSeatConfigMaker(makeUseObjForPayment, makeUseObjForPurse) {
       makePaymentTrait,
       makePurseTrait,
       makeMintTrait,
-      makeIssuerTrait,
+      makeAssayTrait,
       makeMintKeeper: makeCoreMintKeeper,
-      strategyName: 'seatStrategy',
+      extentOpsName: 'seatExtentOps',
     });
   }
   return makeSeatConfig;

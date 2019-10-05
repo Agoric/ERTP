@@ -20,7 +20,7 @@ counter-party for. She creates the zoeInstance:
 const makeSimpleSwap = makeSimpleOfferMaker(swapSrcs);
 const { zoeInstance, governingContract: simpleSwap } = zoe.makeInstance(
   makeSimpleSwap,
-  issuers,
+  assays,
 );
 ```
 
@@ -31,11 +31,11 @@ and a claimPayoff ERTP payment from which she can get her winnings:
 const aliceOfferDesc = harden([
   {
     rule: 'offerExactly',
-    amount: moolaIssuer.makeAmount(3),
+    assetDesc: moolaAssay.makeAssetDesc(3),
   },
   {
     rule: 'wantExactly',
-    amount: simoleanIssuer.makeAmount(7),
+    assetDesc: simoleanAssay.makeAssetDesc(7),
   },
 ]);
 const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment];
@@ -62,11 +62,11 @@ same way as alice, but his offer description is the opposite of Alice's:
 const bobOfferDesc = harden([
   {
     rule: 'wantExactly',
-    amount: moolaIssuer.makeAmount(3),
+    assetDesc: moolaAssay.makeAssetDesc(3),
   },
   {
     rule: 'offerExactly',
-    amount: simoleanIssuer.makeAmount(7),
+    assetDesc: simoleanAssay.makeAssetDesc(7),
   },
 ]);
 ```

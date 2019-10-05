@@ -3,7 +3,7 @@ import harden from '@agoric/harden';
 import { insist } from '../../../util/insist';
 import { isOfferSafeForAll } from './isOfferSafe';
 import { areRightsConserved } from './areRightsConserved';
-import { toAmountMatrix, makeEmptyQuantities } from '../contractUtils';
+import { toAssetDescMatrix, makeEmptyExtents } from '../contractUtils';
 
 import { importManager } from '../../../more/imports/importManager';
 
@@ -13,13 +13,13 @@ import {
   escrowOffer,
   mintEscrowReceiptPayment,
   mintClaimPayoffPayment,
-  fillInUndefinedQuantities,
+  fillInUndefinedExtents,
 } from './zoeUtils';
 
 import { makeState } from './state';
 import { makeSeatMint } from '../../seatMint';
 import { makeEscrowReceiptConfig } from './escrowReceiptConfig';
-import { makeMint } from '../../issuers';
+import { makeMint } from '../../mint';
 
 // Governing contracts
 // TODO: move into own file
@@ -29,14 +29,14 @@ import { makeSecondPriceSrcs } from '../contracts/simpleOffer/srcs/secondPriceSr
 import { swapSrcs } from '../contracts/simpleOffer/srcs/swapSrcs';
 
 const makeZoe = async () => {
-  // The seatIssuer and escrowReceiptIssuer are long-lived identities
+  // The seatAssay and escrowReceiptAssay are long-lived identities
   // over many contract instances
-  const { seatMint, seatIssuer, addUseObj } = makeSeatMint('zoeSeats');
+  const { seatMint, seatAssay, addUseObj } = makeSeatMint('zoeSeats');
   const escrowReceiptMint = makeMint(
     'zoeEscrowReceipts',
     makeEscrowReceiptConfig,
   );
-  const escrowReceiptIssuer = escrowReceiptMint.getIssuer();
+  const escrowReceiptAssay = escrowReceiptMint.getAssay();
 
   const manager = importManager();
   const contractLib = manager.addExports({
@@ -56,37 +56,37 @@ const makeZoe = async () => {
   // access to the users' payments or the Zoe purses, or any of
   // the `adminState` of Zoe. The governing contract can do a
   // couple of things. It can propose a reallocation of
-  // quantities, complete an offer, and interestingly, can create a
+  // extents, complete an offer, and interestingly, can create a
   // new offer itself for recordkeeping and other various
   // purposes.
 
   const governingContractFacet = harden({
     /**
      * The governing contract can propose a reallocation of
-     * quantities per player, which will only succeed if the
+     * extents per player, which will only succeed if the
      * reallocation 1) conserves rights, and 2) is 'offer safe' for
      * all parties involved. This reallocation is partial, meaning
-     * that it applies only to the quantities associated with the
+     * that it applies only to the extents associated with the
      * offerIds that are passed in, rather than applying to all of
-     * the quantities in the quantityMatrix. We are able to ensure
+     * the extents in the extentMatrix. We are able to ensure
      * that with each reallocation, rights are conserved and offer
-     * safety is enforced for all quantities, even though the
+     * safety is enforced for all extents, even though the
      * reallocation is partial, because once these invariants are
      * true, they will remain true until changes are made.
      * @param  {object[]} offerIds - an array of offerIds
-     * @param  {quantity[][]} reallocation - a matrix of quantities,
-     * with one array of quantities per offerId. This is likely
-     * a subset of the full quantitiesMatrix.
+     * @param  {extent[][]} reallocation - a matrix of extents,
+     * with one array of extents per offerId. This is likely
+     * a subset of the full extentsMatrix.
      */
     reallocate: (instanceId, offerIds, reallocation) => {
       const offerDescs = readOnlyState.getOfferDescsFor(offerIds);
-      const currentQuantities = readOnlyState.getQuantitiesFor(offerIds);
+      const currentExtents = readOnlyState.getExtentsFor(offerIds);
 
       // 1) ensure that rights are conserved
       insist(
         areRightsConserved(
-          readOnlyState.getStrategies(instanceId),
-          currentQuantities,
+          readOnlyState.getExtentOps(instanceId),
+          currentExtents,
           reallocation,
         ),
       )`Rights are not conserved in the proposed reallocation`;
@@ -94,14 +94,14 @@ const makeZoe = async () => {
       // 2) ensure 'offer safety' for each player
       insist(
         isOfferSafeForAll(
-          readOnlyState.getStrategies(instanceId),
+          readOnlyState.getExtentOps(instanceId),
           offerDescs,
           reallocation,
         ),
       )`The proposed reallocation was not offer safe`;
 
       // 3) save the reallocation
-      adminState.setQuantitiesFor(offerIds, reallocation);
+      adminState.setExtentsFor(offerIds, reallocation);
     },
 
     /**
@@ -115,12 +115,12 @@ const makeZoe = async () => {
      * @param  {object[]} offerIds - an array of offerIds
      */
     complete: async (instanceId, offerIds) => {
-      const quantities = readOnlyState.getQuantitiesFor(offerIds);
-      const strategies = readOnlyState.getStrategies(instanceId);
+      const extents = readOnlyState.getExtentsFor(offerIds);
+      const extentOps = readOnlyState.getExtentOps(instanceId);
       const labels = readOnlyState.getLabels(instanceId);
-      const amounts = toAmountMatrix(strategies, labels, quantities);
+      const assetDescs = toAssetDescMatrix(extentOps, labels, extents);
       const purses = adminState.getPurses(instanceId);
-      const payments = await makePayments(purses, amounts);
+      const payments = await makePayments(purses, assetDescs);
       const results = adminState.getResultsFor(offerIds);
       results.map((result, i) => result.res(payments[i]));
       adminState.removeOffers(offerIds);
@@ -131,7 +131,7 @@ const makeZoe = async () => {
      *  the associated offerId. This allows the governing contract
      *  to use this offer slot for recordkeeping. For instance, to
      *  represent a pool, the governing contract can create an
-     *  empty offer and then reallocate other quantities to this offer.
+     *  empty offer and then reallocate other extents to this offer.
      */
     escrowEmptyOffer: length => {
       // attenuate the authority by not passing along the result
@@ -151,7 +151,7 @@ const makeZoe = async () => {
       // promise object and only passing the offerId
       const { offerId } = await escrowOffer(
         adminState.recordOffer,
-        adminState.getOrMakePurseForIssuer,
+        adminState.getOrMakePurseForAssay,
         offerDesc,
         offerPayments,
       );
@@ -159,26 +159,25 @@ const makeZoe = async () => {
     },
 
     burnEscrowReceipt: async (instanceId, escrowReceipt) => {
-      const amount = await escrowReceiptIssuer.burnAll(escrowReceipt);
-      const { id } = amount.quantity;
+      const assetDesc = await escrowReceiptAssay.burnAll(escrowReceipt);
+      const { id } = assetDesc.extent;
       const offerIds = harden([id]);
-      await fillInUndefinedQuantities(
+      await fillInUndefinedExtents(
         adminState,
         readOnlyState,
         offerIds,
         instanceId,
       );
-      return amount.quantity;
+      return assetDesc.extent;
     },
 
     // read-only, side-effect-free access below this line:
-    makeEmptyQuantities: () =>
-      makeEmptyQuantities(readOnlyState.getStrategies()),
-    getStrategies: readOnlyState.getStrategies,
-    getQuantitiesFor: readOnlyState.getQuantitiesFor,
+    makeEmptyExtents: () => makeEmptyExtents(readOnlyState.getExtentOps()),
+    getExtentOps: readOnlyState.getExtentOps,
+    getExtentsFor: readOnlyState.getExtentsFor,
     getOfferDescsFor: readOnlyState.getOfferDescsFor,
-    getSeatIssuer: () => seatIssuer,
-    getEscrowReceiptIssuer: () => escrowReceiptIssuer,
+    getSeatAssay: () => seatAssay,
+    getEscrowReceiptAssay: () => escrowReceiptAssay,
   });
 
   // The `publicFacet` of the zoe has three main methods: `makeInstance`
@@ -188,9 +187,9 @@ const makeZoe = async () => {
   // receipt and claimPayoffs payment in return.
 
   const publicFacet = harden({
-    getSeatIssuer: () => seatIssuer,
-    getEscrowReceiptIssuer: () => escrowReceiptIssuer,
-    getIssuersForInstance: instanceId => readOnlyState.getIssuers(instanceId),
+    getSeatAssay: () => seatAssay,
+    getEscrowReceiptAssay: () => escrowReceiptAssay,
+    getAssaysForInstance: instanceId => readOnlyState.getAssays(instanceId),
 
     /**
      * Installs a governing contract and returns a reference to the
@@ -198,16 +197,16 @@ const makeZoe = async () => {
      * shared, and the name of the governing contract installed.
      * @param  {string} libraryName - the wellknown name for the
      * governing contract to be installed
-     * @param  {object[]} issuers - an array of issuers to be used in
+     * @param  {object[]} assays - an array of assays to be used in
      * the governing contract. This determines the order of the offer
      * description elements and offer payments accepted by the
      * governing contract.
      */
-    makeInstance: async (libraryName, issuers) => {
+    makeInstance: async (libraryName, assays) => {
       const makeContractFn = contractLib[libraryName];
       const instanceId = harden({});
       const instance = makeContractFn(governingContractFacet, instanceId);
-      await adminState.addInstance(instanceId, instance, libraryName, issuers);
+      await adminState.addInstance(instanceId, instance, libraryName, assays);
       return harden({
         instance,
         instanceId,
@@ -230,7 +229,7 @@ const makeZoe = async () => {
 
     /**
      * @param  {offerDescElem[]} offerDesc - the offer description, an
-     * array of objects with `rule` and `amount` properties.
+     * array of objects with `rule` and `assetDesc` properties.
      * @param  {payment[]} offerPayments - payments corresponding to
      * the offer description. A payment may be `undefined` in the case
      * of specifying a `want`.
@@ -238,7 +237,7 @@ const makeZoe = async () => {
     escrow: async (offerDesc, offerPayments) => {
       const { offerId, result } = await escrowOffer(
         adminState.recordOffer,
-        adminState.getOrMakePurseForIssuer,
+        adminState.getOrMakePurseForAssay,
         offerDesc,
         offerPayments,
       );

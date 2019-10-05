@@ -7,7 +7,7 @@ import { setup } from './zoe/setupBasicMints';
 import { insist } from '../../../util/insist';
 
 /*
- * A seat quantity may look like:
+ * A seat extent may look like:
  *
  * {
  *   id: {},
@@ -25,21 +25,21 @@ import { insist } from '../../../util/insist';
 
 test('seatMint', async t => {
   try {
-    const { assays, strategies } = setup();
+    const { assays, extentOps } = setup();
     const { seatMint, addUseObj } = makeSeatMint();
 
-    const makeUseObj = quantity => {
-      insist(quantity !== null)`the asset is empty or already used`;
-      if (quantity.offerToBeMade) {
+    const makeUseObj = extent => {
+      insist(extent !== null)`the asset is empty or already used`;
+      if (extent.offerToBeMade) {
         return harden({
           makeOffer: offer => {
-            insist(offerEqual(strategies, offer, quantity.offerToBeMade));
+            insist(offerEqual(extentOps, offer, extent.offerToBeMade));
             // do things with the offer
             return true;
           },
         });
       }
-      if (quantity.offerMade) {
+      if (extent.offerMade) {
         return harden({
           claim: () => {
             return [];
@@ -49,43 +49,43 @@ test('seatMint', async t => {
       return harden({});
     };
 
-    const purse1Quantity = harden({
+    const purse1Extent = harden({
       id: harden({}),
       offerToBeMade: [
-        { rule: 'offerExactly', amount: assays[0].make(8) },
-        { rule: 'wantExactly', amount: assays[1].make(6) },
+        { rule: 'offerExactly', assetDesc: assays[0].makeAssetDesc(8) },
+        { rule: 'wantExactly', assetDesc: assays[1].makeAssetDesc(6) },
       ],
     });
 
-    const purse1 = seatMint.mint(purse1Quantity);
-    t.deepEqual(purse1.getBalance().quantity, purse1Quantity);
-    addUseObj(purse1Quantity.id, makeUseObj(purse1Quantity));
+    const purse1 = seatMint.mint(purse1Extent);
+    t.deepEqual(purse1.getBalance().extent, purse1Extent);
+    addUseObj(purse1Extent.id, makeUseObj(purse1Extent));
 
     const useObjPurse1 = await purse1.unwrap();
     // purse1 should be empty at this point. Note that `withdrawAll` doesn't
     // destroy purses; it just empties the balance.
-    t.deepEqual(purse1.getBalance().quantity, null);
+    t.deepEqual(purse1.getBalance().extent, null);
 
     t.rejects(purse1.unwrap(), /the purse is empty or already used/);
 
-    t.equal(useObjPurse1.makeOffer(purse1Quantity.offerToBeMade), true);
+    t.equal(useObjPurse1.makeOffer(purse1Extent.offerToBeMade), true);
 
-    const purse2Quantity = harden({
+    const purse2Extent = harden({
       id: harden({}),
       offerMade: [
-        { rule: 'offerExactly', amount: assays[0].make(8) },
-        { rule: 'wantExactly', amount: assays[1].make(6) },
+        { rule: 'offerExactly', assetDesc: assays[0].makeAssetDesc(8) },
+        { rule: 'wantExactly', assetDesc: assays[1].makeAssetDesc(6) },
       ],
     });
 
-    const purse2 = seatMint.mint(purse2Quantity);
-    t.deepEqual(purse2.getBalance().quantity, purse2Quantity);
-    addUseObj(purse2Quantity.id, makeUseObj(purse2Quantity));
+    const purse2 = seatMint.mint(purse2Extent);
+    t.deepEqual(purse2.getBalance().extent, purse2Extent);
+    addUseObj(purse2Extent.id, makeUseObj(purse2Extent));
 
     const useObjPurse2 = await purse2.unwrap();
     // purse1 should be empty at this point. Note that `withdrawAll` doesn't
     // destroy purses; it just empties the balance.
-    t.deepEqual(purse2.getBalance().quantity, null);
+    t.deepEqual(purse2.getBalance().extent, null);
 
     t.rejects(purse2.unwrap(), /the purse is empty or already used/);
 

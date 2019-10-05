@@ -2,10 +2,10 @@ import harden from '@agoric/harden';
 import { passStyleOf } from '@agoric/marshal';
 
 import { insist } from '../../../util/insist';
-import { makeUniStrategy } from './uniStrategy';
+import { makeUniExtentOps } from './uniExtentOps';
 
 /*
- * A seat quantity may look like:
+ * A seat extent may look like:
  *
  * {
  *   id: {},
@@ -42,7 +42,7 @@ const insistSeat = seat => {
   return seat;
 };
 
-const seatStrategy = makeUniStrategy(insistSeat);
-harden(seatStrategy);
+const seatExtentOps = makeUniExtentOps(insistSeat);
+harden(seatExtentOps);
 
-export { seatStrategy };
+export { seatExtentOps };

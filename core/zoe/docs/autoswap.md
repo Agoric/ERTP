@@ -12,16 +12,16 @@ Based on UniSwap.
 ## Initialization
 
 First, we initialize the `autoSwapMaker` so that we have access to the
-liquidity issuer for this particular autoswap. We then pass the
-liquidity issuer in as part of the issuers array. 
+liquidity assay for this particular autoswap. We then pass the
+liquidity assay in as part of the assays array. 
 
 ```js
-const { liquidityIssuer, makeAutoSwap } = makeAutoSwapMaker();
-const allIssuers = [moolaIssuer, simoleanIssuer, liquidityIssuer];
+const { liquidityAssay, makeAutoSwap } = makeAutoSwapMaker();
+const allAssays = [moolaAssay, simoleanAssay, liquidityAssay];
 
 const { zoeInstance, governingContract: autoswap } = zoe.makeInstance(
   makeAutoSwap,
-  allIssuers,
+  allAssays,
 );
 ```
 
@@ -44,15 +44,15 @@ escrows them:
 const aliceOffer = harden([
   {
     rule: 'offerExactly',
-    amount: allIssuers[0].makeAmount(10),
+    assetDesc: allAssays[0].makeAssetDesc(10),
   },
   {
     rule: 'offerExactly',
-    amount: allIssuers[1].makeAmount(5),
+    assetDesc: allAssays[1].makeAssetDesc(5),
   },
   {
     rule: 'wantAtLeast',
-    amount: allIssuers[2].makeAmount(10),
+    assetDesc: allAssays[2].makeAssetDesc(10),
   },
 ]);
 const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment, undefined];
@@ -78,15 +78,15 @@ receives an escrow receipt.
  const bobMoolaForSimOfferDesc = harden([
   {
     rule: 'offerExactly',
-    amount: allIssuers[0].makeAmount(2),
+    assetDesc: allAssays[0].makeAssetDesc(2),
   },
   {
     rule: 'wantAtLeast',
-    amount: allIssuers[1].makeAmount(1),
+    assetDesc: allAssays[1].makeAssetDesc(1),
   },
   {
     rule: 'wantAtLeast',
-    amount: allIssuers[2].makeAmount(0),
+    assetDesc: allAssays[2].makeAssetDesc(0),
   },
 ]);
 const bobMoolaForSimPayments = [bobMoolaPayment, undefined, undefined];

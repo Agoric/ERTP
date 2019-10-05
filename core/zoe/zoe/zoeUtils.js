@@ -9,65 +9,65 @@ import { insist } from '../../../util/insist';
 // passed in, making it easy to see which functions can affect what.
 
 const mintEscrowReceiptPayment = (escrowReceiptMint, offerId, offerDesc) => {
-  const escrowReceiptQuantity = harden({
+  const escrowReceiptExtent = harden({
     id: offerId,
     offerMade: offerDesc,
   });
-  const escrowReceiptPurse = escrowReceiptMint.mint(escrowReceiptQuantity);
+  const escrowReceiptPurse = escrowReceiptMint.mint(escrowReceiptExtent);
   const escrowReceiptPaymentP = escrowReceiptPurse.withdrawAll();
   return escrowReceiptPaymentP;
 };
 
 const mintClaimPayoffPayment = (seatMint, addUseObj, offerDesc, result) => {
-  const claimPayoffQuantity = harden({
+  const claimPayoffExtent = harden({
     id: harden({}),
     offerMade: offerDesc,
   });
-  const claimPayoffPurseP = seatMint.mint(claimPayoffQuantity);
+  const claimPayoffPurseP = seatMint.mint(claimPayoffExtent);
   const seat = harden({
     getPayoff: () => result.p,
   });
-  addUseObj(claimPayoffQuantity.id, seat);
+  addUseObj(claimPayoffExtent.id, seat);
   const claimPayoffPaymentP = claimPayoffPurseP.withdrawAll();
   return claimPayoffPaymentP;
 };
 
 const escrowAllPayments = async (
-  getOrMakePurseForIssuer,
+  getOrMakePurseForAssay,
   offerDesc,
   offerPayments,
 ) => {
-  const quantitiesArrayPromises = offerDesc.map(async (offerDescElement, i) => {
+  const extentsArrayPromises = offerDesc.map(async (offerDescElement, i) => {
     // if the user's contractual understanding includes
     // "offerExactly" or "offerAtMost", make sure that they have supplied a
     // payment with that exact balance
     if (['offerExactly', 'offerAtMost'].includes(offerDescElement.rule)) {
-      const { issuer } = offerDescElement.amount.label;
-      const purse = await getOrMakePurseForIssuer(issuer);
-      const amount = await E(purse).depositExactly(
-        offerDesc[i].amount,
+      const { assay } = offerDescElement.assetDesc.label;
+      const purse = await getOrMakePurseForAssay(assay);
+      const assetDesc = await E(purse).depositExactly(
+        offerDesc[i].assetDesc,
         offerPayments[i],
       );
-      return amount.quantity;
+      return assetDesc.extent;
     }
     insist(
       offerPayments[i] === undefined,
     )`payment was included, but the rule was ${offerDesc[i].rule}`;
     return undefined;
   });
-  return Promise.all(quantitiesArrayPromises);
+  return Promise.all(extentsArrayPromises);
 };
 
 const escrowOffer = async (
   recordOffer,
-  getOrMakePurseForIssuer,
+  getOrMakePurseForAssay,
   offerDesc,
   offerPayments,
 ) => {
   const result = makePromise();
 
-  const quantitiesArray = await escrowAllPayments(
-    getOrMakePurseForIssuer,
+  const extentsArray = await escrowAllPayments(
+    getOrMakePurseForAssay,
     offerDesc,
     offerPayments,
   );
@@ -75,7 +75,7 @@ const escrowOffer = async (
   const offerId = harden({});
 
   // has side effects
-  recordOffer(offerId, offerDesc, quantitiesArray, result);
+  recordOffer(offerId, offerDesc, extentsArray, result);
 
   return harden({
     offerId,
@@ -86,11 +86,11 @@ const escrowOffer = async (
 const escrowEmptyOffer = (recordOffer, length) => {
   const offerId = harden({});
   const offerDesc = Array(length).fill(undefined);
-  const quantitiesArray = Array(length).fill(undefined);
+  const extentsArray = Array(length).fill(undefined);
   const result = makePromise();
 
   // has side effects
-  recordOffer(offerId, offerDesc, quantitiesArray, result);
+  recordOffer(offerId, offerDesc, extentsArray, result);
 
   return harden({
     offerId,
@@ -98,28 +98,28 @@ const escrowEmptyOffer = (recordOffer, length) => {
   });
 };
 
-const makePayments = (purses, amountsMatrix) => {
-  const paymentsMatrix = amountsMatrix.map(row => {
+const makePayments = (purses, assetDescsMatrix) => {
+  const paymentsMatrix = assetDescsMatrix.map(row => {
     const payments = Promise.all(
-      row.map((amount, i) => E(purses[i]).withdraw(amount, 'payout')),
+      row.map((assetDesc, i) => E(purses[i]).withdraw(assetDesc, 'payout')),
     );
     return payments;
   });
   return Promise.all(paymentsMatrix);
 };
 
-const fillInUndefinedQuantities = async (
+const fillInUndefinedExtents = async (
   adminState,
   readOnlyState,
   offerIds,
   instanceId,
 ) => {
-  const [quantities] = readOnlyState.getQuantitiesFor(offerIds);
-  const strategies = await Promise.all(readOnlyState.getStrategies(instanceId));
-  const filledInQuantities = quantities.map((quantity, i) =>
-    quantity === undefined ? strategies[i].empty() : quantity,
+  const [extents] = readOnlyState.getExtentsFor(offerIds);
+  const extentOps = await Promise.all(readOnlyState.getExtentOps(instanceId));
+  const filledInExtents = extents.map((extent, i) =>
+    extent === undefined ? extentOps[i].empty() : extent,
   );
-  adminState.setQuantitiesFor(offerIds, harden([filledInQuantities]));
+  adminState.setExtentsFor(offerIds, harden([filledInExtents]));
 };
 
 export {
@@ -128,5 +128,5 @@ export {
   escrowOffer,
   mintEscrowReceiptPayment,
   mintClaimPayoffPayment,
-  fillInUndefinedQuantities,
+  fillInUndefinedExtents,
 };

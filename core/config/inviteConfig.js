@@ -7,7 +7,7 @@ function makeInviteConfig() {
   return harden({
     ...noCustomization,
     makeMintKeeper: makeCoreMintKeeper,
-    strategyName: 'inviteStrategy',
+    extentOpsName: 'inviteExtentOps',
   });
 }
 

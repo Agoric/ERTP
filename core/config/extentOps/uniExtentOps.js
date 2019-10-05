@@ -7,56 +7,56 @@ import {
   mustBeComparable,
 } from '../../../util/sameStructure';
 
-// The uniStrategy represents quantities that can never be combined.
+// The uniExtentOps represents extents that can never be combined.
 // For example, usually there is only one invite in an invite purse or
-// payment. (Using a listStrategy is an alternative, but when there is
-// usually a quantity of one, it's bothersome to always have to grab
+// payment. (Using a listExtentOps is an alternative, but when there is
+// usually a extent of one, it's bothersome to always have to grab
 // the first item in the list rather than just represent the item
 // itself.)
 
-// The uni quantities are either empty (null) or unique. Combining two
-// non-null uni quantities fails because they represent non-combinable
-// rights. In a commonly used pattern, uni quantities contain an id
+// The uni extents are either empty (null) or unique. Combining two
+// non-null uni extents fails because they represent non-combinable
+// rights. In a commonly used pattern, uni extents contain an id
 // represented by a unique empty object.
 
 // `customInsistKind` enforces the particular kind of thing represented. For
-// example, the quantity in an invitation to join a contract might look like:
+// example, the extent in an invitation to join a contract might look like:
 // {
 //   id: harden({}),
 //   offerToBeMade: [rule1, rule2],
 // }
 
-const makeUniStrategy = customInsistKind => {
-  const uniStrategy = harden({
-    insistKind: quantity => {
-      if (quantity === null) {
+const makeUniExtentOps = customInsistKind => {
+  const uniExtentOps = harden({
+    insistKind: extent => {
+      if (extent === null) {
         return null;
       }
-      mustBeComparable(quantity);
-      return customInsistKind(quantity);
+      mustBeComparable(extent);
+      return customInsistKind(extent);
     },
     empty: _ => null,
     isEmpty: uni => uni === null,
     includes: (whole, part) => {
       // the part is only included in the whole if the part is null or
       // if the part equals the whole
-      return uniStrategy.isEmpty(part) || uniStrategy.equals(whole, part);
+      return uniExtentOps.isEmpty(part) || uniExtentOps.equals(whole, part);
     },
     equals: sameStructure,
     with: (left, right) => {
       // left and right can only be added together if one of them is null
-      if (uniStrategy.isEmpty(left)) {
+      if (uniExtentOps.isEmpty(left)) {
         return right;
       }
-      if (uniStrategy.isEmpty(right)) {
+      if (uniExtentOps.isEmpty(right)) {
         return left;
       }
-      throw insist(false)`Cannot combine uni quantities ${left} and ${right}`;
+      throw insist(false)`Cannot combine uni extents ${left} and ${right}`;
     },
     without: (whole, part) => {
       // we can only subtract the part from the whole if either part
       // is null or the part equals the whole
-      if (uniStrategy.isEmpty(part)) {
+      if (uniExtentOps.isEmpty(part)) {
         return whole;
       }
       mustBeSameStructure(
@@ -64,12 +64,12 @@ const makeUniStrategy = customInsistKind => {
         part,
         'Cannot subtract different uni descriptions',
       );
-      return uniStrategy.empty();
+      return uniExtentOps.empty();
     },
   });
-  return uniStrategy;
+  return uniExtentOps;
 };
 
-harden(makeUniStrategy);
+harden(makeUniExtentOps);
 
-export { makeUniStrategy };
+export { makeUniExtentOps };

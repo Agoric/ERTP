@@ -3,58 +3,58 @@ import harden from '@agoric/harden';
 
 import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
 import { makeCoveredCallMaker } from '../../../../../core/zoe/contracts/coveredCall';
-import { makeMint } from '../../../../../core/issuers';
+import { makeMint } from '../../../../../core/mint';
 
 const setup = () => {
   const moolaMint = makeMint('moola');
   const simoleanMint = makeMint('simoleans');
 
-  const moolaIssuer = moolaMint.getIssuer();
-  const simoleanIssuer = simoleanMint.getIssuer();
+  const moolaAssay = moolaMint.getAssay();
+  const simoleanAssay = simoleanMint.getAssay();
 
-  const moolaAssay = moolaIssuer.getAssay();
-  const simoleanAssay = simoleanIssuer.getAssay();
+  const moolaDescOps = moolaAssay.getDescOps();
+  const simoleanDescOps = simoleanAssay.getDescOps();
 
   return harden({
     mints: [moolaMint, simoleanMint],
-    issuers: [moolaIssuer, simoleanIssuer],
     assays: [moolaAssay, simoleanAssay],
+    descOps: [moolaDescOps, simoleanDescOps],
     zoe: makeZoe(),
   });
 };
 
 test('zoe.makeInstance with simpleSwap', async t => {
   try {
-    const { issuers, mints, zoe } = setup();
-    const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
+    const { assays, mints, zoe } = setup();
+    const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
 
     // Setup Alice
-    const aliceMoolaPurse = mints[0].mint(issuers[0].makeAmount(3));
+    const aliceMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(3));
     const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
-    const aliceSimoleanPurse = mints[1].mint(issuers[1].makeAmount(0));
+    const aliceSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(0));
     const aliceSimoleanPayment = aliceSimoleanPurse.withdrawAll();
 
     // Setup Bob
-    const bobMoolaPurse = mints[0].mint(issuers[0].makeAmount(0));
+    const bobMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(0));
     const bobMoolaPayment = bobMoolaPurse.withdrawAll();
-    const bobSimoleanPurse = mints[1].mint(issuers[1].makeAmount(7));
+    const bobSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(7));
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a simpleSwap instance
     const { zoeInstance, governingContract: simpleSwap } = zoe.makeInstance(
       makeCoveredCallMaker,
-      issuers,
+      assays,
     );
 
     // 2: Alice escrows with the zoeInstance
     const aliceOfferDesc = harden([
       {
         rule: 'haveExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
     ]);
     const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment];
@@ -64,7 +64,7 @@ test('zoe.makeInstance with simpleSwap', async t => {
     } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment
-    const aliceEscrowReceipt = await escrowReceiptIssuer.claimAll(
+    const aliceEscrowReceipt = await escrowReceiptAssay.claimAll(
       allegedAliceEscrowReceipt,
     );
 
@@ -78,7 +78,7 @@ test('zoe.makeInstance with simpleSwap', async t => {
       aliceEscrowReceipt,
     );
 
-    // 3: Imagine that Bob also has access to the escrowReceiptIssuer
+    // 3: Imagine that Bob also has access to the escrowReceiptAssay
     // and the automaticRefund
 
     // 4: Bob inspects the invite payment and checks that the offerToBeMade
@@ -87,11 +87,11 @@ test('zoe.makeInstance with simpleSwap', async t => {
     const bobOfferDesc = harden([
       {
         rule: 'wantExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'haveExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
     ]);
     const bobPayments = [bobMoolaPayment, bobSimoleanPayment];
@@ -103,7 +103,7 @@ test('zoe.makeInstance with simpleSwap', async t => {
     } = await zoeInstance.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment
-    const bobEscrowReceipt = await escrowReceiptIssuer.claimAll(
+    const bobEscrowReceipt = await escrowReceiptAssay.claimAll(
       allegedBobEscrowReceipt,
     );
 
@@ -128,10 +128,10 @@ test('zoe.makeInstance with simpleSwap', async t => {
     const bobResult = await bobSeat.getWinnings();
 
     // Alice gets back what she wanted
-    t.deepEquals(aliceResult[1].getBalance(), aliceOfferDesc[1].amount);
+    t.deepEquals(aliceResult[1].getBalance(), aliceOfferDesc[1].assetDesc);
 
     // Alice didn't get any of what she put in
-    t.equals(aliceResult[0].getBalance().quantity, 0);
+    t.equals(aliceResult[0].getBalance().extent, 0);
 
     // 11: Alice deposits her refund to ensure she can
     await aliceMoolaPurse.depositAll(aliceResult[0]);
@@ -144,10 +144,10 @@ test('zoe.makeInstance with simpleSwap', async t => {
     // Assert that the correct refund was achieved.
     // Alice had 3 moola and 0 simoleans.
     // Bob had 0 moola and 7 simoleans.
-    t.equals(aliceMoolaPurse.getBalance().quantity, 0);
-    t.equals(aliceSimoleanPurse.getBalance().quantity, 7);
-    t.equals(bobMoolaPurse.getBalance().quantity, 3);
-    t.equals(bobSimoleanPurse.getBalance().quantity, 0);
+    t.equals(aliceMoolaPurse.getBalance().extent, 0);
+    t.equals(aliceSimoleanPurse.getBalance().extent, 7);
+    t.equals(bobMoolaPurse.getBalance().extent, 3);
+    t.equals(bobSimoleanPurse.getBalance().extent, 0);
   } catch (e) {
     t.assert(false, e);
     console.log(e);

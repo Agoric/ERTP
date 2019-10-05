@@ -23,14 +23,14 @@ const mapArrayOnMatrix = (matrix, arrayFn) => {
 
 const ruleEqual = (leftRule, rightRule) => leftRule.rule === rightRule.rule;
 
-const quantityEqual = (strategy, leftRule, rightRule) =>
-  strategy.equals(leftRule.amount.quantity, rightRule.amount.quantity);
+const extentEqual = (extentOps, leftRule, rightRule) =>
+  extentOps.equals(leftRule.assetDesc.extent, rightRule.assetDesc.extent);
 
-const issuerEqual = (leftRule, rightRule) =>
-  leftRule.amount.label.issuer === rightRule.amount.label.issuer;
+const assayEqual = (leftRule, rightRule) =>
+  leftRule.assetDesc.label.assay === rightRule.assetDesc.label.assay;
 
-// Check that two offers are equal in both their rules and their amounts
-const offerEqual = (strategies, leftOffer, rightOffer) => {
+// Check that two offers are equal in both their rules and their assetDescs
+const offerEqual = (extentOps, leftOffer, rightOffer) => {
   const isLengthEqual = leftOffer.length === rightOffer.length;
   if (!isLengthEqual) {
     return false;
@@ -38,32 +38,28 @@ const offerEqual = (strategies, leftOffer, rightOffer) => {
   return leftOffer.every(
     (leftRule, i) =>
       ruleEqual(leftRule, rightOffer[i]) &&
-      issuerEqual(leftRule, rightOffer[i]) &&
-      quantityEqual(strategies[i], leftRule, rightOffer[i]),
+      assayEqual(leftRule, rightOffer[i]) &&
+      extentEqual(extentOps[i], leftRule, rightOffer[i]),
     true,
   );
 };
 
-// an array of empty quantities per strategy
-const makeEmptyQuantities = strategies =>
-  strategies.map(strategy => strategy.empty());
+// an array of empty extents per extentOps
+const makeEmptyExtents = extentOpsArray =>
+  extentOpsArray.map(extentOps => extentOps.empty());
 
 // validRules is the rule portion of a offer description in array
 // form, such as ['offerExactly', 'wantExactly']
 const makeHasOkRules = validRules => offer =>
   validRules.every((rule, i) => rule === offer[i].rule, true);
 
-// Vector addition of two quantity arrays
-const vectorWith = (strategies, leftQuantities, rightQuantities) =>
-  leftQuantities.map((leftQ, i) =>
-    strategies[i].with(leftQ, rightQuantities[i]),
-  );
+// Vector addition of two extent arrays
+const vectorWith = (extentOps, leftExtents, rightExtents) =>
+  leftExtents.map((leftQ, i) => extentOps[i].with(leftQ, rightExtents[i]));
 
-// Vector subtraction of two quantity arrays
-const vectorWithout = (strategies, leftQuantities, rightQuantities) =>
-  leftQuantities.map((leftQ, i) =>
-    strategies[i].without(leftQ, rightQuantities[i]),
-  );
+// Vector subtraction of two extent arrays
+const vectorWithout = (extentOps, leftExtents, rightExtents) =>
+  leftExtents.map((leftQ, i) => extentOps[i].without(leftQ, rightExtents[i]));
 
 /**
  * Make a function that implements a common invocation pattern for
@@ -85,7 +81,7 @@ const vectorWithout = (strategies, leftQuantities, rightQuantities) =>
  * @param  {function} handleOfferFn - the function to do custom logic before
  * reallocating and ejecting the user. The function takes in the
  * `offerId` and should return an object with `offerIds` and
- * `newQuantities` as properties
+ * `newExtents` as properties
  * @param {object} instanceId - the id for the governing contract instance
  * @param  {} }
  */
@@ -108,50 +104,43 @@ const makeAPIMethod = ({
     result.rej(`${rejectMessage}`);
     return result.p;
   }
-  const { offerIds, newQuantities, burnQuantities } = await handleOfferFn(id);
-  if (burnQuantities !== undefined) {
-    await zoe.reallocateAndBurn(
-      instanceId,
-      offerIds,
-      newQuantities,
-      burnQuantities,
-    );
+  const { offerIds, newExtents, burnExtents } = await handleOfferFn(id);
+  if (burnExtents !== undefined) {
+    await zoe.reallocateAndBurn(instanceId, offerIds, newExtents, burnExtents);
   } else {
-    zoe.reallocate(instanceId, offerIds, newQuantities);
+    zoe.reallocate(instanceId, offerIds, newExtents);
   }
   zoe.complete(instanceId, harden([id]));
   result.res(`${successMessage}`);
   return result.p;
 };
 
-const makeAmount = (strategy, label, allegedQuantity) => {
-  strategy.insistKind(allegedQuantity);
+const makeAssetDesc = (extentOps, label, allegedExtent) => {
+  extentOps.insistKind(allegedExtent);
   return harden({
     label,
-    quantity: allegedQuantity,
+    extent: allegedExtent,
   });
 };
 
-// Transform a quantitiesMatrix to a matrix of amounts given an array
-// of the associated assays.
-const toAmountMatrix = (strategies, labels, quantitiesMatrix) =>
-  quantitiesMatrix.map(quantities =>
-    quantities.map((quantity, i) =>
-      makeAmount(strategies[i], labels[i], quantity),
-    ),
+// Transform a extentsMatrix to a matrix of assetDescs given an array
+// of the associated descOps.
+const toAssetDescMatrix = (extentOps, labels, extentsMatrix) =>
+  extentsMatrix.map(extents =>
+    extents.map((extent, i) => makeAssetDesc(extentOps[i], labels[i], extent)),
   );
 
-const makeOfferDesc = (strategies, labels, rules, quantities) =>
-  strategies.map((strategy, i) =>
+const makeOfferDesc = (extentOpsArray, labels, rules, extents) =>
+  extentOpsArray.map((extentOps, i) =>
     harden({
       rule: rules[i],
-      amount: makeAmount(strategy, labels[i], quantities[i]),
+      assetDesc: makeAssetDesc(extentOps, labels[i], extents[i]),
     }),
   );
 
 /**
  * These operations should be used for calculations with the
- * quantities of basic fungible tokens.
+ * extents of basic fungible tokens.
  */
 const basicFungibleTokenOperations = harden({
   add: (x, y) => Nat(x + y),
@@ -161,23 +150,23 @@ const basicFungibleTokenOperations = harden({
 });
 
 // reproduced, got lost in merge, not sure if correct
-const amountsToQuantitiesArray = (strategies, amounts) =>
-  amounts.map((amount, i) =>
-    amount === undefined ? strategies[i].empty() : amount.quantity,
+const assetDescsToExtentsArray = (extentOps, assetDescs) =>
+  assetDescs.map((assetDesc, i) =>
+    assetDesc === undefined ? extentOps[i].empty() : assetDesc.extent,
   );
 
 export {
   transpose,
   mapArrayOnMatrix,
   offerEqual,
-  makeEmptyQuantities,
+  makeEmptyExtents,
   makeHasOkRules,
   vectorWith,
   vectorWithout,
   makeAPIMethod,
   basicFungibleTokenOperations,
-  makeAmount,
+  makeAssetDesc,
   makeOfferDesc,
-  toAmountMatrix,
-  amountsToQuantitiesArray,
+  toAssetDescMatrix,
+  assetDescsToExtentsArray,
 };

@@ -15,29 +15,27 @@ const makeHandleOffer = (
   poolOfferId,
 ) => offerId => {
   const offerIds = harden([poolOfferId, offerId]);
-  const [poolQuantities, playerQuantities] = zoeInstance.getQuantitiesFor(
-    offerIds,
-  );
-  const liquidityTokenIn = playerQuantities[2];
-  const liqTokenSupply = liquidityMint.getTotalSupply().quantity;
+  const [poolExtents, playerExtents] = zoeInstance.getExtentsFor(offerIds);
+  const liquidityTokenIn = playerExtents[2];
+  const liqTokenSupply = liquidityMint.getTotalSupply().extent;
 
-  const newPlayerQuantities = poolQuantities.map(poolQ =>
+  const newPlayerExtents = poolExtents.map(poolQ =>
     divide(multiply(liquidityTokenIn, poolQ), liqTokenSupply),
   );
 
-  const newPoolQuantities = vectorWithout(
-    zoeInstance.getStrategies(),
-    poolQuantities,
-    newPlayerQuantities,
+  const newPoolExtents = vectorWithout(
+    zoeInstance.getExtentOps(),
+    poolExtents,
+    newPlayerExtents,
   );
 
-  const burnQuantities = zoeInstance.makeEmptyQuantities();
-  burnQuantities[2] = liquidityTokenIn;
+  const burnExtents = zoeInstance.makeEmptyExtents();
+  burnExtents[2] = liquidityTokenIn;
 
   return harden({
     offerIds,
-    newQuantities: [newPoolQuantities, newPlayerQuantities],
-    burnQuantities,
+    newExtents: [newPoolExtents, newPlayerExtents],
+    burnExtents,
   });
 };
 

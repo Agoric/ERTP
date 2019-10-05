@@ -19,66 +19,66 @@ const hasOkRules = makeHasOkRules([
   ['wantAtLeast', 'offerExactly', 'wantAtLeast'],
 ]);
 
-// Make sure that the amount that would be returned if we performed
-// the swap is greater than or equal to the 'wantAtLeast' amount
-const fulfillsWantAtLeast = (poolQuantities, newOffer) => {
+// Make sure that the assetDesc that would be returned if we performed
+// the swap is greater than or equal to the 'wantAtLeast' assetDesc
+const fulfillsWantAtLeast = (poolExtents, newOffer) => {
   const tokenInIndex = newOffer[0].rule === 'offerExactly' ? 0 : 1;
   const tokenOutIndex = 1 - tokenInIndex;
 
-  const tokenInQ = newOffer[tokenInIndex].amount.quantity;
-  const wantAtLeastQ = newOffer[tokenOutIndex].amount.quantity;
+  const tokenInQ = newOffer[tokenInIndex].assetDesc.extent;
+  const wantAtLeastQ = newOffer[tokenOutIndex].assetDesc.extent;
 
   const { tokenOutQ } = calculateSwapMath(
-    poolQuantities[tokenInIndex],
-    poolQuantities[tokenOutIndex],
+    poolExtents[tokenInIndex],
+    poolExtents[tokenOutIndex],
     tokenInQ,
   );
   return tokenOutQ >= wantAtLeastQ;
 };
 
 /**
- * reallocate(quantities) takes a matrix representing the current pool
- * and player quantities and returns a matrix representing the
- * respective resulting quantities.
+ * reallocate(extents) takes a matrix representing the current pool
+ * and player extents and returns a matrix representing the
+ * respective resulting extents.
  */
-const reallocate = quantities => {
-  const poolQuantities = quantities[0];
-  const playerQuantities = quantities[1];
+const reallocate = extents => {
+  const poolExtents = extents[0];
+  const playerExtents = extents[1];
 
-  const { tokenInIndex, tokenOutIndex } = getTokenIndices(playerQuantities);
+  const { tokenInIndex, tokenOutIndex } = getTokenIndices(playerExtents);
 
   const { tokenOutQ, newTokenInPoolQ, newTokenOutPoolQ } = calculateSwap(
-    poolQuantities,
-    playerQuantities,
+    poolExtents,
+    playerExtents,
   );
 
-  const newPoolQuantities = [];
-  newPoolQuantities[tokenInIndex] = newTokenInPoolQ;
-  newPoolQuantities[tokenOutIndex] = newTokenOutPoolQ;
-  newPoolQuantities[2] = 0;
+  const newPoolExtents = [];
+  newPoolExtents[tokenInIndex] = newTokenInPoolQ;
+  newPoolExtents[tokenOutIndex] = newTokenOutPoolQ;
+  newPoolExtents[2] = 0;
 
-  const newPlayerQuantities = [];
-  newPlayerQuantities[tokenInIndex] = 0;
-  newPlayerQuantities[tokenOutIndex] = tokenOutQ;
-  newPlayerQuantities[2] = 0;
+  const newPlayerExtents = [];
+  newPlayerExtents[tokenInIndex] = 0;
+  newPlayerExtents[tokenOutIndex] = tokenOutQ;
+  newPlayerExtents[2] = 0;
 
-  return harden([newPoolQuantities, newPlayerQuantities]);
+  return harden([newPoolExtents, newPlayerExtents]);
 };
 
 const makeHandleOfferF = (zoeInstance, poolOfferId) => id => {
   const offerIds = harden([poolOfferId, id]);
   // reallocate and eject immediately
-  const oldQuantities = zoeInstance.getQuantitiesFor(offerIds);
-  const newQuantities = reallocate(oldQuantities);
+  const oldExtents = zoeInstance.getExtentsFor(offerIds);
+  const newExtents = reallocate(oldExtents);
   return harden({
     offerIds,
-    newQuantities,
+    newExtents,
   });
 };
 
 const makeIsValidOffer = (zoeInstance, poolOfferId) => newOffer => {
-  const poolQuantities = zoeInstance.getQuantitiesFor(harden([poolOfferId]))[0];
-  return hasOkRules(newOffer) && fulfillsWantAtLeast(poolQuantities, newOffer);
+  const poolExtents = zoeInstance.getExtentsFor(harden([poolOfferId]))[0];
+  return hasOkRules(newOffer) && fulfillsWantAtLeast(poolExtents, newOffer);
 };
 
 const makeMakeOfferMethod = (zoeInstance, poolOfferId) =>

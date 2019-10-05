@@ -12,7 +12,7 @@ import {
   sameStructure,
 } from '../util/sameStructure';
 import { makeInviteConfig } from './config/inviteConfig';
-import { makeMint } from './issuers';
+import { makeMint } from './mint';
 import makePromise from '../util/makePromise';
 
 /** Make a reusable host that can reliably install and execute contracts. */
@@ -25,18 +25,18 @@ function makeContractHost(E, evaluate) {
   const installationSources = makePrivateName();
 
   const inviteMint = makeMint('contract host', makeInviteConfig);
-  const inviteIssuer = inviteMint.getIssuer();
-  const inviteAssay = inviteIssuer.getAssay();
+  const inviteAssay = inviteMint.getAssay();
+  const inviteDescOps = inviteAssay.getDescOps();
 
   function redeem(allegedInvitePayment) {
-    const allegedInviteAmount = allegedInvitePayment.getBalance();
-    const inviteAmount = inviteAssay.coerce(allegedInviteAmount);
-    insist(!inviteAssay.isEmpty(inviteAmount))`\
+    const allegedInviteAssetDesc = allegedInvitePayment.getBalance();
+    const inviteAssetDesc = inviteDescOps.coerce(allegedInviteAssetDesc);
+    insist(!inviteDescOps.isEmpty(inviteAssetDesc))`\
 No invites left`;
-    const desc = inviteAssay.quantity(inviteAmount);
+    const desc = inviteDescOps.extent(inviteAssetDesc);
     const { seatIdentity } = desc;
     return Promise.resolve(
-      inviteIssuer.burnExactly(inviteAmount, allegedInvitePayment),
+      inviteAssay.burnExactly(inviteAssetDesc, allegedInvitePayment),
     ).then(_ => seats.get(seatIdentity));
   }
 
@@ -76,8 +76,8 @@ No invites left`;
 
   /** The contract host is designed to have a long-lived credible identity. */
   const contractHost = harden({
-    getInviteIssuer() {
-      return inviteIssuer;
+    getInviteAssay() {
+      return inviteAssay;
     },
     // contractSrcs is a record containing source code for the functions
     // comprising a contract. `spawn` evaluates the `start` function
@@ -120,13 +120,13 @@ No invites left`;
               });
               seats.init(seatIdentity, seat);
               seatDescriptions.init(seatIdentity, seatDescription);
-              const inviteAmount = inviteAssay.make(seatDescription);
+              const inviteAssetDesc = inviteDescOps.make(seatDescription);
               // This should be the only use of the invite mint, to
-              // make an invite purse whose quantity describes this
+              // make an invite purse whose extent describes this
               // seat. This invite purse makes the invite payment,
               // and then the invite purse is dropped, in the sense
               // that it becomes inaccessible.
-              const invitePurse = inviteMint.mint(inviteAmount, name);
+              const invitePurse = inviteMint.mint(inviteAssetDesc, name);
               return invitePurse.withdrawAll(name);
             },
             redeem,

@@ -9,23 +9,23 @@ import { insist } from '../../../util/insist';
  * independently. It *does* allow for returning a full refund plus
  * full winnings.
  *
- * @param  {strategy[]} strategies - an array of strategies ordered in
- * the same order as the corresponding issuers
+ * @param  {extentOps[]} extentOps - an array of extentOps ordered in
+ * the same order as the corresponding assays
  * @param  {offerDescElem[]} offerDesc - the offer description, an
- * array of objects that have a rule and amount, in the same order as
- * the corresponding issuers. The offer description is a player's
+ * array of objects that have a rule and assetDesc, in the same order as
+ * the corresponding assays. The offer description is a player's
  * understanding of the contract that they are entering when they make
  * an offer. OfferDescElements are structured in the form `{ rule:
- * descriptionString, amount}`
- * @param  {quantity[]} quantities - an array of quantities ordered in
- * the same order as the corresponding issuers. This array of quantities
+ * descriptionString, assetDesc}`
+ * @param  {extent[]} extents - an array of extents ordered in
+ * the same order as the corresponding assays. This array of extents
  * is the reallocation to be given to a player.
  */
-function isOfferSafeForPlayer(strategies, offerDesc, quantities) {
+function isOfferSafeForPlayer(extentOps, offerDesc, extents) {
   insist(
-    strategies.length === offerDesc.length &&
-      strategies.length === quantities.length,
-  )`strategies, the offer description, and quantities must be arrays of the same length`;
+    extentOps.length === offerDesc.length &&
+      extentOps.length === extents.length,
+  )`extentOps, the offer description, and extents must be arrays of the same length`;
 
   const allowedRules = [
     'offerExactly',
@@ -34,7 +34,7 @@ function isOfferSafeForPlayer(strategies, offerDesc, quantities) {
     'wantAtLeast',
   ];
 
-  // If we are refunding the player, are their allocated amounts
+  // If we are refunding the player, are their allocated assetDescs
   // greater than or equal to what they said they had at the beginning?
   const refundOk = offerDesc.every((offerDescElem, i) => {
     if (offerDescElem === null || offerDescElem === undefined) {
@@ -46,21 +46,18 @@ function isOfferSafeForPlayer(strategies, offerDesc, quantities) {
     // If the rule was 'offerExactly', we should make sure that the
     // user gets it back exactly in a refund. If the rule is
     // 'offerAtMost' we need to ensure that the user gets back the
-    // amount or greater. If the rule is something else, anything
+    // assetDesc or greater. If the rule is something else, anything
     // we give back is fine.
     if (offerDescElem.rule === 'offerExactly') {
-      return strategies[i].equals(quantities[i], offerDescElem.amount.quantity);
+      return extentOps[i].equals(extents[i], offerDescElem.assetDesc.extent);
     }
     if (offerDesc.rule === 'offerAtMost') {
-      return strategies[i].includes(
-        quantities[i],
-        offerDescElem.amount.quantity,
-      );
+      return extentOps[i].includes(extents[i], offerDescElem.assetDesc.extent);
     }
     return true;
   }, true);
 
-  // If we are not refunding the player, are their allocated amounts
+  // If we are not refunding the player, are their allocated assetDescs
   // greater than or equal to what they said they wanted at the beginning?
   const winningsOk = offerDesc.every((offerDescElem, i) => {
     if (offerDescElem === null || offerDescElem === undefined) {
@@ -70,18 +67,15 @@ function isOfferSafeForPlayer(strategies, offerDesc, quantities) {
       allowedRules.includes(offerDescElem.rule),
     )`The rule ${offerDescElem.rule} was not recognized`;
     // If the rule was 'wantExactly', we should make sure that the
-    // user gets exactly the amount specified in their winnings. If
+    // user gets exactly the assetDesc specified in their winnings. If
     // the rule is 'wantAtLeast', we need to ensure that the user
-    // gets back winnings that are equal or greater to the amount.
+    // gets back winnings that are equal or greater to the assetDesc.
     // If the rule is something else, anything we give back is fine.
     if (offerDescElem.rule === 'wantExactly') {
-      return strategies[i].equals(quantities[i], offerDescElem.amount.quantity);
+      return extentOps[i].equals(extents[i], offerDescElem.assetDesc.extent);
     }
     if (offerDescElem.rule === 'wantAtLeast') {
-      return strategies[i].includes(
-        quantities[i],
-        offerDescElem.amount.quantity,
-      );
+      return extentOps[i].includes(extents[i], offerDescElem.assetDesc.extent);
     }
     return true;
   }, true);
@@ -89,19 +83,19 @@ function isOfferSafeForPlayer(strategies, offerDesc, quantities) {
   return refundOk || winningsOk;
 }
 /**
- * @param  {strategy[]} strategies - an array of strategies ordered in
- * the same order as the corresponding issuers
+ * @param  {extentOps[]} extentOps - an array of extentOps ordered in
+ * the same order as the corresponding assays
  * @param  {offerDesc[][]} offerDescMatrix - an array of arrays. Each of the
  * element arrays is the offer description that a single player
- * made, in the same order as the corresponding issuers.
- * @param  {quantity[][]} quantityMatrix - an array of arrays. Each of the
- * element arrays is the array of quantities that a single player will
- * get, in the same order as the corresponding issuers.
+ * made, in the same order as the corresponding assays.
+ * @param  {extent[][]} extentMatrix - an array of arrays. Each of the
+ * element arrays is the array of extents that a single player will
+ * get, in the same order as the corresponding assays.
  */
-const isOfferSafeForAll = (strategies, offerDescMatrix, quantitiesMatrix) =>
+const isOfferSafeForAll = (extentOps, offerDescMatrix, extentsMatrix) =>
   offerDescMatrix.every(
     (offerDesc, i) =>
-      isOfferSafeForPlayer(strategies, offerDesc, quantitiesMatrix[i]),
+      isOfferSafeForPlayer(extentOps, offerDesc, extentsMatrix[i]),
     true,
   );
 

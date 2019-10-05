@@ -17,7 +17,7 @@ const makeSimpleOfferMaker = srcs => (zoe, instanceId) => {
       // Eject if the offer is invalid
       if (
         !srcs.isValidOffer(
-          zoe.getStrategies(instanceId),
+          zoe.getExtentOps(instanceId),
           offerIds,
           offerIdsToOfferDescs,
           offerMadeDesc,
@@ -34,13 +34,13 @@ const makeSimpleOfferMaker = srcs => (zoe, instanceId) => {
 
       // Check if we can reallocate and reallocate.
       if (srcs.canReallocate(offerIds, offerIdsToOfferDescs)) {
-        const { reallocOfferIds, reallocQuantities } = srcs.reallocate(
-          zoe.getStrategies(instanceId),
+        const { reallocOfferIds, reallocExtents } = srcs.reallocate(
+          zoe.getExtentOps(instanceId),
           offerIds,
           offerIdsToOfferDescs,
-          zoe.getQuantitiesFor,
+          zoe.getExtentsFor,
         );
-        zoe.reallocate(instanceId, reallocOfferIds, reallocQuantities);
+        zoe.reallocate(instanceId, reallocOfferIds, reallocExtents);
         zoe.complete(instanceId, offerIds);
       }
 

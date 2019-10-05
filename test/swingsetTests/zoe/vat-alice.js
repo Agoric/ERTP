@@ -3,8 +3,8 @@ import harden from '@agoric/harden';
 const makeAliceMaker = async (E, log, zoe) => {
   const showPaymentBalance = async (paymentP, name) => {
     try {
-      const amount = await E(paymentP).getBalance();
-      log(name, ': balance ', amount);
+      const assetDesc = await E(paymentP).getBalance();
+      log(name, ': balance ', assetDesc);
     } catch (err) {
       console.error(err);
     }
@@ -17,24 +17,24 @@ const makeAliceMaker = async (E, log, zoe) => {
           log(`=> alice.doCreateAutomaticRefund called`);
           // 1: Alice creates the automaticRefund instance
 
-          const moolaIssuer = await E(moolaPurse).getIssuer();
-          const simoleanIssuer = await E(simoleanPurse).getIssuer();
+          const moolaAssay = await E(moolaPurse).getAssay();
+          const simoleanAssay = await E(simoleanPurse).getAssay();
 
-          const issuers = [moolaIssuer, simoleanIssuer];
+          const assays = [moolaAssay, simoleanAssay];
 
           const { instance: automaticRefund, instanceId } = await E(
             zoe,
-          ).makeInstance('automaticRefund', issuers);
+          ).makeInstance('automaticRefund', assays);
 
           // 2: Alice escrows with Zoe
           const offerDesc = harden([
             {
               rule: 'offerExactly',
-              amount: await E(issuers[0]).makeAmount(3),
+              assetDesc: await E(assays[0]).makeAssetDesc(3),
             },
             {
               rule: 'wantExactly',
-              amount: await E(issuers[1]).makeAmount(7),
+              assetDesc: await E(assays[1]).makeAssetDesc(7),
             },
           ]);
 

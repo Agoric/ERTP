@@ -21,7 +21,7 @@ Alice can create an auction by doing:
 ```js
 const { instance: aliceAuction, instanceId } = await zoe.makeInstance(
   'secondPriceAuction3Bids',
-  issuers,
+  assays,
 );
 ```
 
@@ -32,11 +32,11 @@ calling `makeOffer` on the auction instance with her escrow receipt.
 const aliceOfferDesc = harden([
   {
     rule: 'offerExactly',
-    amount: moolaIssuer.makeAmount(1),
+    assetDesc: moolaAssay.makeAssetDesc(1),
   },
   {
     rule: 'wantAtLeast',
-    amount: simoleanIssuer.makeAmount(3),
+    assetDesc: simoleanAssay.makeAssetDesc(3),
   },
 ]);
 const alicePayments = [aliceMoolaPayment, undefined];
@@ -49,7 +49,7 @@ const aliceOfferResult = await aliceAuction.makeOffer(aliceEscrowReceipt);
 ```
 
 Note that in this implementation, the item that will be auctioned is
-described at index 0, and Alice's minimum bid amount is at index 1 in
+described at index 0, and Alice's minimum bid assetDesc is at index 1 in
 the offer description. 
 
 Now Alice can spread her auction `instanceId` far and wide and see if
@@ -67,8 +67,8 @@ implementation, Alice will have to tell Bob out of band what the
 minimum bid in simoleans is.)
 
 ```js
-const bobIssuers = zoe.getIssuersForInstance(instanceId);
-t.deepEquals(bobIssuers, issuers);
+const bobAssays = zoe.getAssaysForInstance(instanceId);
+t.deepEquals(bobAssays, assays);
 ```
 
 Bob decides to join the contract and
@@ -78,11 +78,11 @@ makes an offer:
 const bobOfferDesc = harden([
   {
     rule: 'wantExactly',
-    amount: moolaIssuer.makeAmount(1),
+    assetDesc: moolaAssay.makeAssetDesc(1),
   },
   {
     rule: 'offerAtMost',
-    amount: simoleanIssuer.makeAmount(11),
+    assetDesc: simoleanAssay.makeAssetDesc(11),
   },
 ]);
 const bobPayments = [undefined, bobSimoleanPayment];

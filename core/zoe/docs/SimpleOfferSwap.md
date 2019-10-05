@@ -19,7 +19,7 @@ counter-party for. She creates a swap instance:
 ```js
 const { instance: aliceSwap, instanceId } = await zoe.makeInstance(
   'simpleOfferSwap',
-  issuers,
+  assays,
 );
 ```
 
@@ -30,11 +30,11 @@ and a claimPayoff ERTP payment from which she can get her payoff:
 const aliceOfferDesc = harden([
   {
     rule: 'offerExactly',
-    amount: moolaIssuer.makeAmount(3),
+    assetDesc: moolaAssay.makeAssetDesc(3),
   },
   {
     rule: 'wantExactly',
-    amount: simoleanIssuer.makeAmount(7),
+    assetDesc: simoleanAssay.makeAssetDesc(7),
   },
 ]);
 const alicePayments = [aliceMoolaPayment, undefined];
@@ -60,8 +60,8 @@ matches Alice's claims.
 ```js
 const { instance: bobSwap, libraryName } = zoe.getInstance(instanceId);
 t.equals(libraryName, 'simpleOfferSwap');
-const bobIssuers = zoe.getIssuersForInstance(instanceId);
-t.deepEquals(bobIssuers, issuers);
+const bobAssays = zoe.getAssaysForInstance(instanceId);
+t.deepEquals(bobAssays, assays);
 ```
 
 Bob decides to be the counter-party. He also escrows his payment and
@@ -72,11 +72,11 @@ the opposite of Alice's:
 const bobOfferDesc = harden([
   {
     rule: 'wantExactly',
-    amount: bobIssuers[0].makeAmount(3),
+    assetDesc: bobAssays[0].makeAssetDesc(3),
   },
   {
     rule: 'offerExactly',
-    amount: bobIssuers[1].makeAmount(7),
+    assetDesc: bobAssays[1].makeAssetDesc(7),
   },
 ]);
 const bobPayments = [undefined, bobSimoleanPayment];

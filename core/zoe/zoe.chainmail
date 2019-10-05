@@ -13,43 +13,43 @@ struct EscrowReceiptAndClaimPayoff ( ) {
 /**
  * Zoe is a long-lived and well-trusted contract that enforces
  * offer-safety for the contracts that use it. Zoe has a single
- * `seatIssuer` and a single `escrowReceiptIssuer` for the entirety of its
- * lifetime. By having a reference to Zoe, a user can get the `seatIssuer`
- * or `escrowReceiptIssuer` and thus validate any `seat` or `escrowReceipt`
+ * `seatAssay` and a single `escrowReceiptAssay` for the entirety of its
+ * lifetime. By having a reference to Zoe, a user can get the `seatAssay`
+ * or `escrowReceiptAssay` and thus validate any `seat` or `escrowReceipt`
  * they receive from someone else. 
  */
 
 interface Zoe {
 
   /**
-   * Get the long-lived seatIssuer. The mint associated with the
-   * seatIssuer creates the ERTP payments that represent the right to
+   * Get the long-lived seatAssay. The mint associated with the
+   * seatAssay creates the ERTP payments that represent the right to
    * claim the payoffs of involvement in a contract.
    */
-  getSeatIssuer() -> (Issuer);
+  getSeatAssay() -> (Assay);
 
   /**
-   * Get the long-lived escrowReceiptIssuer. The mint associated
-   * with the escrowReceiptIssuer creates the ERTP payments that
+   * Get the long-lived escrowReceiptAssay. The mint associated
+   * with the escrowReceiptAssay creates the ERTP payments that
    * represent proof of escrow and may be passed into a
    * governingContract method.
    */
-  getEscrowReceiptIssuer() -> (Issuer);
+  getEscrowReceiptAssay() -> (Assay);
 
   /**
-   * Returns the array of issuers for the particular instance. This is 
+   * Returns the array of assays for the particular instance. This is 
    * helpful in the case that the user has forgotten the order.
    */
-  getIssuersForInstance() -> (List(Issuer));
+  getAssaysForInstance() -> (List(Assay));
 
   /** 
    * Zoe is long-lived. We can use Zoe to create governing contract
    * instances by specifying by name a particular governing contract 
-   * library to install, as well as the array of issuers for that 
+   * library to install, as well as the array of assays for that 
    * particular instance. We get back an instance, an id for that 
    * instance, and the name of the library.
    */
-  makeInstance(libraryName :Text, issuers :List(Issuer)) -> (InstanceInformation);
+  makeInstance(libraryName :Text, assays :List(Assay)) -> (InstanceInformation);
   
   /**
    * Credibly get the instance from the instanceId.
@@ -58,14 +58,14 @@ interface Zoe {
 
   /** 
    * To escrow, the user must provide an `offerDesc` which is a list of
-   * objects with a rule property (such as 'offerExactly') and an amount
+   * objects with a rule property (such as 'offerExactly') and an assetDesc
    * property. The objects in the `offerDesc` must be in the same order
-   * as the issuers associated with a governing contract. That is, the
-   * amount in index 0 of `offerDesc` should be an amount for the issuer
-   * in index 0 of the issuers array.`payments` is an array of the
+   * as the assays associated with a governing contract. That is, the
+   * assetDesc in index 0 of `offerDesc` should be an assetDesc for the assay
+   * in index 0 of the assays array.`payments` is an array of the
    * actual payments to be escrowed, following the rules in the
    * offerDesc. If the offerDesc rule is 'offerExactly' or 'offerAtMost',
-   * then a payment matching the amount is expected. If the offerDesc
+   * then a payment matching the assetDesc is expected. If the offerDesc
    * rule is 'wantAtLeast' or 'wantExactly' then the payment will be
    * ignored and should be `undefined`.
    */
@@ -79,7 +79,7 @@ interface Zoe {
  */
 struct OfferDescElement ( ) {
   rule :Rule;
-  amount :Amount;
+  assetDesc :AssetDesc;
 }
 
 interface ZoeGoverningContractFacet () {
@@ -87,11 +87,11 @@ interface ZoeGoverningContractFacet () {
   /** 
    * Instruct Zoe to try reallocating for the given offerIds.
    * Reallocation is a matrix (array of arrays) where the rows are the
-   * quantities to be paid to the player who made the offer at the same
+   * extents to be paid to the player who made the offer at the same
    * index in the offerIds array. The reallocation will only happen if
    * 'offer safety' and conservation of rights are true, as enforced by Zoe.
    */
-  reallocate (instanceId :Object, offerIds :List(Object), reallocation :List(List(Quantity)));
+  reallocate (instanceId :Object, offerIds :List(Object), reallocation :List(List(Extent)));
 
   /** 
    * Eject the offer, taking the current allocation for that offer and
@@ -117,24 +117,24 @@ interface ZoeGoverningContractFacet () {
   escrowOffer (offerDesc :List(OfferDescElem), offerPayments :List(Payment)) -> (offerId);
 
   /** Burn and validate an escrowReceipt received from the user. */
-  burnEscrowReceipt (instanceId :Object, escrowReceipt :Payment) -> (Quantity);
+  burnEscrowReceipt (instanceId :Object, escrowReceipt :Payment) -> (Extent);
 
   ////// The methods below are pure and have no side-effects. ////////
 
   /**
-   * Create an array of empty quantities per issuer. Note that if the 
+   * Create an array of empty extents per assay. Note that if the 
    * mint is not a basic fungible mint, this may be something other than 0. 
    */
-  makeEmptyQuantities ( ) -> (List(Quantity));
+  makeEmptyExtents ( ) -> (List(Extent));
 
-  /** Get the array of strategies, the logic from the assays */
-  getStrategies (instanceId :Object) -> (List(Strategy));
+  /** Get the array of extentOps, the logic from the descOps */
+  getExtentOps (instanceId :Object) -> (List(ExtentOps));
 
   /** 
    * Pass in an array of offerIds and get a matrix (array of arrays)
-   * containing the quantities, in the same order as the offerIds array.
+   * containing the extents, in the same order as the offerIds array.
    */
-  getQuantitiesFor (offerIds :List(Object)) -> (List(List(Quantity)));
+  getExtentsFor (offerIds :List(Object)) -> (List(List(Extent)));
 
   /** 
    * Pass in an array of offerIds and get a matrix (array of arrays)
@@ -143,9 +143,9 @@ interface ZoeGoverningContractFacet () {
    */
   getOfferDescsFor (offerIds :List(Object)) -> (List(OfferDesc));
 
-  /** Get the Zoe seatIssuer */
-  getSeatIssuer ( ) -> (Issuer);
+  /** Get the Zoe seatAssay */
+  getSeatAssay ( ) -> (Assay);
 
-  /** Get the Zoe escrowReceiptIssuer */
-  getEscrowReceiptIssuer ( ) -> (Issuer);
+  /** Get the Zoe escrowReceiptAssay */
+  getEscrowReceiptAssay ( ) -> (Assay);
 }

@@ -4,10 +4,10 @@ import {
   transpose,
   mapArrayOnMatrix,
   offerEqual,
-  toAmountMatrix,
-  makeEmptyQuantities,
+  toAssetDescMatrix,
+  makeEmptyExtents,
   vectorWith,
-  makeAmount,
+  makeAssetDesc,
   makeOfferDesc,
 } from '../../../../core/zoe/contractUtils';
 import { setup } from './setupBasicMints';
@@ -37,13 +37,13 @@ test('mapArrayOnMatrix', t => {
   }
 });
 
-test('toAmountMatrix', t => {
+test('toAssetDescMatrix', t => {
   try {
-    const { strategies, labels, assays } = setup();
+    const { extentOps, labels, descOps } = setup();
     const matrix = [[1, 2, 3], [4, 5, 6]];
-    t.deepEquals(toAmountMatrix(strategies, labels, matrix), [
-      [assays[0].make(1), assays[1].make(2), assays[2].make(3)],
-      [assays[0].make(4), assays[1].make(5), assays[2].make(6)],
+    t.deepEquals(toAssetDescMatrix(extentOps, labels, matrix), [
+      [descOps[0].make(1), descOps[1].make(2), descOps[2].make(3)],
+      [descOps[0].make(4), descOps[1].make(5), descOps[2].make(6)],
     ]);
   } catch (e) {
     t.assert(false, e);
@@ -52,10 +52,10 @@ test('toAmountMatrix', t => {
   }
 });
 
-test('makeEmptyQuantities', t => {
+test('makeEmptyExtents', t => {
   try {
-    const { strategies } = setup();
-    t.deepEquals(makeEmptyQuantities(strategies), [0, 0, 0]);
+    const { extentOps } = setup();
+    t.deepEquals(makeEmptyExtents(extentOps), [0, 0, 0]);
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -64,23 +64,23 @@ test('makeEmptyQuantities', t => {
 });
 
 test('offerEqual - offers are equal', t => {
-  const { issuers, strategies } = setup();
+  const { assays, extentOps } = setup();
   try {
     const offer1 = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
-    t.ok(offerEqual(strategies, offer1, offer1));
+    t.ok(offerEqual(extentOps, offer1, offer1));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -88,38 +88,38 @@ test('offerEqual - offers are equal', t => {
   }
 });
 
-test('offerEqual - throws bc offers have different issuers', t => {
-  const { issuers, strategies } = setup();
+test('offerEqual - throws bc offers have different assays', t => {
+  const { assays, extentOps } = setup();
   try {
     const offer1 = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     const offer2 = [
       {
         rule: 'offerExactly',
-        amount: issuers[1].makeAmount(3),
+        assetDesc: assays[1].makeAssetDesc(3),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[0].makeAmount(7),
+        assetDesc: assays[0].makeAssetDesc(7),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
-    t.notOk(offerEqual(strategies, offer1, offer2));
+    t.notOk(offerEqual(extentOps, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -127,38 +127,38 @@ test('offerEqual - throws bc offers have different issuers', t => {
   }
 });
 
-test('offerEqual - returns false bc different quantity', t => {
-  const { issuers, strategies } = setup();
+test('offerEqual - returns false bc different extent', t => {
+  const { assays, extentOps } = setup();
   try {
     const offer1 = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     const offer2 = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(4),
+        assetDesc: assays[0].makeAssetDesc(4),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
-    t.notOk(offerEqual(strategies, offer1, offer2));
+    t.notOk(offerEqual(extentOps, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -167,37 +167,37 @@ test('offerEqual - returns false bc different quantity', t => {
 });
 
 test('offerEqual - returns false bc different rule', t => {
-  const { issuers, strategies } = setup();
+  const { assays, extentOps } = setup();
   try {
     const offer1 = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     const offer2 = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'offerExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
-    t.notOk(offerEqual(strategies, offer1, offer2));
+    t.notOk(offerEqual(extentOps, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -206,37 +206,37 @@ test('offerEqual - returns false bc different rule', t => {
 });
 
 test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
-  const { issuers, strategies } = setup();
+  const { assays, extentOps } = setup();
   try {
     const offer1 = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     const offer2 = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(3),
+        assetDesc: assays[0].makeAssetDesc(3),
       },
       {
         rule: 'wantExactly',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
       {
         rule: 'wantAtLeast',
-        amount: issuers[2].makeAmount(7),
+        assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
-    t.notOk(offerEqual(strategies, offer1, offer2));
+    t.notOk(offerEqual(extentOps, offer1, offer2));
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -246,14 +246,10 @@ test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
 
 test('vectorWith', t => {
   try {
-    const { strategies } = setup();
-    const leftQuantities = [4, 5, 6];
-    const rightQuantities = [3, 5, 10];
-    t.deepEquals(vectorWith(strategies, leftQuantities, rightQuantities), [
-      7,
-      10,
-      16,
-    ]);
+    const { extentOps } = setup();
+    const leftExtents = [4, 5, 6];
+    const rightExtents = [3, 5, 10];
+    t.deepEquals(vectorWith(extentOps, leftExtents, rightExtents), [7, 10, 16]);
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -261,13 +257,13 @@ test('vectorWith', t => {
   }
 });
 
-test('makeAmount', t => {
+test('makeAssetDesc', t => {
   try {
-    const { strategies, labels, issuers, mints } = setup();
-    const amount = makeAmount(strategies[0], labels[0], 10);
-    t.deepEquals(amount, issuers[0].makeAmount(10));
-    const purse = mints[0].mint(amount);
-    t.deepEquals(purse.getBalance(), amount);
+    const { extentOps, labels, assays, mints } = setup();
+    const assetDesc = makeAssetDesc(extentOps[0], labels[0], 10);
+    t.deepEquals(assetDesc, assays[0].makeAssetDesc(10));
+    const purse = mints[0].mint(assetDesc);
+    t.deepEquals(purse.getBalance(), assetDesc);
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -277,28 +273,23 @@ test('makeAmount', t => {
 
 test('makeOfferDesc', t => {
   try {
-    const { strategies, labels, issuers } = setup();
+    const { extentOps, labels, assays } = setup();
     const rules = ['offerExactly', 'offerAtMost', 'wantAtLeast'];
-    const quantities = [4, 6, 2];
-    const actualOfferDesc = makeOfferDesc(
-      strategies,
-      labels,
-      rules,
-      quantities,
-    );
+    const extents = [4, 6, 2];
+    const actualOfferDesc = makeOfferDesc(extentOps, labels, rules, extents);
 
     const expectedOfferDesc = [
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(4),
+        assetDesc: assays[0].makeAssetDesc(4),
       },
       {
         rule: 'offerAtMost',
-        amount: issuers[1].makeAmount(6),
+        assetDesc: assays[1].makeAssetDesc(6),
       },
       {
         rule: 'wantAtLeast',
-        amount: issuers[2].makeAmount(2),
+        assetDesc: assays[2].makeAssetDesc(2),
       },
     ];
     t.deepEquals(actualOfferDesc, expectedOfferDesc);

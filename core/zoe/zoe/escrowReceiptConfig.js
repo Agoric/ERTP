@@ -8,7 +8,7 @@ function makeEscrowReceiptConfig() {
   return harden({
     ...noCustomization,
     makeMintKeeper: makeCoreMintKeeper,
-    strategyName: 'seatStrategy',
+    extentOpsName: 'seatExtentOps',
   });
 }
 

@@ -6,47 +6,47 @@ import { setup } from '../setupBasicMints';
 
 test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
   try {
-    const { issuers: originalIssuers, mints, assays } = setup();
-    const issuers = originalIssuers.slice(0, 2);
+    const { assays: originalAssays, mints, descOps } = setup();
+    const assays = originalAssays.slice(0, 2);
     const zoe = await makeZoe();
-    const escrowReceiptIssuer = zoe.getEscrowReceiptIssuer();
+    const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
 
     // Setup Alice
-    const aliceMoolaPurse = mints[0].mint(issuers[0].makeAmount(1));
+    const aliceMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(1));
     const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
-    const aliceSimoleanPurse = mints[1].mint(issuers[1].makeAmount(0));
+    const aliceSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(0));
 
     // Setup Bob
-    const bobMoolaPurse = mints[0].mint(issuers[0].makeAmount(0));
-    const bobSimoleanPurse = mints[1].mint(issuers[1].makeAmount(11));
+    const bobMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(0));
+    const bobSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(11));
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // Setup Carol
-    const carolMoolaPurse = mints[0].mint(issuers[0].makeAmount(0));
-    const carolSimoleanPurse = mints[1].mint(issuers[1].makeAmount(7));
+    const carolMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(0));
+    const carolSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(7));
     const carolSimoleanPayment = carolSimoleanPurse.withdrawAll();
 
     // Setup Dave
-    const daveMoolaPurse = mints[0].mint(issuers[0].makeAmount(0));
-    const daveSimoleanPurse = mints[1].mint(issuers[1].makeAmount(5));
+    const daveMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(0));
+    const daveSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(5));
     const daveSimoleanPayment = daveSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a secondPriceAuction instance
 
     const { instance: aliceAuction, instanceId } = await zoe.makeInstance(
       'secondPriceAuction3Bids',
-      issuers,
+      assays,
     );
 
     // 2: Alice escrows with zoe
     const aliceOfferDesc = harden([
       {
         rule: 'offerExactly',
-        amount: issuers[0].makeAmount(1),
+        assetDesc: assays[0].makeAssetDesc(1),
       },
       {
         rule: 'wantAtLeast',
-        amount: issuers[1].makeAmount(3),
+        assetDesc: assays[1].makeAssetDesc(3),
       },
     ]);
     const alicePayments = [aliceMoolaPayment, undefined];
@@ -57,7 +57,7 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
 
     // 3: Alice does a claimAll on the escrowReceipt payment. It's
     // unnecessary if she trusts Zoe but we will do it for the tests.
-    const aliceEscrowReceipt = await escrowReceiptIssuer.claimAll(
+    const aliceEscrowReceipt = await escrowReceiptAssay.claimAll(
       allegedAliceEscrowReceipt,
     );
 
@@ -75,19 +75,19 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
     const { instance: bobAuction, libraryName } = zoe.getInstance(instanceId);
     t.equals(libraryName, 'secondPriceAuction3Bids');
 
-    // bob wants to know what issuers this contract is about and in
+    // bob wants to know what assays this contract is about and in
     // what order. Is it what he expects?
-    const bobIssuers = zoe.getIssuersForInstance(instanceId);
-    t.deepEquals(bobIssuers, issuers);
+    const bobAssays = zoe.getAssaysForInstance(instanceId);
+    t.deepEquals(bobAssays, assays);
 
     const bobOfferDesc = harden([
       {
         rule: 'wantExactly',
-        amount: issuers[0].makeAmount(1),
+        assetDesc: assays[0].makeAssetDesc(1),
       },
       {
         rule: 'offerAtMost',
-        amount: issuers[1].makeAmount(11),
+        assetDesc: assays[1].makeAssetDesc(11),
       },
     ]);
     const bobPayments = [undefined, bobSimoleanPayment];
@@ -100,7 +100,7 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
 
     // 7: Bob does a claimAll on the escrowReceipt payment. This is
     // unnecessary but we will do it anyways for the test
-    const bobEscrowReceipt = await escrowReceiptIssuer.claimAll(
+    const bobEscrowReceipt = await escrowReceiptAssay.claimAll(
       allegedBobEscrowReceipt,
     );
 
@@ -121,11 +121,11 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
     const carolOfferDesc = harden([
       {
         rule: 'wantExactly',
-        amount: issuers[0].makeAmount(1),
+        assetDesc: assays[0].makeAssetDesc(1),
       },
       {
         rule: 'offerAtMost',
-        amount: issuers[1].makeAmount(7),
+        assetDesc: assays[1].makeAssetDesc(7),
       },
     ]);
     const carolPayments = [undefined, carolSimoleanPayment];
@@ -153,11 +153,11 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
     const daveOfferDesc = harden([
       {
         rule: 'wantExactly',
-        amount: issuers[0].makeAmount(1),
+        assetDesc: assays[0].makeAssetDesc(1),
       },
       {
         rule: 'offerAtMost',
-        amount: issuers[1].makeAmount(5),
+        assetDesc: assays[1].makeAssetDesc(5),
       },
     ]);
     const davePayments = [undefined, daveSimoleanPayment];
@@ -201,10 +201,10 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
     const daveResult = await daveSeat.getPayoff();
 
     // Alice (the creator of the auction) gets back the second highest bid
-    t.deepEquals(aliceResult[1].getBalance(), carolOfferDesc[1].amount);
+    t.deepEquals(aliceResult[1].getBalance(), carolOfferDesc[1].assetDesc);
 
     // Alice didn't get any of what she put in
-    t.equals(aliceResult[0].getBalance().quantity, 0);
+    t.equals(aliceResult[0].getBalance().extent, 0);
 
     // 23: Alice deposits her winnings to ensure she can
     await aliceMoolaPurse.depositAll(aliceResult[0]);
@@ -212,24 +212,24 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
 
     // Bob (the winner of the auction) gets the one moola and the
     // difference between his bid and the price back
-    t.deepEquals(bobResult[0].getBalance(), assays[0].make(1));
-    t.deepEquals(bobResult[1].getBalance(), assays[1].make(4));
+    t.deepEquals(bobResult[0].getBalance(), descOps[0].make(1));
+    t.deepEquals(bobResult[1].getBalance(), descOps[1].make(4));
 
     // 24: Bob deposits his winnings to ensure he can
     await bobMoolaPurse.depositAll(bobResult[0]);
     await bobSimoleanPurse.depositAll(bobResult[1]);
 
     // Carol gets a full refund
-    t.deepEquals(carolResult[0].getBalance(), assays[0].make(0));
-    t.deepEquals(carolResult[1].getBalance(), carolOfferDesc[1].amount);
+    t.deepEquals(carolResult[0].getBalance(), descOps[0].make(0));
+    t.deepEquals(carolResult[1].getBalance(), carolOfferDesc[1].assetDesc);
 
     // 25: Carol deposits her winnings to ensure she can
     await carolMoolaPurse.depositAll(carolResult[0]);
     await carolSimoleanPurse.depositAll(carolResult[1]);
 
     // Dave gets a full refund
-    t.deepEquals(daveResult[0].getBalance(), assays[0].make(0));
-    t.deepEquals(daveResult[1].getBalance(), daveOfferDesc[1].amount);
+    t.deepEquals(daveResult[0].getBalance(), descOps[0].make(0));
+    t.deepEquals(daveResult[1].getBalance(), daveOfferDesc[1].assetDesc);
 
     // 24: Dave deposits his winnings to ensure he can
     await daveMoolaPurse.depositAll(daveResult[0]);
@@ -246,14 +246,14 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
     // Bob: 1 moola and 4 simoleans
     // Carol: 0 moola and 7 simoleans
     // Dave: 0 moola and 5 simoleans
-    t.equals(aliceMoolaPurse.getBalance().quantity, 0);
-    t.equals(aliceSimoleanPurse.getBalance().quantity, 7);
-    t.equals(bobMoolaPurse.getBalance().quantity, 1);
-    t.equals(bobSimoleanPurse.getBalance().quantity, 4);
-    t.equals(carolMoolaPurse.getBalance().quantity, 0);
-    t.equals(carolSimoleanPurse.getBalance().quantity, 7);
-    t.equals(daveMoolaPurse.getBalance().quantity, 0);
-    t.equals(daveSimoleanPurse.getBalance().quantity, 5);
+    t.equals(aliceMoolaPurse.getBalance().extent, 0);
+    t.equals(aliceSimoleanPurse.getBalance().extent, 7);
+    t.equals(bobMoolaPurse.getBalance().extent, 1);
+    t.equals(bobSimoleanPurse.getBalance().extent, 4);
+    t.equals(carolMoolaPurse.getBalance().extent, 0);
+    t.equals(carolSimoleanPurse.getBalance().extent, 7);
+    t.equals(daveMoolaPurse.getBalance().extent, 0);
+    t.equals(daveSimoleanPurse.getBalance().extent, 5);
   } catch (e) {
     t.assert(false, e);
     console.log(e);

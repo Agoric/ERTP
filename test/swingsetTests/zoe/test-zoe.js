@@ -20,12 +20,12 @@ const expectedAutomaticRefundOkLog = [
   '=> automaticRefundOk called',
   '=> alice and bob are setup',
   '=> alice.doCreateAutomaticRefund called',
-  '[{"rule":"offerExactly","amount":{"label":{"issuer":{},"description":"moola"},"quantity":3}},{"rule":"wantExactly","amount":{"label":{"issuer":{},"description":"simoleans"},"quantity":7}}]',
-  '[{"rule":"wantExactly","amount":{"label":{"issuer":{},"description":"moola"},"quantity":15}},{"rule":"offerExactly","amount":{"label":{"issuer":{},"description":"simoleans"},"quantity":17}}]',
-  'bobMoolaPurse: balance {"label":{"issuer":{},"description":"moola"},"quantity":0}',
-  'bobSimoleanPurse;: balance {"label":{"issuer":{},"description":"simoleans"},"quantity":17}',
-  'aliceMoolaPurse: balance {"label":{"issuer":{},"description":"moola"},"quantity":3}',
-  'aliceSimoleanPurse;: balance {"label":{"issuer":{},"description":"simoleans"},"quantity":0}',
+  '[{"rule":"offerExactly","assetDesc":{"label":{"assay":{},"description":"moola"},"extent":3}},{"rule":"wantExactly","assetDesc":{"label":{"assay":{},"description":"simoleans"},"extent":7}}]',
+  '[{"rule":"wantExactly","assetDesc":{"label":{"assay":{},"description":"moola"},"extent":15}},{"rule":"offerExactly","assetDesc":{"label":{"assay":{},"description":"simoleans"},"extent":17}}]',
+  'bobMoolaPurse: balance {"label":{"assay":{},"description":"moola"},"extent":0}',
+  'bobSimoleanPurse;: balance {"label":{"assay":{},"description":"simoleans"},"extent":17}',
+  'aliceMoolaPurse: balance {"label":{"assay":{},"description":"moola"},"extent":3}',
+  'aliceSimoleanPurse;: balance {"label":{"assay":{},"description":"simoleans"},"extent":0}',
 ];
 
 test('zoe - automaticRefund - valid inputs - with SES', async t => {

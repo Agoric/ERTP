@@ -9,21 +9,21 @@ const makeSecondOffer = firstOffer =>
   harden([
     {
       rule: firstOffer[1].rule,
-      amount: firstOffer[0].amount,
+      assetDesc: firstOffer[0].assetDesc,
     },
     {
       rule: firstOffer[0].rule,
-      amount: firstOffer[1].amount,
+      assetDesc: firstOffer[1].assetDesc,
     },
   ]);
 
 const isValidFirstOfferDesc = newOfferDesc =>
   hasOkRulesOfferFirst(newOfferDesc) || hasOkRulesWantFirst(newOfferDesc);
-const isValidSecondOfferDesc = (strategies, firstOffer, newOfferDesc) =>
-  offerEqual(strategies, makeSecondOffer(firstOffer), newOfferDesc);
+const isValidSecondOfferDesc = (extentOps, firstOffer, newOfferDesc) =>
+  offerEqual(extentOps, makeSecondOffer(firstOffer), newOfferDesc);
 
 const isValidOffer = (
-  strategies,
+  extentOps,
   offerIds,
   offerIdsToOfferDescs,
   offerMadeDesc,
@@ -34,7 +34,7 @@ const isValidOffer = (
     (isFirstOffer && isValidFirstOfferDesc(offerMadeDesc)) ||
     (isSecondOffer &&
       isValidSecondOfferDesc(
-        strategies,
+        extentOps,
         offerIdsToOfferDescs.get(offerIds[0]),
         offerMadeDesc,
       ))
@@ -44,17 +44,12 @@ const isValidOffer = (
 const swapSrcs = harden({
   isValidOffer,
   canReallocate: (offerIds, _offerIdsToOfferDescs) => offerIds.length === 2,
-  reallocate: (
-    _strategies,
-    offerIds,
-    _offerIdsToOfferDescs,
-    getQuantitiesFor,
-  ) =>
+  reallocate: (_extentOps, offerIds, _offerIdsToOfferDescs, getExtentsFor) =>
     harden({
       reallocOfferIds: offerIds,
-      reallocQuantities: harden([
-        ...getQuantitiesFor(harden([offerIds[1]])),
-        ...getQuantitiesFor(harden([offerIds[0]])),
+      reallocExtents: harden([
+        ...getExtentsFor(harden([offerIds[1]])),
+        ...getExtentsFor(harden([offerIds[0]])),
       ]),
     }),
 });

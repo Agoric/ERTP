@@ -1,7 +1,7 @@
 ## Custom Mints and Other Configurations
 
-The `makeMint` function in `issuers.js` takes in a configuration
-function that can change a number of things about how mints, issuers,
+The `makeMint` function in `assays.js` takes in a configuration
+function that can change a number of things about how mints, assays,
 purses, and payments are made. 
 
 By default, `makeBasicFungibleConfig` is used. This creates a mint for
@@ -24,13 +24,13 @@ const makeTotalSupplyConfig = () => {
     yield harden({});
   }
 
-  function* makeMintTrait(_coreMint, _issuer, _assay, mintKeeper) {
+  function* makeMintTrait(_coreMint, _assay, _assay, mintKeeper) {
     return yield harden({
       getTotalSupply: () => mintKeeper.getTotalSupply(),
     });
   }
 
-  function* makeIssuerTrait(_coreIssuer) {
+  function* makeAssayTrait(_coreAssay) {
     yield harden({});
   }
 
@@ -38,9 +38,9 @@ const makeTotalSupplyConfig = () => {
     makePaymentTrait,
     makePurseTrait,
     makeMintTrait,
-    makeIssuerTrait,
+    makeAssayTrait,
     makeMintKeeper: makeTotalSupplyMintKeeper,
-    strategy: natStrategy,
+    extentOps: natExtentOps,
     makeMintTrait,
   });
 };
@@ -52,19 +52,19 @@ method to `mint` called `getTotalSupply`, and we've changed the
 supply for us (more on this in separate documentation). 
 
 Let's take a look into how we are able to add new methods to mints,
-issuers, purses, and payments. 
+assays, purses, and payments. 
 
 In `makePaymentTrait`, we take `corePayment` as a parameter. The
-`corePayment` is constructed in `issuers.js` and has all of the
+`corePayment` is constructed in `assays.js` and has all of the
 methods we are familiar with:
 
 ```js
 const corePayment = harden({
-  getIssuer() {
-    return issuer;
+  getAssay() {
+    return assay;
   },
   getBalance() {
-    return paymentKeeper.getAmount(payment);
+    return paymentKeeper.getAssetDesc(payment);
   },
   getName() {
     return name;
@@ -87,19 +87,19 @@ However, we do want to add an extra method to mints. So,
 `makeMintTrait` is defined as:
 
 ```js
-function* makeMintTrait(_coreMint, _issuer, _assay, mintKeeper) {
+function* makeMintTrait(_coreMint, _assay, _assay, mintKeeper) {
   return yield harden({
     getTotalSupply: () => mintKeeper.getTotalSupply(),
   });
 }
 ```
 
-Back in `issuers.js`, our custom methods will be combined with the
+Back in `assays.js`, our custom methods will be combined with the
 "core" methods already present. Here's how that works for our custom
 mint methods:
 
 ```js
-const makeMintTraitIter = makeMintTrait(coreMint, issuer, assay, mintKeeper);
+const makeMintTraitIter = makeMintTrait(coreMint, assay, assay, mintKeeper);
 const mintTrait = makeMintTraitIter.next().value;
 const mint = harden({
   ...mintTrait,
@@ -110,7 +110,7 @@ makeMintTraitIter.next(mint);
 
 ## The Trait Pattern
 
-We want the core behavior of mints, issuers, purses and payments to be
+We want the core behavior of mints, assays, purses and payments to be
 consistent and reliable across different types of assets. On the other
 hand, we do know that there is a genuine need to have slightly
 different purposes expressed.
@@ -129,7 +129,7 @@ Sometimes, we want to burn the payment in the custom method. That
 caused a problem because with normal functions we don't actually have
 access to the full payment, the one which is built by adding methods to the
 `corePayment`. We only have access to the `corePayment` that
-is passed in as a parameter. When we call `issuer.burnAll(payment)`,
+is passed in as a parameter. When we call `assay.burnAll(payment)`,
 the payment gets looked up in a WeakMap of all the payments and their
 current balances. However, the corePayment won't be in that WeakMap.
 The finished payment (the corePayment plus the custom methods) is what
