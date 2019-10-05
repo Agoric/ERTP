@@ -1,0 +1,103 @@
+import harden from '@agoric/harden';
+
+import {
+  makeHasOkRules,
+  makeAPIMethod,
+  basicFungibleTokenOperations as operations,
+  vectorWith,
+} from '../../../contractUtils';
+
+const { divide, multiply } = operations;
+
+const isValidOfferAddingLiquidity = makeHasOkRules([
+  ['offerExactly', 'offerExactly', 'wantAtLeast'],
+]);
+
+const makeHandleOfferF = (
+  zoeInstance,
+  liquidityMint,
+  poolOfferId,
+) => async offerId => {
+  const [oldPoolQuantities, playerQuantities] = zoeInstance.getQuantitiesFor(
+    harden([poolOfferId, offerId]),
+  );
+  const strategies = zoeInstance.getStrategies();
+  const liqTokenSupply = liquidityMint.getTotalSupply().quantity;
+
+  // Calculate how many liquidity tokens we should be minting.
+  // Calculations are based on the quantities represented by index 0.
+  // If the current supply is zero, start off by just taking the
+  // quantity at index 0 and using it as the quantity for the
+  // liquidity token.
+  const liquidityQOut =
+    liqTokenSupply > 0
+      ? divide(
+          multiply(playerQuantities[0], liqTokenSupply),
+          oldPoolQuantities[0],
+        )
+      : playerQuantities[0];
+
+  // Calculate the new pool quantities by adding together the old
+  // quantities plus the liquidity that was just added
+  const newPoolQuantities = vectorWith(
+    strategies,
+    oldPoolQuantities,
+    playerQuantities,
+  );
+
+  // Set the liquidity token quantity in the array of quantities that
+  // will be turned into payments sent back to the user.
+  const newPlayerQuantities = zoeInstance.makeEmptyQuantities();
+  newPlayerQuantities[2] = liquidityQOut;
+
+  // Now we need to mint the liquidity tokens and make sure that the
+  // `zoeInstance` knows about them. We will need to create an offer
+  // that escrows the liquidity tokens, and then drop the result.
+  const newPurse = liquidityMint.mint(liquidityQOut);
+  const newPayment = newPurse.withdrawAll();
+
+  const rules = ['wantAtLeast', 'wantAtLeast', 'offerExactly'];
+  const quantities = [
+    strategies[0].empty(),
+    strategies[1].empty(),
+    liquidityQOut,
+  ];
+  const liquidityOfferDesc = zoeInstance.makeOfferDesc(rules, quantities);
+
+  const liquidityOfferId = await zoeInstance.escrowOffer(
+    liquidityOfferDesc,
+    harden([undefined, undefined, newPayment]),
+  );
+  // Reallocate, giving the liquidity tokens to the user, adding the
+  // user's liquidity to the pool, and setting the liquidity offer
+  // quantities to empty.
+
+  zoeInstance.reallocate(
+    harden([offerId, poolOfferId, liquidityOfferId]),
+    harden([
+      newPlayerQuantities,
+      newPoolQuantities,
+      zoeInstance.makeEmptyQuantities(),
+    ]),
+  );
+  // The newly created liquidityOffer is temporary and is dropped
+  zoeInstance.complete(harden([liquidityOfferId]));
+
+  return harden({
+    offerIds: harden([offerId, poolOfferId]),
+    newQuantities: harden([newPlayerQuantities, newPoolQuantities]),
+  });
+};
+
+const makeAddLiquidityMethod = (zoeInstance, liquidityMint, poolOfferId) =>
+  makeAPIMethod({
+    zoeInstance,
+    isValidOfferFn: isValidOfferAddingLiquidity,
+    successMessage: 'Added liquidity.',
+    rejectMessage: 'The offer to add liquidity was invalid.',
+    handleOfferFn: makeHandleOfferF(zoeInstance, liquidityMint, poolOfferId),
+  });
+
+harden(makeAddLiquidityMethod);
+
+export { makeAddLiquidityMethod };

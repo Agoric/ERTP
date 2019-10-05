@@ -30,7 +30,7 @@ Description must be truthy: ${description}`;
     makePurseTrait,
     makeMintTrait,
     makeMintKeeper,
-    strategy,
+    strategyName,
   } = makeConfig();
 
   // Methods like depositExactly() pass in an amount which is supposed
@@ -67,10 +67,13 @@ Description must be truthy: ${description}`;
 
     // makePaymentTrait is defined in the passed-in configuration and adds
     // additional methods to corePayment
+    const makePaymentTraitIter = makePaymentTrait(corePayment, issuer);
+    const paymentTrait = makePaymentTraitIter.next().value;
     const payment = harden({
-      ...makePaymentTrait(corePayment, issuer),
+      ...paymentTrait,
       ...corePayment,
     });
+    makePaymentTraitIter.next(payment);
 
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
@@ -100,10 +103,13 @@ Description must be truthy: ${description}`;
     });
     // makePaymentTrait is defined in the passed-in configuration and adds
     // additional methods to corePayment
+    const makePaymentTraitIter = makePaymentTrait(corePayment, issuer);
+    const paymentTrait = makePaymentTraitIter.next().value;
     const payment = harden({
-      ...makePaymentTrait(corePayment, issuer),
+      ...paymentTrait,
       ...corePayment,
     });
+    makePaymentTraitIter.next(payment);
 
     // ///////////////// commit point //////////////////
     // All queries above passed with no side effects.
@@ -123,8 +129,8 @@ Description must be truthy: ${description}`;
       return assay;
     },
 
-    getStrategy() {
-      return assay.getStrategy();
+    getStrategyName() {
+      return assay.getStrategyName();
     },
 
     makeAmount(quantity) {
@@ -225,14 +231,17 @@ Description must be truthy: ${description}`;
 
   // makeIssuerTrait is defined in the passed-in configuration and adds
   // additional methods to coreIssuer.
+  const makeIssuerTraitIter = makeIssuerTrait(coreIssuer);
+  const issuerTrait = makeIssuerTraitIter.next().value;
   const issuer = harden({
-    ...makeIssuerTrait(coreIssuer),
+    ...issuerTrait,
     ...coreIssuer,
   });
+  makeIssuerTraitIter.next(issuer);
 
   const label = harden({ issuer, description });
 
-  const assay = makeAssay(label, strategy);
+  const assay = makeAssay(label, strategyName);
   const mintKeeper = makeMintKeeper(assay);
   const { purseKeeper, paymentKeeper } = mintKeeper;
 
@@ -297,10 +306,13 @@ Description must be truthy: ${description}`;
 
       // makePurseTrait is defined in the passed-in configuration and
       // adds additional methods to corePurse
+      const makePurseTraitIter = makePurseTrait(corePurse, issuer);
+      const purseTrait = makePurseTraitIter.next().value;
       const purse = harden({
-        ...makePurseTrait(corePurse, issuer),
+        ...purseTrait,
         ...corePurse,
       });
+      makePurseTraitIter.next(purse);
 
       purseKeeper.recordNew(purse, initialBalance);
       return purse;
@@ -309,10 +321,13 @@ Description must be truthy: ${description}`;
 
   // makeMintTrait is defined in the passed-in configuration and
   // adds additional methods to coreMint
+  const makeMintTraitIter = makeMintTrait(coreMint, issuer, assay, mintKeeper);
+  const mintTrait = makeMintTraitIter.next().value;
   const mint = harden({
-    ...makeMintTrait(coreMint, issuer, assay, mintKeeper),
+    ...mintTrait,
     ...coreMint,
   });
+  makeMintTraitIter.next(mint);
 
   return mint;
 }

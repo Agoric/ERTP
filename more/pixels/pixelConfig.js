@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 import { makePixelMintKeeper } from './pixelMintKeeper';
-import { makePixelStrategy } from './pixelStrategy';
 import { makeMint } from '../../core/issuers';
 
 /**
@@ -58,101 +57,102 @@ function makePixelConfigMaker(
       return childIssuer.makeAmount(quantity);
     }
 
-    return harden({
-      makePaymentTrait(superPayment, issuer) {
-        return harden({
-          // This creates a new use object on every call. Please see
-          // the gallery for the definition of the use object that is
-          // created here by calling `makeUseObj`
-          getUse() {
-            return makeUseObj(issuer, superPayment);
-          },
-          // Revoke all descendants of this payment and mint a new
-          // payment from the child mint with the same quantity as the
-          // original payment
-          claimChild() {
-            prepareChildMint(issuer);
-            const childAmount = getChildAmount(
-              issuer,
-              superPayment.getBalance(),
-            );
-            // Remove the amount of this payment from the purses and
-            // payments of the childMint. Removes recursively down the
-            // chain until it fails to find a childMint.
-            childMint.revoke(childAmount);
-            const childPurse = childMint.mint(childAmount);
-            return childPurse.withdrawAll();
-          },
-        });
-      },
-      makePurseTrait(superPurse, issuer) {
-        return harden({
-          // This creates a new use object on every call. Please see
-          // the gallery for the definition of the use object that is
-          // created here by calling `makeUseObj`
-          getUse() {
-            return makeUseObj(issuer, superPurse);
-          },
-          // Revoke all descendants of this purse and mint a new purse
-          // from the child mint with the same quantity as the
-          // original purse
-          claimChild() {
-            prepareChildMint(issuer);
-            const childAmount = getChildAmount(issuer, superPurse.getBalance());
-            // Remove the amount of this payment from the purses and
-            // payments of the childMint. Removes recursively down the
-            // chain until it fails to find a childMint.
-            childMint.revoke(childAmount);
-            return childMint.mint(childAmount);
-          },
-        });
-      },
-      makeMintTrait(_superMint, issuer, assay, mintKeeper) {
-        return harden({
-          // revoke destroys the amount from this mint and calls
-          // revoke on the childMint with an amount of the same
-          // quantity. Destroying the amount depends on the fact that
-          // pixels are uniquely identifiable by their `x` and `y`
-          // coordinates. Therefore, destroy can look for purses and
-          // payments that include those particular pixels and remove
-          // the particular pixels from those purses or payments
-          revoke(amount) {
-            amount = assay.coerce(amount);
+    function* makePaymentTrait(corePayment, issuer) {
+      yield harden({
+        // This creates a new use object on every call. Please see
+        // the gallery for the definition of the use object that is
+        // created here by calling `makeUseObj`
+        getUse() {
+          return makeUseObj(issuer, corePayment);
+        },
+        // Revoke all descendants of this payment and mint a new
+        // payment from the child mint with the same quantity as the
+        // original payment
+        claimChild() {
+          prepareChildMint(issuer);
+          const childAmount = getChildAmount(issuer, corePayment.getBalance());
+          // Remove the amount of this payment from the purses and
+          // payments of the childMint. Removes recursively down the
+          // chain until it fails to find a childMint.
+          childMint.revoke(childAmount);
+          const childPurse = childMint.mint(childAmount);
+          return childPurse.withdrawAll();
+        },
+      });
+    }
+    function* makePurseTrait(corePurse, issuer) {
+      yield harden({
+        // This creates a new use object on every call. Please see
+        // the gallery for the definition of the use object that is
+        // created here by calling `makeUseObj`
+        getUse() {
+          return makeUseObj(issuer, corePurse);
+        },
+        // Revoke all descendants of this purse and mint a new purse
+        // from the child mint with the same quantity as the
+        // original purse
+        claimChild() {
+          prepareChildMint(issuer);
+          const childAmount = getChildAmount(issuer, corePurse.getBalance());
+          // Remove the amount of this payment from the purses and
+          // payments of the childMint. Removes recursively down the
+          // chain until it fails to find a childMint.
+          childMint.revoke(childAmount);
+          return childMint.mint(childAmount);
+        },
+      });
+    }
+    function* makeMintTrait(_coreMint, issuer, assay, mintKeeper) {
+      yield harden({
+        // revoke destroys the amount from this mint and calls
+        // revoke on the childMint with an amount of the same
+        // quantity. Destroying the amount depends on the fact that
+        // pixels are uniquely identifiable by their `x` and `y`
+        // coordinates. Therefore, destroy can look for purses and
+        // payments that include those particular pixels and remove
+        // the particular pixels from those purses or payments
+        revoke(amount) {
+          amount = assay.coerce(amount);
 
-            mintKeeper.destroy(amount);
-            if (childMint !== undefined) {
-              childMint.revoke(getChildAmount(issuer, amount)); // recursively revoke child assets
-            }
-          },
-        });
-      },
-      makeIssuerTrait(superIssuer) {
-        return harden({
-          // The parent issuer is one level up in the chain of
-          // issuers.
-          getParentIssuer() {
-            return parentIssuer;
-          },
-          // The child issuer is one level down in the chain of issuers.
-          getChildIssuer() {
-            prepareChildMint(superIssuer);
-            return childIssuer;
-          },
-          // Returns true if the alleged descendant issuer is either a
-          // child, grandchild, or any other kind of descendant
-          isDescendantIssuer(allegedDescendant) {
-            if (childIssuer === undefined) {
-              return false;
-            }
-            if (childIssuer === allegedDescendant) {
-              return true;
-            }
-            return childIssuer.isDescendantIssuer(allegedDescendant);
-          },
-        });
-      },
+          mintKeeper.destroy(amount);
+          if (childMint !== undefined) {
+            childMint.revoke(getChildAmount(issuer, amount)); // recursively revoke child assets
+          }
+        },
+      });
+    }
+    function* makeIssuerTrait(coreIssuer) {
+      yield harden({
+        // The parent issuer is one level up in the chain of
+        // issuers.
+        getParentIssuer() {
+          return parentIssuer;
+        },
+        // The child issuer is one level down in the chain of issuers.
+        getChildIssuer() {
+          prepareChildMint(coreIssuer);
+          return childIssuer;
+        },
+        // Returns true if the alleged descendant issuer is either a
+        // child, grandchild, or any other kind of descendant
+        isDescendantIssuer(allegedDescendant) {
+          if (childIssuer === undefined) {
+            return false;
+          }
+          if (childIssuer === allegedDescendant) {
+            return true;
+          }
+          return childIssuer.isDescendantIssuer(allegedDescendant);
+        },
+      });
+    }
+    return harden({
+      makePaymentTrait,
+      makePurseTrait,
+      makeMintTrait,
+      makeIssuerTrait,
       makeMintKeeper: makePixelMintKeeper,
-      strategy: makePixelStrategy(canvasSize),
+      strategyName: 'pixelStrategy10',
     });
   }
   return makePixelConfig;
