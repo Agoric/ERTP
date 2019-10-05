@@ -6,7 +6,7 @@ import {
   includesPixel,
 } from '../../../../../more/pixels/types/pixelList';
 
-import { makePixelExtentOps } from '../../../../../more/pixels/pixelStrategy';
+import { makePixelExtentOps } from '../../../../../more/pixels/pixelExtentOps';
 
 test('pixelList insistKind', t => {
   const startPixel = harden({ x: 0, y: 0 });

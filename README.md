@@ -75,7 +75,7 @@ holding a reference to the assay for a mint, you can check that a
 payment is valid and exclusively claim it in a new payment to yourself. 
 
 That's the basic use case for a fungible token. `makeMint` in
-[assay.js](core/assay.js) takes
+[mint.js](core/mint.js) takes
 in an optional configuration that allows for many more possibilities. 
 
 ## Pixel Gallery Demo

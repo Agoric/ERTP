@@ -5,7 +5,7 @@ import harden from '@agoric/harden';
 
 import { insist } from '../util/insist';
 import { makeBasicFungibleConfig } from './config/basicFungibleConfig';
-import { makeDescOps } from './assay';
+import { makeDescOps } from './descOps';
 
 /**
  * makeMint takes in a string description as well as a function to

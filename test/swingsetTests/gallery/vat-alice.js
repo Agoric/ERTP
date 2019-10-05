@@ -8,7 +8,7 @@ import { makeCollect } from '../../../core/contractHost';
 import { escrowExchangeSrcs } from '../../../core/escrow';
 
 // only used by doCreateFakeChild test below
-import { makeMint } from '../../../core/issuers';
+import { makeMint } from '../../../core/mint';
 import { makePixelConfigMaker } from '../../../more/pixels/pixelConfig';
 
 let storedUseObj;

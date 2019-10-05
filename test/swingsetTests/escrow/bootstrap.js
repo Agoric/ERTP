@@ -3,9 +3,9 @@
 import harden from '@agoric/harden';
 
 import { escrowExchangeSrcs } from '../../../core/escrow';
-import { makeUniDescOpsConfigMaker } from '../../../core/config/uniAssayConfig';
+import { makeUniDescOpsConfigMaker } from '../../../core/config/uniDescOpsConfig';
 import { insist } from '../../../util/insist';
-import { makeMint } from '../../../core/issuers';
+import { makeMint } from '../../../core/mint';
 import { allComparable } from '../../../util/sameStructure';
 
 function build(E, log) {

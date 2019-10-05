@@ -1,8 +1,8 @@
 import harden from '@agoric/harden';
 
 import { makePixelMintKeeper } from './pixelMintKeeper';
-import { makePixelExtentOps } from './pixelStrategy';
-import { makeMint } from '../../core/issuers';
+import { makePixelExtentOps } from './pixelExtentOps';
+import { makeMint } from '../../core/mint';
 
 /**
  * `makePixelConfigMaker` exists in order to pass in more parameters

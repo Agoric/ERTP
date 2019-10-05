@@ -11,8 +11,8 @@ import {
   mustBeSameStructure,
   sameStructure,
 } from '../util/sameStructure';
-import { makeUniDescOpsConfigMaker } from './config/uniAssayConfig';
-import { makeMint } from './issuers';
+import { makeUniDescOpsConfigMaker } from './config/uniDescOpsConfig';
+import { makeMint } from './mint';
 import makePromise from '../util/makePromise';
 
 /** Make a reusable host that can reliably install and execute contracts. */

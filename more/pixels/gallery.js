@@ -4,7 +4,7 @@ import harden from '@agoric/harden';
 import { makeCollect } from '../../core/contractHost';
 import { insist } from '../../util/insist';
 import { makePixelConfigMaker } from './pixelConfig';
-import { makeMint } from '../../core/issuers';
+import { makeMint } from '../../core/mint';
 import { makeWholePixelList } from './types/pixelList';
 import {
   makeInsistPixel,

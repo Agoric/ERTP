@@ -1,6 +1,6 @@
 import { test } from 'tape-promise/tape';
 
-import { makeMint } from '../../../core/issuers';
+import { makeMint } from '../../../core/mint';
 
 test('split bad assetDescs', t => {
   try {
