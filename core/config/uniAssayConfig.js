@@ -2,20 +2,20 @@ import harden from '@agoric/harden';
 
 import { noCustomization } from './noCustomization';
 import { makeCoreMintKeeper } from './coreMintKeeper';
-import { makeUniStrategy } from './strategies/uniStrategy';
+import { makeUniExtentOps } from './strategies/uniStrategy';
 
-// This UniAssay config is used to create invites and similar assets.
-// It does not customize the purses, payments, mints, or issuers, and
-// it uses the core mintKeeper as well as the uniAssay (naturally)
-function makeUniAssayConfigMaker(descriptionCoercer) {
-  function makeUniAssayConfig() {
+// This UniDescOps config is used to create invites and similar assets.
+// It does not customize the purses, payments, mints, or assays, and
+// it uses the core mintKeeper as well as the uniDescOps (naturally)
+function makeUniDescOpsConfigMaker(descriptionCoercer) {
+  function makeUniDescOpsConfig() {
     return harden({
       ...noCustomization,
       makeMintKeeper: makeCoreMintKeeper,
-      strategy: makeUniStrategy(descriptionCoercer),
+      extentOps: makeUniExtentOps(descriptionCoercer),
     });
   }
-  return makeUniAssayConfig;
+  return makeUniDescOpsConfig;
 }
 
-export { makeUniAssayConfigMaker };
+export { makeUniDescOpsConfigMaker };

@@ -1,99 +1,99 @@
 /**
- * Amounts are wrappers on quantities that have been validated by an Assay, and
- * can be verified as having been issued by the Assay. They contain their
- * quantity and a Label. The label identifies a particular issuer.
+ * AssetDescs are wrappers on extents that have been validated by an DescOps, and
+ * can be verified as having been issued by the DescOps. They contain their
+ * extent and a Label. The label identifies a particular assay.
  */
-struct Amount (Quantity, Label) {
+struct AssetDesc (Extent, Label) {
   label :Label;
-  quantity :Quantity;
+  extent :Extent;
 }
 
 /**
  * Quantities describe the extent of something that can be owned or shared.
- * The format is determined by its assay. Fungible quantities are normally
- * represented by natural numbers. Other quantities may be represented as
+ * The format is determined by its descOps. Fungible extents are normally
+ * represented by natural numbers. Other extents may be represented as
  * strings naming a particular right, or an arbitrary object that sensibly
- * represents the rights at issue. All Amounts made by the same Assay have the
+ * represents the rights at issue. All AssetDescs made by the same DescOps have the
  * same label.
  *
- * Quantity must be Comparable. (This IDL doesn't yet provide a way to specify
+ * Extent must be Comparable. (This IDL doesn't yet provide a way to specify
  * subtype relationships for structs.)
  */
-struct Quantity {
+struct Extent {
 }
 
 /**
- * Creator and validator of asset Amounts.
+ * Creator and validator of asset AssetDescs.
  *
- * Amounts are the canonical description of tradable goods. They are manipulated
+ * AssetDescs are the canonical description of tradable goods. They are manipulated
  * by mints, and represent the goods and currency carried by purses and
  * payments. They can be used to represent things like currency, stock, and the
  * abstract right to participate in a particular exchange.
  *
- * The assay treats the Label as an opaque object. It's used in the
- * amounts produced by this assay.
+ * The descOps treats the Label as an opaque object. It's used in the
+ * assetDescs produced by this descOps.
  */
-interface Assay (Amount (Quantity, Label)) {
+interface DescOps (AssetDesc (Extent, Label)) {
 
-  /** Return this assay's label. */
+  /** Return this descOps's label. */
   getLabel() -> (Label);
 
-  /** Make a new verified Amount containing the allegedQuantity. */
-  make(allegedQuantity :Quantity) -> (Amount);
+  /** Make a new verified AssetDesc containing the allegedExtent. */
+  make(allegedExtent :Extent) -> (AssetDesc);
 
   /**
-   * Is this like an Amount object made by this Assay, such as one received by
-   * pass-by-copy from an otherwise-identical remote Amount? If so, return an
-   * Amount object made by this Assay. Otherwise error.
+   * Is this like an AssetDesc object made by this DescOps, such as one received by
+   * pass-by-copy from an otherwise-identical remote AssetDesc? If so, return an
+   * AssetDesc object made by this DescOps. Otherwise error.
    *
-   * For fungible amounts based on natural numbers, coerce also accepts a bare
-   * number which it will coerce to a labeled number via assay.make().
+   * For fungible assetDescs based on natural numbers, coerce also accepts a bare
+   * number which it will coerce to a labeled number via descOps.make().
    */
-  coerce(allegedAmount :Amount) -> (Amount);
+  coerce(allegedAssetDesc :AssetDesc) -> (AssetDesc);
 
-  /** Return a Quantity representing the Amount parameter. */
-  quantity(amount :Amount) -> (Quantity);
+  /** Return a Extent representing the AssetDesc parameter. */
+  extent(assetDesc :AssetDesc) -> (Extent);
 
-  /** Return an empty amount. Conveys no authority. */
-  empty() -> (Amount);
+  /** Return an empty assetDesc. Conveys no authority. */
+  empty() -> (AssetDesc);
 
-  /** Return true if the Amount is empty. Otherwise false. */
-  isEmpty(amount :Amount) -> (boolean);
+  /** Return true if the AssetDesc is empty. Otherwise false. */
+  isEmpty(assetDesc :AssetDesc) -> (boolean);
 
-  /** Returns true if the leftAmount contains the rightAmount. */
-  includes(leftAmount :Amount, rightAmount :Amount) -> (boolean);
+  /** Returns true if the leftAssetDesc contains the rightAssetDesc. */
+  includes(leftAssetDesc :AssetDesc, rightAssetDesc :AssetDesc) -> (boolean);
 
   /** 
-   * Returns true if the leftAmount equals the rightAmount. We assume
+   * Returns true if the leftAssetDesc equals the rightAssetDesc. We assume
    * that if includes is true in both directions, equals is also true 
    */
-  equals(leftAmount :Amount, rightAmount :Amount) -> (boolean);
+  equals(leftAssetDesc :AssetDesc, rightAssetDesc :AssetDesc) -> (boolean);
 
   /**
-   * Returns a new amount that includes both leftAmount and rightAmount.
+   * Returns a new assetDesc that includes both leftAssetDesc and rightAssetDesc.
    *
-   * For fungible amounts this means adding the quantities. For other kinds of
-   * amounts, it usually means including both.
+   * For fungible assetDescs this means adding the extents. For other kinds of
+   * assetDescs, it usually means including both.
    */
-  with(leftAmount :Amount, rightAmount :Amount) -> (Amount);
+  with(leftAssetDesc :AssetDesc, rightAssetDesc :AssetDesc) -> (AssetDesc);
 
   /**
-   * Returns a new amount that includes the portion of leftAmount not included
-   * in rightAmount. If leftAmount doesn't include rightAmout, throw an error.
+   * Returns a new assetDesc that includes the portion of leftAssetDesc not included
+   * in rightAssetDesc. If leftAssetDesc doesn't include rightAmout, throw an error.
    */
-  without(leftAmount :Amount, rightAmount :Amount) -> (Amount);
+  without(leftAssetDesc :AssetDesc, rightAssetDesc :AssetDesc) -> (AssetDesc);
 }
 
 /**
- * The label for an amount identifies the issuer, and includes a description of
+ * The label for an assetDesc identifies the assay, and includes a description of
  * the rights it represents.
  *
- * Every amount created by the Assay will have the same label, but recipients
- * cannot use the label by itself to verify that a purported amount is
+ * Every assetDesc created by the DescOps will have the same label, but recipients
+ * cannot use the label by itself to verify that a purported assetDesc is
  * authentic, since the label can be copied. 
  */
 struct Label {
-  issuer :Issuer;
+  assay :Assay;
   description :Description;
 }
 
@@ -107,27 +107,27 @@ struct Description {
 }
 
 /**
- * UniAssay represents amounts that have unique descriptions. It is a
- * refinement of Assay that we've found useful, but has no special
+ * UniDescOps represents assetDescs that have unique descriptions. It is a
+ * refinement of DescOps that we've found useful, but has no special
  * place in the protocol.
  *
- * The quantity must either be null, in which case it is empty, or be some
+ * The extent must either be null, in which case it is empty, or be some
  * truthy comparable value, in which case it represents a single unique unit
- * described by that truthy quantity. Combining two uni amounts with different
- * truthy quantities fails, as they represent non-combinable rights.
+ * described by that truthy extent. Combining two uni assetDescs with different
+ * truthy extents fails, as they represent non-combinable rights.
  */
-interface UniAssay extends (Assay) {
+interface UniDescOps extends (DescOps) {
 }
 
 /**
- * Assay for a labeled natural number describing a quantity of fungible
- * erights. The label describes what kinds of rights these are. NatAssay is a
- * refinement of Assay that we've found useful, but has no special place in the
+ * DescOps for a labeled natural number describing a extent of fungible
+ * erights. The label describes what kinds of rights these are. NatDescOps is a
+ * refinement of DescOps that we've found useful, but has no special place in the
  * protocol.
  *
- * Empty amounts have zero units. 'includes()' verifies that leftAmount is
- * greater than or equal to rightAmount. 'with()' and 'without()' add and
+ * Empty assetDescs have zero units. 'includes()' verifies that leftAssetDesc is
+ * greater than or equal to rightAssetDesc. 'with()' and 'without()' add and
  * subtract their contents.
  */
-interface NatAssay extends (Assay) {
+interface NatDescOps extends (DescOps) {
 }
