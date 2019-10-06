@@ -21,10 +21,11 @@ import { extentOpsLib } from './config/extentOpsLib';
 // passed. Rather, we expect each vat that needs to operate on assetDescs
 // will have its own local descOps to do so.
 
-function makeDescOps(label, extentOpsName) {
+function makeDescOps(label, extentOpsName, extentOpsArgs = []) {
   mustBeComparable(label);
 
-  const extentOps = extentOpsLib[extentOpsName];
+  const makeExtentOps = extentOpsLib[extentOpsName];
+  const extentOps = makeExtentOps(...extentOpsArgs);
 
   // The brand represents recognition of the assetDesc as authorized.
   const brand = new WeakSet();
@@ -34,9 +35,11 @@ function makeDescOps(label, extentOpsName) {
       return label;
     },
 
-    getExtentOpsName() {
-      return extentOpsName;
-    },
+    getExtentOps: () =>
+      harden({
+        name: extentOpsName,
+        args: extentOpsArgs,
+      }),
 
     // Given the raw extent that this kind of assetDesc would label, return
     // an assetDesc so labeling that extent.

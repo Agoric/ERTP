@@ -158,7 +158,8 @@ function makePixelConfigMaker(
       makeMintTrait,
       makeAssayTrait,
       makeMintKeeper: makePixelMintKeeper,
-      extentOpsName: 'pixelExtentOps10',
+      extentOpsName: 'pixelExtentOps',
+      extentOpsArgs: [10],
     });
   }
   return makePixelConfig;

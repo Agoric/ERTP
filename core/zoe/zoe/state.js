@@ -44,8 +44,8 @@ const makeState = () => {
 
       const extentOps = await Promise.all(
         assays.map(async assay => {
-          const extentOpsName = await E(assay).getExtentOpsName();
-          return extentOpsLib[extentOpsName];
+          const { name, args } = await E(assay).getExtentOps();
+          return extentOpsLib[name](...args);
         }),
       );
       instanceIdToExtentOps.set(instanceId, extentOps);

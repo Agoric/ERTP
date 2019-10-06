@@ -31,6 +31,7 @@ Description must be truthy: ${description}`;
     makeMintTrait,
     makeMintKeeper,
     extentOpsName,
+    extentOpsArgs,
   } = makeConfig();
 
   // Methods like depositExactly() pass in an assetDesc which is supposed
@@ -129,8 +130,8 @@ Description must be truthy: ${description}`;
       return descOps;
     },
 
-    getExtentOpsName() {
-      return descOps.getExtentOpsName();
+    getExtentOps() {
+      return descOps.getExtentOps();
     },
 
     makeAssetDesc(extent) {
@@ -249,7 +250,7 @@ Description must be truthy: ${description}`;
 
   const label = harden({ assay, description });
 
-  const descOps = makeDescOps(label, extentOpsName);
+  const descOps = makeDescOps(label, extentOpsName, extentOpsArgs);
   const mintKeeper = makeMintKeeper(descOps);
   const { purseKeeper, paymentKeeper } = mintKeeper;
 

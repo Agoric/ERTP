@@ -16,6 +16,7 @@ function makeBasicFungibleConfig() {
     ...noCustomization,
     makeMintKeeper: makeCoreMintKeeper,
     extentOpsName: 'natExtentOps',
+    extentOpsArgs: [],
   });
 }
 
