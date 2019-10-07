@@ -29,33 +29,34 @@ function makeBidderMaker(E, host, log) {
           const bidPaymentP = E(myMoneyPurseP).withdrawAll('a bid payment');
 
           const allegedInviteBalanceP = E(bidderSeatPaymentP).getBalance();
-          E.resolve(
-            allComparable(harden([termsP, allegedInviteBalanceP])),
-          ).then(p => {
+          allComparable(harden([termsP, allegedInviteBalanceP])).then(p => {
             const [terms, allegedInviteBalance] = p;
             E(auctionInstallationP)
               .checkAmount(allegedInviteBalance, terms, bidSeat)
-              .then(v => insist(v)` installation must verify.`);
-            const { deadline } = terms;
-            insist(deadline > 5 && deadline < 40)`unreasonable deadline`;
-            E(timerP)
-              .ticks()
-              .then(ticks => insist(ticks < deadline)`Deadline already passed`);
-            E(timerP).tick(`BIDDER: verification.`);
+              .then(v => {
+                insist(v)` installation must verify.`;
+                const { deadline } = terms;
+                insist(deadline > 5 && deadline < 40)`unreasonable deadline`;
+                E(timerP)
+                  .ticks()
+                  .then(
+                    ticks => insist(ticks < deadline)`Deadline already passed`,
+                  );
+                E(timerP).tick(`BIDDER: verification.`);
+                const bidderSeatP = E(host).redeem(bidderSeatPaymentP);
+                E(bidderSeatP)
+                  .offer(bidPaymentP)
+                  .then(bid => E(timerP).tick(`BIDDER: bid ${bid}`));
+
+                E(timerP).tick(`BIDDER: queuing collection`);
+                return collect(
+                  bidderSeatP,
+                  myArtPurseP,
+                  myMoneyPurseP,
+                  'bidder earnings',
+                );
+              });
           });
-
-          const bidderSeatP = E(host).redeem(bidderSeatPaymentP);
-          E(bidderSeatP)
-            .offer(bidPaymentP)
-            .then(bid => E(timerP).tick(`BIDDER: bid ${bid}`));
-
-          E(timerP).tick(`BIDDER: queuing collection`);
-          return collect(
-            bidderSeatP,
-            myArtPurseP,
-            myMoneyPurseP,
-            'bidder earnings',
-          );
         },
       });
       return bidder;

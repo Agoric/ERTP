@@ -24,14 +24,9 @@ function build(E, log) {
 
     const makeUniAssayConfig = makeUniAssayConfigMaker();
     const artMint = makeMint('Christies Art Auctions', makeUniAssayConfig);
-    const aliceArtPurse = artMint.mint(
-      artMint.getIssuer().makeAmount('Salvator Mundi'),
-      'alice portfolio',
-    );
-    const emptyPurse = artMint.getIssuer().makeEmptyPurse();
-    const zeroBalance = emptyPurse.getBalance();
-    const bobArtPurse = artMint.mint(zeroBalance, 'bob portfolio');
-    const barbArtPurse = artMint.mint(zeroBalance, 'barb portfolio');
+    const aliceArtPurse = artMint.mint('Salvator Mundi', 'alice portfolio');
+    const bobArtPurse = artMint.getIssuer().makeEmptyPurse('bob portfolio');
+    const barbArtPurse = artMint.getIssuer().makeEmptyPurse('barb portfolio');
 
     const aliceP = E(aliceMakerP).make(
       agencyEscrowInstallationP,
@@ -56,14 +51,12 @@ function build(E, log) {
       barbArtPurse,
       'bidder2',
     );
-    return Promise.all([aliceP, bobP]).then(_ => {
-      const doneP = E(aliceP).createAuctionAndInviteBidders(bobP, barbP);
-      E.resolve(doneP).then(
-        price => log(`++ auction done: ${price}`),
-        rej => log('++ auctionP failed', rej),
-      );
-      return doneP;
-    });
+    const doneP = E(aliceP).createAuctionAndInviteBidders(bobP, barbP);
+    doneP.then(
+      price => log(`++ auction done: ${price}`),
+      rej => log('++ auctionP failed', rej),
+    );
+    return doneP;
   }
 
   const obj0 = {

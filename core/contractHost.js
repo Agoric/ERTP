@@ -31,8 +31,7 @@ function makeCollect(E, log) {
         .getRefund()
         .then(refund => refund && E(refundPurseP).depositAll(refund)),
     ]);
-    const doneP = allSettled(results);
-    E.resolve(doneP).then(([wins, refs]) => {
+    allSettled(results).then(([wins, refs]) => {
       log(`${name} wins: `, wins, ` refs: `, refs);
     });
     // Use Promise.all here rather than allSettled in order to

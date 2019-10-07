@@ -18,42 +18,48 @@ function makeAliceMaker(E, host, log) {
       const alice = harden({
         createAuctionAndInviteBidders(...biddersP) {
           log('++ alice.createAuctionAndInviteBidders starting');
-          const termsP = harden({
-            agencyEscrowInstallationP,
-            currencyAmount: E(myMoneyPurseP).getBalance(),
-            goodsAmount: E(myArtPurseP).getBalance(),
-            timerP,
-            deadline: 11,
-            minBidCount: 2,
-            minPrice: 0,
-          });
-          const offerInvitePaymentP = E(auctionInstallationP).spawn(termsP);
-          const inviteIssuerP = E(host).getInviteIssuer();
-          const offerSeatPaymentP = E(inviteIssuerP).claimAll(
-            offerInvitePaymentP,
-            'offer',
-          );
-          const offerSeatP = E(host).redeem(offerSeatPaymentP);
-          const artPaymentP = E(myArtPurseP).withdrawAll();
-          const bidderMakerP = E(offerSeatP).offer(artPaymentP);
-          E(timerP).tick('art deposit');
-          const doneP = collect(
-            offerSeatP,
-            myMoneyPurseP,
-            myArtPurseP,
-            'auction earnings',
-          );
-          E.resolve(doneP).then(
-            ([wins, _refunds]) =>
-              log(`*** Alice sold her painting for ${wins.quantity}. **`),
-            rej => log(`**** Alice's painting didn't sell. ** ${rej}`),
-          );
+          return Promise.all([
+            E(myMoneyPurseP).getBalance(),
+            E(myArtPurseP).getBalance(),
+          ]).then(balances => {
+            const [moneyBalance, artBalance] = balances;
+            const termsP = harden({
+              agencyEscrowInstallationP,
+              currencyAmount: moneyBalance,
+              goodsAmount: artBalance,
+              timerP,
+              deadline: 11,
+              minBidCount: 2,
+              minPrice: 0,
+            });
+            const offerInvitePaymentP = E(auctionInstallationP).spawn(termsP);
+            const inviteIssuerP = E(host).getInviteIssuer();
+            const offerSeatPaymentP = E(inviteIssuerP).claimAll(
+              offerInvitePaymentP,
+              'offer',
+            );
+            const offerSeatP = E(host).redeem(offerSeatPaymentP);
+            const artPaymentP = E(myArtPurseP).withdrawAll();
+            const bidderMakerP = E(offerSeatP).offer(artPaymentP);
+            E(timerP).tick('art deposit');
+            const doneP = collect(
+              offerSeatP,
+              myMoneyPurseP,
+              myArtPurseP,
+              'auction earnings',
+            );
+            doneP.then(
+              ([wins, _refunds]) =>
+                log(`*** Alice sold her painting for ${wins.quantity}. **`),
+              rej => log(`**** Alice's painting didn't sell. ** ${rej}`),
+            );
 
-          biddersP.map(bidder => {
-            E(timerP).tick('bidder offer');
-            return E(bidder).offerSeat(E(bidderMakerP).makeBidderSeat(), termsP);
+            biddersP.map(bidder => {
+              E(timerP).tick('bidder offer');
+              return E(bidder).offerSeat(E(bidderMakerP).makeBidderSeat(), termsP);
+            });
+            return E(offerSeatP).getCompletion();
           });
-          return E(offerSeatP).getCompletion();
         },
       });
       return alice;

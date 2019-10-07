@@ -3,6 +3,7 @@
 
 import harden from '@agoric/harden';
 import { mustBeSameStructure } from '../../util/sameStructure';
+import { natStrategy } from '../../core/config/strategies/natStrategy';
 
 // There are two parties to this transaction. The buyer is offering some amount
 // of currency (any fungible good) for a valuable item. The buyer will either
@@ -11,7 +12,7 @@ import { mustBeSameStructure } from '../../util/sameStructure';
 // transact. Only the amount is visible to the agency before an escrow seat is
 // received for the transaction.
 const agencyEscrow = {
-  start: (terms, inviteMaker) => {
+  start: terms => {
     const { currencyAmount, goodsAmount } = terms;
     const { issuer: goodsIssuer } = goodsAmount.label;
 
@@ -40,15 +41,15 @@ const agencyEscrow = {
       // The buyer will receive their winnings through a trusted escrow.
       consummateDeal(originalOffer, finalPrice, goodsPayment) {
         const wonGoodsPayment = E(goodsIssuer).claimAll(goodsPayment, 'wins');
-        const { issuer: currencyIssuer } = currencyAmount.label;
-        const overbidAmount = E(currencyIssuer).makeAmount(
-          originalOffer - finalPrice,
-        );
-        const finalPriceAmount = E(currencyIssuer).makeAmount(finalPrice);
-        return Promise.all([deposit.p, overbidAmount, finalPriceAmount]).then(
+        const { issuer: currencyIssuerP } = currencyAmount.label;
+        const overbid = natStrategy.without(originalOffer, finalPrice);
+        // TODO(hibbert) look up strategy from issuer with extentOpsLib
+        const overbidAmountP = E(currencyIssuerP).makeAmount(overbid);
+        const finalPriceAmount = E(currencyIssuerP).makeAmount(finalPrice);
+        return Promise.all([deposit.p, overbidAmountP, finalPriceAmount]).then(
           splitDetails => {
             const [dep, overbidAmt, finalPriceAmt] = splitDetails;
-            return E(currencyIssuer)
+            return E(currencyIssuerP)
               .split(dep, [finalPriceAmt, overbidAmt])
               .then(splitPurses => {
                 const [proceedsP, overbidP] = splitPurses;
@@ -89,8 +90,8 @@ const agencyEscrow = {
     });
 
     return harden({
-      agency: inviteMaker.make('agency', agencySeat),
-      buyer: inviteMaker.make('buyer', buyerSeat),
+      agency: agencySeat,
+      buyer: buyerSeat,
     });
   },
 

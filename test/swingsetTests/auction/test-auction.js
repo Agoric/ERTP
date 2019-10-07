@@ -24,12 +24,12 @@ const auctionGolden = [
   '@@ tick:3: bidder offer @@',
   '++ bidder.offerSeat starting',
   '@@ tick:4: BIDDER: starting offerSeat() @@',
-  '@@ tick:5: BIDDER: queuing collection @@',
-  '@@ tick:6: BIDDER: starting offerSeat() @@',
+  '@@ tick:5: BIDDER: starting offerSeat() @@',
+  '@@ schedule task for:11, currently: 5 @@',
+  '@@ tick:6: BIDDER: verification. @@',
   '@@ tick:7: BIDDER: queuing collection @@',
-  '@@ schedule task for:11, currently: 7 @@',
   '@@ tick:8: BIDDER: verification. @@',
-  '@@ tick:9: BIDDER: verification. @@',
+  '@@ tick:9: BIDDER: queuing collection @@',
   '@@ tick:10: BIDDER: bid 1000 @@',
   '@@ tick:11: BIDDER: bid 900 @@',
   '&& running a task scheduled for 11. &&',
@@ -46,7 +46,7 @@ test('2 bidder auction w/SES', async t => {
   t.end();
 });
 
-test.only('2 bidder auction', async t => {
+test('2 bidder auction', async t => {
   const dump = await main(false, 'auction', ['simple-auction']);
   t.deepEquals(dump.log, auctionGolden);
   t.end();

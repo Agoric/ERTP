@@ -3,6 +3,7 @@
 
 import harden from '@agoric/harden';
 import { mustBeSameStructure } from '../../util/sameStructure';
+import { natStrategy } from '../../core/config/strategies/natStrategy';
 
 // A Seller will provide a good to be auctioned and a possibly empty purse to
 // show the currency in which bids must be expressed. The Auctioneer will create
@@ -34,17 +35,25 @@ const auction = {
     let bestPrice = 0;
     let secondPrice = 0;
     const currencyIssuer = currencyAmount.label.issuer;
-    const currencyStrategy = E(currencyIssuer).getStrategy();
     const auctionComplete = makePromise();
 
     // If bidder is undefined, cancel all Bids, otherwise cancel all but bidder.
     function cancelExcept(bidder) {
       // Cancel entries unless the key matches the argument
-      for (const [bidderSeat] of agencySeatsP) {
-        if (bidder === undefined || bidderSeat !== bidder) {
-          E(bidderSeat).cancel();
+      for (const [bidderSeatKey] of agencySeatsP) {
+        if (bidder === undefined || bidderSeatKey !== bidder) {
+          E(bidderSeatKey).cancel();
         }
       }
+    }
+
+    // By analogy with 'strictly greater than': x includes y and is not equal
+    function strictlyIncludes(leftAmount, rightAmount) {
+      // TODO(hibbert) look up strategy from issuer with extentOpsLib
+      return (
+        natStrategy.includes(leftAmount, rightAmount) &&
+        !natStrategy.equals(leftAmount, rightAmount)
+      );
     }
 
     E(timerP)
@@ -53,13 +62,15 @@ const auction = {
         // hold auction unless too few Bids or minPrice not met
         if (
           bidsReceived < minBidCount ||
-          minPrice > secondPrice
-          // (currencyStrategy.includes(minPrice, secondPrice) &&
-          //   !currencyStrategy.equals(minPrice, secondPrice))
+          strictlyIncludes(minPrice, secondPrice)
         ) {
           cancelExcept();
           sellerRefund.res(escrowedGoods.p);
-          auctionComplete.reject('too few bids');
+          auctionComplete.reject(
+            bidsReceived < minBidCount
+              ? 'too few bids'
+              : 'minimum price not met.',
+          );
           return;
         }
         cancelExcept(bestBidderP);
@@ -86,11 +97,10 @@ const auction = {
               const { quantity } = amount;
               E(buyerSeatP).offer(currencyPaymentP, escrowTerms);
               bidsReceived += 1;
-              if (quantity > bestPrice) {
+              if (strictlyIncludes(quantity, bestPrice)) {
                 bestBidderP = buyerSeatP;
                 [bestPrice, secondPrice] = [quantity, bestPrice];
-              } else if (quantity > secondPrice) {
-              // } else if (currencyStrategy.includes(quantity, secondPrice)) {
+              } else if (strictlyIncludes(quantity, secondPrice)) {
                 secondPrice = quantity;
               }
               agencySeatsP.set(buyerSeatP, agencySeatP);
@@ -105,8 +115,8 @@ const auction = {
       // returned unless they get the goods.
       makeBidderSeat() {
         const seats = E(agencyEscrowInstallationP).spawn(escrowTerms);
-        const agencySeatP = seats.then(pair => inviteMaker.redeem(pair.agency));
-        const buyerSeatP = seats.then(pair => inviteMaker.redeem(pair.buyer));
+        const agencySeatP = seats.then(pair => pair.agency);
+        const buyerSeatP = seats.then(pair => pair.buyer);
 
         bidderSeatCount += 1;
         const bidderSeat = harden({
