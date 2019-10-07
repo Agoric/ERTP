@@ -34,13 +34,15 @@ const auction = {
     let bestPrice = 0;
     let secondPrice = 0;
     const currencyIssuer = currencyAmount.label.issuer;
+    const currencyStrategy = E(currencyIssuer).getStrategy();
     const auctionComplete = makePromise();
 
     // If bidder is undefined, cancel all Bids, otherwise cancel all but bidder.
     function cancelExcept(bidder) {
-      for (const [key] of agencySeatsP) {
-        if (bidder === undefined || key !== bidder) {
-          E(key).cancel();
+      // Cancel entries unless the key matches the argument
+      for (const [bidderSeat] of agencySeatsP) {
+        if (bidder === undefined || bidderSeat !== bidder) {
+          E(bidderSeat).cancel();
         }
       }
     }
@@ -48,8 +50,13 @@ const auction = {
     E(timerP)
       .delayUntil(deadline)
       .then(() => {
-        // hold auction:
-        if (bidsReceived < minBidCount || secondPrice < minPrice) {
+        // hold auction unless too few Bids or minPrice not met
+        if (
+          bidsReceived < minBidCount ||
+          minPrice > secondPrice
+          // (currencyStrategy.includes(minPrice, secondPrice) &&
+          //   !currencyStrategy.equals(minPrice, secondPrice))
+        ) {
           cancelExcept();
           sellerRefund.res(escrowedGoods.p);
           auctionComplete.reject('too few bids');
@@ -64,7 +71,7 @@ const auction = {
         );
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
         sellerRefund.res();
-        E.resolve(paidAmountP).then(paidAmount => {
+        paidAmountP.then(paidAmount => {
           auctionComplete.res(paidAmount.quantity);
         });
       });
@@ -83,6 +90,7 @@ const auction = {
                 bestBidderP = buyerSeatP;
                 [bestPrice, secondPrice] = [quantity, bestPrice];
               } else if (quantity > secondPrice) {
+              // } else if (currencyStrategy.includes(quantity, secondPrice)) {
                 secondPrice = quantity;
               }
               agencySeatsP.set(buyerSeatP, agencySeatP);
@@ -92,10 +100,10 @@ const auction = {
     }
 
     const bidderMaker = harden({
-      // Each call on newBidderSeat() will return a bidderSeat invite, which
+      // Each call on makeBidderSeat() will return a bidderSeat invite, which
       // allows the holder to make offers and ensures that the money will be
       // returned unless they get the goods.
-      newBidderSeat() {
+      makeBidderSeat() {
         const seats = E(agencyEscrowInstallationP).spawn(escrowTerms);
         const agencySeatP = seats.then(pair => inviteMaker.redeem(pair.agency));
         const buyerSeatP = seats.then(pair => inviteMaker.redeem(pair.buyer));

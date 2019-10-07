@@ -46,7 +46,7 @@ test('2 bidder auction w/SES', async t => {
   t.end();
 });
 
-test('2 bidder auction', async t => {
+test.only('2 bidder auction', async t => {
   const dump = await main(false, 'auction', ['simple-auction']);
   t.deepEquals(dump.log, auctionGolden);
   t.end();
