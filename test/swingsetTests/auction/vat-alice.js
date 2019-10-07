@@ -56,7 +56,10 @@ function makeAliceMaker(E, host, log) {
 
             biddersP.map(bidder => {
               E(timerP).tick('bidder offer');
-              return E(bidder).offerSeat(E(bidderMakerP).makeBidderSeat(), termsP);
+              return E(bidder).offerSeat(
+                E(bidderMakerP).makeBidderSeat(),
+                termsP,
+              );
             });
             return E(offerSeatP).getCompletion();
           });
