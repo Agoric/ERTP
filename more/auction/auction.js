@@ -14,15 +14,15 @@ const auction = {
   start: (terms, inviteMaker) => {
     const {
       agencyEscrowInstallationP,
-      currencyAmount,
-      goodsAmount,
+      currencyAssetDesc,
+      goodsAssetDesc,
       timerP,
       deadline,
       minBidCount,
       minPrice,
     } = terms;
 
-    const escrowTerms = harden({ currencyAmount, goodsAmount });
+    const escrowTerms = harden({ currencyAssetDesc, goodsAssetDesc });
     const escrowedGoods = makePromise();
     const sellerWinnings = makePromise();
     const sellerRefund = makePromise();
@@ -34,7 +34,7 @@ const auction = {
     let bidsReceived = 0;
     let bestPrice = 0;
     let secondPrice = 0;
-    const currencyIssuer = currencyAmount.label.issuer;
+    const currencyIssuer = currencyAssetDesc.label.issuer;
     const auctionComplete = makePromise();
 
     // If bidder is undefined, cancel all Bids, otherwise cancel all but bidder.
@@ -48,11 +48,11 @@ const auction = {
     }
 
     // By analogy with 'strictly greater than': x includes y and is not equal
-    function strictlyIncludes(leftAmount, rightAmount) {
+    function strictlyIncludes(leftAssetDesc, rightAssetDesc) {
       // TODO(hibbert) look up strategy from issuer with extentOpsLib
       return (
-        natStrategy.includes(leftAmount, rightAmount) &&
-        !natStrategy.equals(leftAmount, rightAmount)
+        natStrategy.includes(leftAssetDesc, rightAssetDesc) &&
+        !natStrategy.equals(leftAssetDesc, rightAssetDesc)
       );
     }
 
@@ -75,15 +75,15 @@ const auction = {
         }
         cancelExcept(bestBidderP);
         const bestBidAgencySeatP = agencySeatsP.get(bestBidderP);
-        const paidAmountP = E(bestBidAgencySeatP).consummateDeal(
+        const paidAssetDescP = E(bestBidAgencySeatP).consummateDeal(
           bestPrice,
           secondPrice,
           escrowedGoods.p,
         );
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
         sellerRefund.res();
-        paidAmountP.then(paidAmount => {
-          auctionComplete.res(paidAmount.quantity);
+        paidAssetDescP.then(paidAssetDesc => {
+          auctionComplete.res(paidAssetDesc.quantity);
         });
       });
 
@@ -93,8 +93,8 @@ const auction = {
         .then(currencyPaymentP => {
           return E(currencyPaymentP)
             .getBalance()
-            .then(amount => {
-              const { quantity } = amount;
+            .then(assetDesc => {
+              const { quantity } = assetDesc;
               E(buyerSeatP).offer(currencyPaymentP, escrowTerms);
               bidsReceived += 1;
               if (strictlyIncludes(quantity, bestPrice)) {
@@ -142,8 +142,8 @@ const auction = {
     // out auction seats in response to the offer.
     const sellerSeat = harden({
       offer(productPayment) {
-        return E(goodsAmount.label.issuer)
-          .claimExactly(goodsAmount, productPayment, 'consignment')
+        return E(goodsAssetDesc.label.issuer)
+          .claimExactly(goodsAssetDesc, productPayment, 'consignment')
           .then(consignment => {
             escrowedGoods.res(consignment);
             return bidderMaker;
@@ -165,21 +165,30 @@ const auction = {
   },
 
   // Only the bidders need to validate.
-  checkAmount: (installation, allegedInviteAmount, expectedTerms, seat) => {
-    mustBeSameStructure(allegedInviteAmount.quantity.seatDesc, seat);
-    const allegedTerms = allegedInviteAmount.quantity.terms;
-    mustBeSameStructure(allegedTerms, expectedTerms, 'Escrow checkAmount');
+  checkInstallation: (
+    installation,
+    allegedInviteAssetDesc,
+    expectedTerms,
+    seat,
+  ) => {
+    mustBeSameStructure(allegedInviteAssetDesc.quantity.seatDesc, seat);
+    const allegedTerms = allegedInviteAssetDesc.quantity.terms;
     mustBeSameStructure(
-      allegedInviteAmount.quantity.installation,
+      allegedTerms,
+      expectedTerms,
+      'Escrow checkInstallation',
+    );
+    mustBeSameStructure(
+      allegedInviteAssetDesc.quantity.installation,
       installation,
-      'escrow checkAmount installation',
+      'escrow checkInstallation installation',
     );
     return true;
   },
 };
 const auctionSrcs = {
   start: `${auction.start}`,
-  checkAmount: `${auction.checkAmount}`,
+  checkInstallation: `${auction.checkInstallation}`,
 };
 
 export { auction, auctionSrcs };

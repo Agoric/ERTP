@@ -32,7 +32,7 @@ function makeBidderMaker(E, host, log) {
           allComparable(harden([termsP, allegedInviteBalanceP])).then(p => {
             const [terms, allegedInviteBalance] = p;
             E(auctionInstallationP)
-              .checkAmount(allegedInviteBalance, terms, bidSeat)
+              .checkInstallation(allegedInviteBalance, terms, bidSeat)
               .then(v => {
                 insist(v)` installation must verify.`;
                 const { deadline } = terms;

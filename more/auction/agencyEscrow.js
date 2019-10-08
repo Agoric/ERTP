@@ -3,24 +3,24 @@
 
 import harden from '@agoric/harden';
 import { mustBeSameStructure } from '../../util/sameStructure';
-import { natStrategy } from '../../core/config/strategies/natStrategy';
+import { natExtentOps } from '../../core/config/extentOps/natExtentOps';
 
 // There are two parties to this transaction. The buyer is offering some amount
 // of currency (any fungible good) for a valuable item. The buyer will either
 // get the item, and possibly a return of some currency, or will get all their
 // offer back. The agency needs to see the offer before deciding whether to
-// transact. Only the amount is visible to the agency before an escrow seat is
+// transact. Only the extent is visible to the agency before an escrow seat is
 // received for the transaction.
 const agencyEscrow = {
   start: terms => {
-    const { currencyAmount, goodsAmount } = terms;
-    const { issuer: goodsIssuer } = goodsAmount.label;
+    const { currencyAssetDesc, goodsAssetDesc } = terms;
+    const { issuer: goodsIssuer } = goodsAssetDesc.label;
 
     // We want to give the buyer a promise for the good and for a refund. The
     // refund will resolve either to all the buyer's deposit, or the portion of
     // the deposit that wasn't required. The agency will get an invite for a
-    // seat that can ask the amount deposited, and then either cancel or provide
-    // an escrow seat with a specific price up to the amount.
+    // seat that can ask for the assetDesc deposited, and then either cancel or
+    // provide an escrow seat with a specific price up to the assetDesc.
 
     // Buyer's winnings and refund will be resolved if the offer is consummated.
     // If it's cancelled, only refund will be resolved. Winnings will contain
@@ -41,25 +41,29 @@ const agencyEscrow = {
       // The buyer will receive their winnings through a trusted escrow.
       consummateDeal(originalOffer, finalPrice, goodsPayment) {
         const wonGoodsPayment = E(goodsIssuer).claimAll(goodsPayment, 'wins');
-        const { issuer: currencyIssuerP } = currencyAmount.label;
-        const overbid = natStrategy.without(originalOffer, finalPrice);
+        const { issuer: currencyIssuerP } = currencyAssetDesc.label;
+        const overbid = natExtentOps.without(originalOffer, finalPrice);
         // TODO(hibbert) look up strategy from issuer with extentOpsLib
-        const overbidAmountP = E(currencyIssuerP).makeAmount(overbid);
-        const finalPriceAmount = E(currencyIssuerP).makeAmount(finalPrice);
-        return Promise.all([deposit.p, overbidAmountP, finalPriceAmount]).then(
-          splitDetails => {
-            const [dep, overbidAmt, finalPriceAmt] = splitDetails;
-            return E(currencyIssuerP)
-              .split(dep, [finalPriceAmt, overbidAmt])
-              .then(splitPurses => {
-                const [proceedsP, overbidP] = splitPurses;
-                earnings.res(proceedsP);
-                winnings.res(wonGoodsPayment);
-                refund.res(overbidP);
-                return E(earnings.p).getBalance();
-              });
-          },
+        const overbidAssetDescP = E(currencyIssuerP).makeAssetDesc(overbid);
+        const finalPriceAssetDescP = E(currencyIssuerP).makeAssetDesc(
+          finalPrice,
         );
+        return Promise.all([
+          deposit.p,
+          overbidAssetDescP,
+          finalPriceAssetDescP,
+        ]).then(splitDetails => {
+          const [dep, overbidAmt, finalPriceAmt] = splitDetails;
+          return E(currencyIssuerP)
+            .split(dep, [finalPriceAmt, overbidAmt])
+            .then(splitPurses => {
+              const [proceedsP, overbidP] = splitPurses;
+              earnings.res(proceedsP);
+              winnings.res(wonGoodsPayment);
+              refund.res(overbidP);
+              return E(earnings.p).getBalance();
+            });
+        });
       },
       getWinnings() {
         return earnings.p;
@@ -70,7 +74,7 @@ const agencyEscrow = {
       // The buyer provides an offer that will be escrowed, then either returned
       // or traded for the desired goods.
       offer(currencyOffer) {
-        const { issuer } = currencyAmount.label;
+        const { issuer } = currencyAssetDesc.label;
         const escrowedBidP = E(issuer).claimAll(currencyOffer);
         deposit.res(escrowedBidP);
       },
@@ -95,18 +99,23 @@ const agencyEscrow = {
     });
   },
 
-  checkAmount: (installation, allegedInviteAmount, expectedTerms, seat) => {
-    mustBeSameStructure(allegedInviteAmount.quantity.seatDesc, seat);
-    const allegedTerms = allegedInviteAmount.quantity.terms;
+  checkInstallation: (
+    installation,
+    allegedInviteAssetDesc,
+    expectedTerms,
+    seat,
+  ) => {
+    mustBeSameStructure(allegedInviteAssetDesc.quantity.seatDesc, seat);
+    const allegedTerms = allegedInviteAssetDesc.quantity.terms;
     mustBeSameStructure(
       allegedTerms,
       expectedTerms,
-      'AgencyEscrow checkAmount',
+      'AgencyEscrow checkInstallation',
     );
     mustBeSameStructure(
-      allegedInviteAmount.quantity.installation,
+      allegedInviteAssetDesc.quantity.installation,
       installation,
-      'escrow checkAmount installation',
+      'escrow checkInstallation installation',
     );
     return true;
   },
@@ -114,7 +123,7 @@ const agencyEscrow = {
 
 const agencyEscrowSrcs = {
   start: `${agencyEscrow.start}`,
-  checkAmount: `${agencyEscrow.checkAmount}`,
+  checkInstallation: `${agencyEscrow.checkInstallation}`,
 };
 
 export { agencyEscrowSrcs };

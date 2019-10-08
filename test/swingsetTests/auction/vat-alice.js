@@ -25,8 +25,8 @@ function makeAliceMaker(E, host, log) {
             const [moneyBalance, artBalance] = balances;
             const termsP = harden({
               agencyEscrowInstallationP,
-              currencyAmount: moneyBalance,
-              goodsAmount: artBalance,
+              currencyAssetDesc: moneyBalance,
+              goodsAssetDesc: artBalance,
               timerP,
               deadline: 11,
               minBidCount: 2,
