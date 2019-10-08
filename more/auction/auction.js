@@ -3,7 +3,7 @@
 
 import harden from '@agoric/harden';
 import { mustBeSameStructure } from '../../util/sameStructure';
-import { natStrategy } from '../../core/config/strategies/natStrategy';
+import { natExtentOps } from '../../core/config/extentOps/natExtentOps';
 
 // A Seller will provide a good to be auctioned and a possibly empty purse to
 // show the currency in which bids must be expressed. The Auctioneer will create
@@ -34,7 +34,7 @@ const auction = {
     let bidsReceived = 0;
     let bestPrice = 0;
     let secondPrice = 0;
-    const currencyIssuer = currencyAssetDesc.label.issuer;
+    const currencyAssay = currencyAssetDesc.label.assay;
     const auctionComplete = makePromise();
 
     // If bidder is undefined, cancel all Bids, otherwise cancel all but bidder.
@@ -49,10 +49,10 @@ const auction = {
 
     // By analogy with 'strictly greater than': x includes y and is not equal
     function strictlyIncludes(leftAssetDesc, rightAssetDesc) {
-      // TODO(hibbert) look up strategy from issuer with extentOpsLib
+      // TODO(hibbert) look up strategy from assay with extentOpsLib
       return (
-        natStrategy.includes(leftAssetDesc, rightAssetDesc) &&
-        !natStrategy.equals(leftAssetDesc, rightAssetDesc)
+        natExtentOps.includes(leftAssetDesc, rightAssetDesc) &&
+        !natExtentOps.equals(leftAssetDesc, rightAssetDesc)
       );
     }
 
@@ -83,28 +83,28 @@ const auction = {
         sellerWinnings.res(E(bestBidAgencySeatP).getWinnings());
         sellerRefund.res();
         paidAssetDescP.then(paidAssetDesc => {
-          auctionComplete.res(paidAssetDesc.quantity);
+          auctionComplete.res(paidAssetDesc.extent);
         });
       });
 
     function addNewBid(paymentP, buyerSeatP, agencySeatP) {
-      return E(currencyIssuer)
+      return E(currencyAssay)
         .claimAll(paymentP)
         .then(currencyPaymentP => {
           return E(currencyPaymentP)
             .getBalance()
             .then(assetDesc => {
-              const { quantity } = assetDesc;
+              const { extent } = assetDesc;
               E(buyerSeatP).offer(currencyPaymentP, escrowTerms);
               bidsReceived += 1;
-              if (strictlyIncludes(quantity, bestPrice)) {
+              if (strictlyIncludes(extent, bestPrice)) {
                 bestBidderP = buyerSeatP;
-                [bestPrice, secondPrice] = [quantity, bestPrice];
-              } else if (strictlyIncludes(quantity, secondPrice)) {
-                secondPrice = quantity;
+                [bestPrice, secondPrice] = [extent, bestPrice];
+              } else if (strictlyIncludes(extent, secondPrice)) {
+                secondPrice = extent;
               }
               agencySeatsP.set(buyerSeatP, agencySeatP);
-              return quantity;
+              return extent;
             });
         });
     }
@@ -142,7 +142,7 @@ const auction = {
     // out auction seats in response to the offer.
     const sellerSeat = harden({
       offer(productPayment) {
-        return E(goodsAssetDesc.label.issuer)
+        return E(goodsAssetDesc.label.assay)
           .claimExactly(goodsAssetDesc, productPayment, 'consignment')
           .then(consignment => {
             escrowedGoods.res(consignment);
@@ -171,15 +171,15 @@ const auction = {
     expectedTerms,
     seat,
   ) => {
-    mustBeSameStructure(allegedInviteAssetDesc.quantity.seatDesc, seat);
-    const allegedTerms = allegedInviteAssetDesc.quantity.terms;
+    mustBeSameStructure(allegedInviteAssetDesc.extent.seatDesc, seat);
+    const allegedTerms = allegedInviteAssetDesc.extent.terms;
     mustBeSameStructure(
       allegedTerms,
       expectedTerms,
       'Escrow checkInstallation',
     );
     mustBeSameStructure(
-      allegedInviteAssetDesc.quantity.installation,
+      allegedInviteAssetDesc.extent.installation,
       installation,
       'escrow checkInstallation installation',
     );

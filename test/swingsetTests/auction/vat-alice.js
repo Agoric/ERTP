@@ -33,8 +33,8 @@ function makeAliceMaker(E, host, log) {
               minPrice: 0,
             });
             const offerInvitePaymentP = E(auctionInstallationP).spawn(termsP);
-            const inviteIssuerP = E(host).getInviteIssuer();
-            const offerSeatPaymentP = E(inviteIssuerP).claimAll(
+            const inviteAssayP = E(host).getInviteAssay();
+            const offerSeatPaymentP = E(inviteAssayP).claimAll(
               offerInvitePaymentP,
               'offer',
             );
@@ -50,7 +50,7 @@ function makeAliceMaker(E, host, log) {
             );
             doneP.then(
               ([wins, _refunds]) =>
-                log(`*** Alice sold her painting for ${wins.quantity}. **`),
+                log(`*** Alice sold her painting for ${wins.extent}. **`),
               rej => log(`**** Alice's painting didn't sell. ** ${rej}`),
             );
 

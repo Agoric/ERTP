@@ -21,8 +21,8 @@ function makeBidderMaker(E, host, log) {
         offerSeat(bidderSeatInviteP, termsP) {
           log('++ bidder.offerSeat starting');
           E(timerP).tick(`BIDDER: starting offerSeat()`);
-          const inviteIssuerP = E(host).getInviteIssuer();
-          const bidderSeatPaymentP = E(inviteIssuerP).claimAll(
+          const inviteAssayP = E(host).getInviteAssay();
+          const bidderSeatPaymentP = E(inviteAssayP).claimAll(
             bidderSeatInviteP,
             'offer',
           );

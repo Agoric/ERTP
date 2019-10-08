@@ -4,9 +4,9 @@ import harden from '@agoric/harden';
 
 import { agencyEscrowSrcs } from '../../../more/auction/agencyEscrow';
 import { auctionSrcs } from '../../../more/auction/auction';
-import { makeMint } from '../../../core/issuers';
+import { makeMint } from '../../../core/mint';
 import makePromise from '../../../util/makePromise';
-import { makeUniAssayConfigMaker } from '../../../core/config/uniAssayConfig';
+import { makeUniDescOpsConfigMaker } from '../../../core/config/uniDescOpsConfig';
 import buildManualTimer from '../../../tools/manualTimer';
 
 function build(E, log) {
@@ -22,11 +22,11 @@ function build(E, log) {
     const bobMoneyPurse = moneyMint.mint(1000, 'bob funds');
     const barbMoneyPurse = moneyMint.mint(900, 'barb funds');
 
-    const makeUniAssayConfig = makeUniAssayConfigMaker();
+    const makeUniAssayConfig = makeUniDescOpsConfigMaker();
     const artMint = makeMint('Christies Art Auctions', makeUniAssayConfig);
     const aliceArtPurse = artMint.mint('Salvator Mundi', 'alice portfolio');
-    const bobArtPurse = artMint.getIssuer().makeEmptyPurse('bob portfolio');
-    const barbArtPurse = artMint.getIssuer().makeEmptyPurse('barb portfolio');
+    const bobArtPurse = artMint.getAssay().makeEmptyPurse('bob portfolio');
+    const barbArtPurse = artMint.getAssay().makeEmptyPurse('barb portfolio');
 
     const aliceP = E(aliceMakerP).make(
       agencyEscrowInstallationP,

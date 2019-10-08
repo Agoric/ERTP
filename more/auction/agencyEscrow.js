@@ -14,7 +14,7 @@ import { natExtentOps } from '../../core/config/extentOps/natExtentOps';
 const agencyEscrow = {
   start: terms => {
     const { currencyAssetDesc, goodsAssetDesc } = terms;
-    const { issuer: goodsIssuer } = goodsAssetDesc.label;
+    const { assay: goodsAssay } = goodsAssetDesc.label;
 
     // We want to give the buyer a promise for the good and for a refund. The
     // refund will resolve either to all the buyer's deposit, or the portion of
@@ -40,12 +40,12 @@ const agencyEscrow = {
       // The agency can accept one offer and collect the buyer's price or less.
       // The buyer will receive their winnings through a trusted escrow.
       consummateDeal(originalOffer, finalPrice, goodsPayment) {
-        const wonGoodsPayment = E(goodsIssuer).claimAll(goodsPayment, 'wins');
-        const { issuer: currencyIssuerP } = currencyAssetDesc.label;
+        const wonGoodsPayment = E(goodsAssay).claimAll(goodsPayment, 'wins');
+        const { assay: currencyAssayP } = currencyAssetDesc.label;
         const overbid = natExtentOps.without(originalOffer, finalPrice);
-        // TODO(hibbert) look up strategy from issuer with extentOpsLib
-        const overbidAssetDescP = E(currencyIssuerP).makeAssetDesc(overbid);
-        const finalPriceAssetDescP = E(currencyIssuerP).makeAssetDesc(
+        // TODO(hibbert) look up strategy from assay with extentOpsLib
+        const overbidAssetDescP = E(currencyAssayP).makeAssetDesc(overbid);
+        const finalPriceAssetDescP = E(currencyAssayP).makeAssetDesc(
           finalPrice,
         );
         return Promise.all([
@@ -54,7 +54,7 @@ const agencyEscrow = {
           finalPriceAssetDescP,
         ]).then(splitDetails => {
           const [dep, overbidAmt, finalPriceAmt] = splitDetails;
-          return E(currencyIssuerP)
+          return E(currencyAssayP)
             .split(dep, [finalPriceAmt, overbidAmt])
             .then(splitPurses => {
               const [proceedsP, overbidP] = splitPurses;
@@ -74,8 +74,8 @@ const agencyEscrow = {
       // The buyer provides an offer that will be escrowed, then either returned
       // or traded for the desired goods.
       offer(currencyOffer) {
-        const { issuer } = currencyAssetDesc.label;
-        const escrowedBidP = E(issuer).claimAll(currencyOffer);
+        const { assay } = currencyAssetDesc.label;
+        const escrowedBidP = E(assay).claimAll(currencyOffer);
         deposit.res(escrowedBidP);
       },
       // a promise for a purse for the goods.
@@ -88,7 +88,7 @@ const agencyEscrow = {
       },
       // The auction cancels losing offers to return the funds
       cancel() {
-        winnings.res(E(E(goodsIssuer).makeEmptyPurse()).withdrawAll('empty'));
+        winnings.res(E(E(goodsAssay).makeEmptyPurse()).withdrawAll('empty'));
         refund.res(deposit.p);
       },
     });
@@ -105,15 +105,15 @@ const agencyEscrow = {
     expectedTerms,
     seat,
   ) => {
-    mustBeSameStructure(allegedInviteAssetDesc.quantity.seatDesc, seat);
-    const allegedTerms = allegedInviteAssetDesc.quantity.terms;
+    mustBeSameStructure(allegedInviteAssetDesc.extent.seatDesc, seat);
+    const allegedTerms = allegedInviteAssetDesc.extent.terms;
     mustBeSameStructure(
       allegedTerms,
       expectedTerms,
       'AgencyEscrow checkInstallation',
     );
     mustBeSameStructure(
-      allegedInviteAssetDesc.quantity.installation,
+      allegedInviteAssetDesc.extent.installation,
       installation,
       'escrow checkInstallation installation',
     );
