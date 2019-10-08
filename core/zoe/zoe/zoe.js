@@ -27,6 +27,8 @@ import { makeAutomaticRefund } from '../contracts/automaticRefund';
 import { makeSimpleOfferMaker } from '../contracts/simpleOffer/simpleOffer';
 import { makeSecondPriceSrcs } from '../contracts/simpleOffer/srcs/secondPriceSrcs';
 import { swapSrcs } from '../contracts/simpleOffer/srcs/swapSrcs';
+import { makeCoveredCallMaker } from '../contracts/coveredCall';
+import { coveredCallSrcs } from '../contracts/coveredCallSrcs';
 
 const makeZoe = async () => {
   // The seatAssay and escrowReceiptAssay are long-lived identities
@@ -43,6 +45,7 @@ const makeZoe = async () => {
     automaticRefund: makeAutomaticRefund,
     secondPriceAuction3Bids: makeSimpleOfferMaker(makeSecondPriceSrcs(3)),
     simpleOfferSwap: makeSimpleOfferMaker(swapSrcs),
+    coveredCall: makeCoveredCallMaker(coveredCallSrcs),
   });
 
   const { adminState, readOnlyState } = await makeState();
@@ -82,23 +85,16 @@ const makeZoe = async () => {
       reallocate: (offerIds, reallocation) => {
         const offerDescs = readOnlyState.getOfferDescsFor(offerIds);
         const currentExtents = readOnlyState.getExtentsFor(offerIds);
+        const extentOps = readOnlyState.getExtentOps(instanceId);
 
         // 1) ensure that rights are conserved
         insist(
-          areRightsConserved(
-            readOnlyState.getExtentOps(instanceId),
-            currentExtents,
-            reallocation,
-          ),
+          areRightsConserved(extentOps, currentExtents, reallocation),
         )`Rights are not conserved in the proposed reallocation`;
 
         // 2) ensure 'offer safety' for each player
         insist(
-          isOfferSafeForAll(
-            readOnlyState.getExtentOps(instanceId),
-            offerDescs,
-            reallocation,
-          ),
+          isOfferSafeForAll(extentOps, offerDescs, reallocation),
         )`The proposed reallocation was not offer safe`;
 
         // 3) save the reallocation

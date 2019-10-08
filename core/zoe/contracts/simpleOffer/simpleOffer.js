@@ -8,10 +8,11 @@ const makeSimpleOfferMaker = srcs => zoe => {
 
   return harden({
     makeOffer: async escrowReceipt => {
-      const status = makePromise();
       const { id, offerMade: offerMadeDesc } = await zoe.burnEscrowReceipt(
         escrowReceipt,
       );
+
+      const status = makePromise();
 
       // Eject if the offer is invalid
       if (

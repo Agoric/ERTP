@@ -1,11 +1,10 @@
 import harden from '@agoric/harden';
 
-import { insist } from '../../../util/insist';
 import makePromise from '../../../util/makePromise';
 import { makeStateMachine } from '../utils/stateMachine';
 import { makeSeatMint } from '../../seatMint';
 
-const makeCoveredCallMaker = govC => zoeInstance => {
+const makeCoveredCallMaker = srcs => zoe => {
   const makeOfferKeeper = () => {
     const validOfferIdsToDescs = new WeakMap();
     const validOfferIds = [];
@@ -22,7 +21,6 @@ const makeCoveredCallMaker = govC => zoeInstance => {
   const { keepOffer, getValidOfferIds } = makeOfferKeeper();
 
   const { seatMint, seatAssay, addUseObj } = makeSeatMint();
-  const escrowReceiptAssay = zoeInstance.getEscrowReceiptAssay();
 
   const allowedTransitions = [
     ['open', ['closed', 'cancelled']],
@@ -35,40 +33,37 @@ const makeCoveredCallMaker = govC => zoeInstance => {
   const makeOfferMaker = offerToBeMadeDesc => {
     const makeOffer = async escrowReceipt => {
       const offerResult = makePromise();
-      // we will either drop this purse or withdraw from it to give a refund
-      const escrowReceiptPurse = escrowReceiptAssay.makeEmptyPurse();
-      const assetDesc = await escrowReceiptPurse.depositAll(escrowReceipt);
-      const { id, offerMade: offerMadeDesc } = assetDesc.extent;
+      const { id, offerMade: offerMadeDesc } = await zoe.burnEscrowReceipt(
+        escrowReceipt,
+      );
       if (sm.getStatus() !== 'open') {
-        offerResult.rej('swap was cancelled');
+        zoe.complete(harden([id]));
+        offerResult.rej('coveredCall was cancelled');
         return offerResult.p;
-        // TODO: refund?
       }
 
       // fail-fast if the offerDesc isn't valid
       if (
-        !govC.isValidOfferDesc(
-          zoeInstance.getDescOps(),
+        !srcs.isValidOfferDesc(
+          zoe.getExtentOps(),
           offerToBeMadeDesc,
           offerMadeDesc,
         )
       ) {
         offerResult.rej('offer was invalid');
         return offerResult.p;
-        // TODO: refund?
       }
 
       // keep valid offer
       keepOffer(id, offerMadeDesc);
       const validIds = getValidOfferIds();
 
-      if (sm.canTransitionTo('closed') && govC.canReallocate(validIds)) {
+      if (sm.canTransitionTo('closed') && srcs.canReallocate(validIds)) {
         sm.transitionTo('closed');
-        zoeInstance.reallocate(
-          validIds,
-          govC.reallocate(zoeInstance.getExtentsFor(validIds)),
-        );
-        zoeInstance.eject(validIds);
+        const extents = zoe.getExtentsFor(validIds);
+        const reallocation = srcs.reallocate(extents);
+        zoe.reallocate(validIds, reallocation);
+        zoe.complete(validIds);
       }
       offerResult.res('offer successfully made');
       return offerResult.p;
@@ -78,26 +73,36 @@ const makeCoveredCallMaker = govC => zoeInstance => {
 
   const institution = harden({
     async init(escrowReceipt) {
-      const { offerMade: offerMadeDesc } = escrowReceipt.getBalance().extent;
-      insist(
-        govC.isValidInitialOfferDesc(zoeInstance.getAssays(), offerMadeDesc),
-      )`this offer has an invalid format`;
+      const { id, offerMade: offerMadeDesc } = await zoe.burnEscrowReceipt(
+        escrowReceipt,
+      );
+      const outcomeP = makePromise();
+      // Eject if the offer is invalid
+      if (!srcs.isValidInitialOfferDesc(offerMadeDesc)) {
+        zoe.complete(harden([id]));
+        outcomeP.rej('The offer was invalid. Please check your refund.');
+        return outcomeP.p;
+      }
 
-      const makeOffer = makeOfferMaker(offerMadeDesc);
-      const outcome = makeOffer(escrowReceipt);
+      keepOffer(id, offerMadeDesc);
 
-      const wantedOffers = govC.makeWantedOfferDescs(offerMadeDesc);
+      const wantedOffers = srcs.makeWantedOfferDescs(offerMadeDesc);
 
-      const invites = wantedOffers.map(offer => {
+      const invites = wantedOffers.map(async offer => {
         const extent = harden({
-          src: govC.name,
+          src: srcs.name,
           id: harden({}),
           offerToBeMade: offer,
         });
         addUseObj(extent.id, harden({ makeOffer: makeOfferMaker(offer) }));
-        const purse = seatMint.mint(harden(extent));
+        const purse = await seatMint.mint(harden(extent));
         return purse.withdrawAll();
       });
+
+      const inviteP = invites[0];
+
+      outcomeP.res('offer successfully made');
+      const [outcome, invite] = await Promise.all([outcomeP.p, inviteP]);
       /**
        * Seat: the seat for the initial player
        * Invites: invitations for all of the other seats that can
@@ -107,10 +112,9 @@ const makeCoveredCallMaker = govC => zoeInstance => {
        */
       return harden({
         outcome,
-        invites,
+        invite,
       });
     },
-    getAssays: _ => zoeInstance.getAssays(),
     getStatus: _ => sm.getStatus(),
     getSeatAssay: _ => seatAssay,
   });

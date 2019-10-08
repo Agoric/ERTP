@@ -23,9 +23,9 @@ import { insist } from '../../util/insist';
 
 const insistSeat = seat => {
   const properties = Object.getOwnPropertyNames(seat);
-  insist(
-    properties.length === 2,
-  )`must have the properties 'id', and 'offerToBeMade' or 'offerMade'`;
+  // insist(
+  //   properties.length === 2,
+  // )`must have the properties 'id', and 'offerToBeMade' or 'offerMade'`;
   insist(properties.includes('id'))`must include 'id'`;
   insist(
     properties.includes('offerToBeMade') || properties.includes('offerMade'),

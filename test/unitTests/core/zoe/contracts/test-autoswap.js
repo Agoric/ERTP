@@ -9,7 +9,7 @@ test('autoSwap with valid offers', async t => {
   try {
     const { assays: defaultAssays, mints } = setup();
     const assays = defaultAssays.slice(0, 2);
-    const zoe = makeZoe();
+    const zoe = await makeZoe();
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
 
     // Setup Alice

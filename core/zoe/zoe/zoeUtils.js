@@ -53,6 +53,9 @@ const escrowAllPayments = async (
     insist(
       offerPayments[i] === undefined,
     )`payment was included, but the rule was ${offerDesc[i].rule}`;
+    // TODO: we should require that offerDescElement cannot be
+    // undefined. That way we can get the issuers and this undefined
+    // should be strategy.empty()
     return undefined;
   });
   return Promise.all(extentsArrayPromises);
