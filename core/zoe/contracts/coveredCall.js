@@ -2,7 +2,6 @@ import harden from '@agoric/harden';
 
 import makePromise from '../../../util/makePromise';
 import { makeStateMachine } from '../utils/stateMachine';
-import { makeSeatMint } from '../../seatMint';
 
 const makeCoveredCallMaker = srcs => zoe => {
   const makeOfferKeeper = () => {
@@ -13,14 +12,11 @@ const makeCoveredCallMaker = srcs => zoe => {
         validOfferIdsToDescs.set(offerId, offerDesc);
         validOfferIds.push(offerId);
       },
-      getOffer: offerId => validOfferIdsToDescs.get(offerId),
       getValidOfferIds: () => validOfferIds,
     });
   };
 
   const { keepOffer, getValidOfferIds } = makeOfferKeeper();
-
-  const { seatMint, seatAssay, addUseObj } = makeSeatMint();
 
   const allowedTransitions = [
     ['open', ['closed', 'cancelled']],
@@ -38,7 +34,7 @@ const makeCoveredCallMaker = srcs => zoe => {
       );
       if (sm.getStatus() !== 'open') {
         zoe.complete(harden([id]));
-        offerResult.rej('coveredCall was cancelled');
+        offerResult.rej('offers are not accepted at this time');
         return offerResult.p;
       }
 
@@ -50,6 +46,7 @@ const makeCoveredCallMaker = srcs => zoe => {
           offerMadeDesc,
         )
       ) {
+        zoe.complete(harden([id]));
         offerResult.rej('offer was invalid');
         return offerResult.p;
       }
@@ -88,16 +85,9 @@ const makeCoveredCallMaker = srcs => zoe => {
 
       const wantedOffers = srcs.makeWantedOfferDescs(offerMadeDesc);
 
-      const invites = wantedOffers.map(async offer => {
-        const extent = harden({
-          src: srcs.name,
-          id: harden({}),
-          offerToBeMade: offer,
-        });
-        addUseObj(extent.id, harden({ makeOffer: makeOfferMaker(offer) }));
-        const purse = await seatMint.mint(harden(extent));
-        return purse.withdrawAll();
-      });
+      const invites = wantedOffers.map(async offer =>
+        zoe.makeInvite(offer, harden({ makeOffer: makeOfferMaker(offer) })),
+      );
 
       const inviteP = invites[0];
 
@@ -116,7 +106,6 @@ const makeCoveredCallMaker = srcs => zoe => {
       });
     },
     getStatus: _ => sm.getStatus(),
-    getSeatAssay: _ => seatAssay,
   });
   return institution;
 };

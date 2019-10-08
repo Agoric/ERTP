@@ -34,6 +34,11 @@ const makeZoe = async () => {
   // The seatAssay and escrowReceiptAssay are long-lived identities
   // over many contract instances
   const { seatMint, seatAssay, addUseObj } = makeSeatMint('zoeSeats');
+  const {
+    seatMint: inviteMint,
+    seatAssay: inviteAssay,
+    addUseObj: inviteAddUseObj,
+  } = makeSeatMint('zoeInvite');
   const escrowReceiptMint = makeMint(
     'zoeEscrowReceipts',
     makeEscrowReceiptConfig,
@@ -168,12 +173,25 @@ const makeZoe = async () => {
         return assetDesc.extent;
       },
 
+      makeInvite: (offerToBeMade, useObj) => {
+        const inviteExtent = harden({
+          id: harden({}),
+          instanceId,
+          offerToBeMade,
+        });
+        const invitePurseP = inviteMint.mint(inviteExtent);
+        inviteAddUseObj(inviteExtent.id, useObj);
+        const invitePaymentP = invitePurseP.withdrawAll();
+        return invitePaymentP;
+      },
+
       // read-only, side-effect-free access below this line:
       makeEmptyExtents: () => makeEmptyExtents(readOnlyState.getExtentOps()),
       getExtentOps: () => readOnlyState.getExtentOps(instanceId),
       getExtentsFor: readOnlyState.getExtentsFor,
       getOfferDescsFor: readOnlyState.getOfferDescsFor,
       getSeatAssay: () => seatAssay,
+      getInviteAssay: () => inviteAssay,
       getEscrowReceiptAssay: () => escrowReceiptAssay,
     });
 
@@ -186,6 +204,7 @@ const makeZoe = async () => {
   const publicFacet = harden({
     getSeatAssay: () => seatAssay,
     getEscrowReceiptAssay: () => escrowReceiptAssay,
+    getInviteAssay: () => inviteAssay,
     getAssaysForInstance: instanceId => readOnlyState.getAssays(instanceId),
 
     /**

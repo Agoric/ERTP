@@ -118,6 +118,9 @@ interface ZoeGoverningContractFacet () {
 
   /** Burn and validate an escrowReceipt received from the user. */
   burnEscrowReceipt (instanceId :Object, escrowReceipt :Payment) -> (Extent);
+  
+  /** Create an invite using the Zoe inviteMint */
+  makeInvite (offerToBeMade :List(OfferDescElem), useObj :Object) -> (Payment);
 
   ////// The methods below are pure and have no side-effects. ////////
 

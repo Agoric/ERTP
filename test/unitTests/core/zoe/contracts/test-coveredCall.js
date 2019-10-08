@@ -72,7 +72,7 @@ test('zoe - coveredCall', async t => {
     } = await aliceCoveredCall.init(aliceEscrowReceipt);
 
     // Check that the assays and bobInvitePayment are as expected
-    t.deepEquals(bobInvitePayment.getBalance().extent.src, 'coveredCall');
+    t.deepEquals(bobInvitePayment.getBalance().extent.instanceId, instanceId);
     t.deepEquals(bobInvitePayment.getBalance().extent.offerToBeMade, [
       {
         rule: 'wantExactly',
@@ -109,11 +109,15 @@ test('zoe - coveredCall', async t => {
       ),
     );
 
-    t.equal(bobInvitePayment.getBalance().extent.src, 'coveredCall');
+    t.equal(bobInvitePayment.getBalance().extent.instanceId, instanceId);
+
+    // Bob claims all with the Zoe inviteAssay
+    const inviteAssay = zoe.getInviteAssay();
+    const bobExclInvitePayment = await inviteAssay.claimAll(bobInvitePayment);
 
     // 5: Only after assaying the invite does he unwrap it (destroying
     // the ERTP invite) and accept it
-    const bobInvite = await bobInvitePayment.unwrap();
+    const bobInvite = await bobExclInvitePayment.unwrap();
     const bobPayments = [undefined, bobSimoleanPayment];
 
     // 6: Bob escrows
