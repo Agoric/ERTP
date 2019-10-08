@@ -34,7 +34,7 @@ const auction = {
     let bidsReceived = 0;
     let bestPrice = 0;
     let secondPrice = 0;
-    const currencyAssay = currencyAssetDesc.label.assay;
+    const currencyAssayP = currencyAssetDesc.label.assay;
     const auctionComplete = makePromise();
 
     // If bidder is undefined, cancel all Bids, otherwise cancel all but bidder.
@@ -64,7 +64,7 @@ const auction = {
           bidsReceived < minBidCount ||
           strictlyIncludes(minPrice, secondPrice)
         ) {
-          cancelExcept();
+          cancelExcept(undefined);
           sellerRefund.res(escrowedGoods.p);
           auctionComplete.reject(
             bidsReceived < minBidCount
@@ -88,7 +88,7 @@ const auction = {
       });
 
     function addNewBid(paymentP, buyerSeatP, agencySeatP) {
-      return E(currencyAssay)
+      return E(currencyAssayP)
         .claimAll(paymentP)
         .then(currencyPaymentP => {
           return E(currencyPaymentP)
@@ -171,17 +171,20 @@ const auction = {
     expectedTerms,
     seat,
   ) => {
-    mustBeSameStructure(allegedInviteAssetDesc.extent.seatDesc, seat);
-    const allegedTerms = allegedInviteAssetDesc.extent.terms;
     mustBeSameStructure(
-      allegedTerms,
+      allegedInviteAssetDesc.extent.seatDesc,
+      seat,
+      'Auction checkInstallation seat',
+    );
+    mustBeSameStructure(
+      allegedInviteAssetDesc.extent.terms,
       expectedTerms,
-      'Escrow checkInstallation',
+      'Auction checkInstallation terms',
     );
     mustBeSameStructure(
       allegedInviteAssetDesc.extent.installation,
       installation,
-      'escrow checkInstallation installation',
+      'Auction checkInstallation installation',
     );
     return true;
   },

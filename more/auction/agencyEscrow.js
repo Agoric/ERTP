@@ -2,7 +2,6 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { mustBeSameStructure } from '../../util/sameStructure';
 import { natExtentOps } from '../../core/config/extentOps/natExtentOps';
 
 // There are two parties to this transaction. The buyer is offering some amount
@@ -18,12 +17,12 @@ const agencyEscrow = {
 
     // We want to give the buyer a promise for the good and for a refund. The
     // refund will resolve either to all the buyer's deposit, or the portion of
-    // the deposit that wasn't required. The agency will get an invite for a
-    // seat that can ask for the assetDesc deposited, and then either cancel or
-    // provide an escrow seat with a specific price up to the assetDesc.
+    // the deposit that wasn't required. The agency will get a seat that can ask
+    // for the extent deposited, and then either cancel or provide an escrow
+    // seat with a specific price up to that extent.
 
     // Buyer's winnings and refund will be resolved if the offer is consummated.
-    // If it's cancelled, only refund will be resolved. Winnings will contain
+    // If it is cancelled, only refund will be resolved. Winnings will contain
     // the item or nothing. Refund usually contains currency.
     const winnings = makePromise();
     const refund = makePromise();
@@ -42,8 +41,8 @@ const agencyEscrow = {
       consummateDeal(originalOffer, finalPrice, goodsPayment) {
         const wonGoodsPayment = E(goodsAssay).claimAll(goodsPayment, 'wins');
         const { assay: currencyAssayP } = currencyAssetDesc.label;
+        // TODO(hibbert) look up extentOps from assay with extentOpsLib
         const overbid = natExtentOps.without(originalOffer, finalPrice);
-        // TODO(hibbert) look up strategy from assay with extentOpsLib
         const overbidAssetDescP = E(currencyAssayP).makeAssetDesc(overbid);
         const finalPriceAssetDescP = E(currencyAssayP).makeAssetDesc(
           finalPrice,
@@ -53,9 +52,9 @@ const agencyEscrow = {
           overbidAssetDescP,
           finalPriceAssetDescP,
         ]).then(splitDetails => {
-          const [dep, overbidAmt, finalPriceAmt] = splitDetails;
+          const [dep, overbidAssetDesc, finalPriceAssetDesc] = splitDetails;
           return E(currencyAssayP)
-            .split(dep, [finalPriceAmt, overbidAmt])
+            .split(dep, [finalPriceAssetDesc, overbidAssetDesc])
             .then(splitPurses => {
               const [proceedsP, overbidP] = splitPurses;
               earnings.res(proceedsP);
@@ -98,32 +97,8 @@ const agencyEscrow = {
       buyer: buyerSeat,
     });
   },
-
-  checkInstallation: (
-    installation,
-    allegedInviteAssetDesc,
-    expectedTerms,
-    seat,
-  ) => {
-    mustBeSameStructure(allegedInviteAssetDesc.extent.seatDesc, seat);
-    const allegedTerms = allegedInviteAssetDesc.extent.terms;
-    mustBeSameStructure(
-      allegedTerms,
-      expectedTerms,
-      'AgencyEscrow checkInstallation',
-    );
-    mustBeSameStructure(
-      allegedInviteAssetDesc.extent.installation,
-      installation,
-      'escrow checkInstallation installation',
-    );
-    return true;
-  },
 };
 
-const agencyEscrowSrcs = {
-  start: `${agencyEscrow.start}`,
-  checkInstallation: `${agencyEscrow.checkInstallation}`,
-};
+const agencyEscrowSrcs = { start: `${agencyEscrow.start}` };
 
 export { agencyEscrowSrcs };
