@@ -4,6 +4,7 @@ import { insist } from '../../../util/insist';
 import { isOfferSafeForAll } from './isOfferSafe';
 import { areRightsConserved } from './areRightsConserved';
 import { toAssetDescMatrix, makeEmptyExtents } from '../contractUtils';
+import makePromise from '../../../util/makePromise';
 
 import { importManager } from '../../../more/imports/importManager';
 
@@ -12,6 +13,7 @@ import {
   escrowEmptyOffer,
   escrowOffer,
   mintEscrowReceiptPayment,
+  mintPayoffPayment,
   fillInUndefinedExtents,
 } from './zoeUtils';
 
@@ -37,6 +39,13 @@ const makeZoe = async () => {
     seatAssay: inviteAssay,
     addUseObj: inviteAddUseObj,
   } = makeSeatMint('zoeInvite');
+
+  const {
+    seatMint: payoffMint,
+    seatAssay: payoffAssay,
+    addUseObj: payoffAddUseObj,
+  } = makeSeatMint('zoePayoff');
+
   const escrowReceiptMint = makeMint(
     'zoeEscrowReceipts',
     makeEscrowReceiptConfig,
@@ -168,6 +177,7 @@ const makeZoe = async () => {
           offerIds,
           instanceId,
         );
+        adminState.recordUsedInInstance(instanceId, id);
         return assetDesc.extent;
       },
 
@@ -201,6 +211,7 @@ const makeZoe = async () => {
   const publicFacet = harden({
     getEscrowReceiptAssay: () => escrowReceiptAssay,
     getInviteAssay: () => inviteAssay,
+    getPayoffAssay: () => payoffAssay,
     getAssaysForInstance: instanceId => readOnlyState.getAssays(instanceId),
 
     /**
@@ -264,6 +275,26 @@ const makeZoe = async () => {
       return {
         escrowReceipt: escrowReceiptPaymentP,
         payoff: result.p,
+        makePayoffPaymentObj: harden({
+          makePayoffPayment: () => {
+            // if offer has already completed, we cannot make a payment
+            if (!readOnlyState.isOfferIdActive(offerId)) {
+              throw new Error('offer has already completed');
+            }
+            result.reject(
+              'A new payoff ERTP payment was made, making this invalid.',
+            );
+            const newResult = makePromise();
+            adminState.replaceResult(offerId, newResult);
+            return mintPayoffPayment(
+              payoffMint,
+              payoffAddUseObj,
+              offerDesc,
+              newResult,
+              adminState.getInstanceIdForOfferId(offerId),
+            );
+          },
+        }),
       };
     },
   });

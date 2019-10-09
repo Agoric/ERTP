@@ -49,6 +49,7 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
       payoff: alicePayoffP,
+      makePayoffPaymentObj,
     } = await zoe.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. (This is
@@ -116,6 +117,10 @@ test('zoe.makeInstance with automaticRefund', async t => {
     t.equals(aliceOfferMadeDesc, aliceOfferDesc);
 
     const alicePayoff = await alicePayoffP;
+    t.throws(
+      () => makePayoffPaymentObj.makePayoffPayment(),
+      /offer has already completed/,
+    );
     const bobPayoff = await bobPayoffP;
 
     // Alice got back what she put in

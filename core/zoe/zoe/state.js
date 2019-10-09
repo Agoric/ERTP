@@ -7,6 +7,7 @@ const makeState = () => {
   const offerIdToExtents = new WeakMap();
   const offerIdToOfferDescs = new WeakMap();
   const offerIdToResults = new WeakMap();
+  const offerIdToInstanceId = new WeakMap();
   const instanceIdToInstance = new WeakMap();
   const instanceIdToLibraryName = new WeakMap();
   const assayToPurse = new WeakMap();
@@ -28,6 +29,9 @@ const makeState = () => {
       offerIds.map(offerId => offerIdToExtents.get(offerId)),
     getOfferDescsFor: offerIds =>
       offerIds.map(offerId => offerIdToOfferDescs.get(offerId)),
+
+    // per offerId
+    isOfferIdActive: offerId => offerIdToInstanceId.has(offerId),
   });
 
   // The adminState should never leave Zoe and should be closely held
@@ -75,6 +79,20 @@ const makeState = () => {
       offerIdToOfferDescs.set(offerId, offerDesc);
       offerIdToResults.set(offerId, result);
     },
+    replaceResult: (offerId, newResult) => {
+      // check exists first before replacing
+      if (!offerIdToResults.has(offerId)) {
+        throw new Error('offerId not found. Offer may have completed');
+      }
+      offerIdToResults.set(offerId, newResult);
+    },
+    recordUsedInInstance: (instanceId, offerId) => {
+      if (offerIdToInstanceId.has(offerId)) {
+        throw new Error('offer id was already used');
+      }
+      offerIdToInstanceId.set(offerId, instanceId);
+    },
+    getInstanceIdForOfferId: offerId => offerIdToInstanceId.get(offerId),
     setExtentsFor: (offerIds, reallocation) =>
       offerIds.map((offerId, i) =>
         offerIdToExtents.set(offerId, reallocation[i]),
@@ -88,6 +106,7 @@ const makeState = () => {
         offerIdToExtents.delete(objId);
         offerIdToOfferDescs.delete(objId);
         offerIdToResults.delete(objId);
+        offerIdToInstanceId.delete(objId);
       });
     },
   });
