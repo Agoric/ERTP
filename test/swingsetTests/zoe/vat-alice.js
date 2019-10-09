@@ -42,7 +42,7 @@ const makeAliceMaker = async (E, log, zoe) => {
 
           const offerPayments = [aliceMoolaPayment, undefined];
 
-          const { escrowReceipt, claimPayoff } = await E(zoe).escrow(
+          const { escrowReceipt, payoff: payoffP } = await E(zoe).escrow(
             offerDesc,
             offerPayments,
           );
@@ -58,16 +58,11 @@ const makeAliceMaker = async (E, log, zoe) => {
           // it
           await E(bobP).doAutomaticRefund(instanceId);
 
-          // 6: Alice unwraps the claimPayoff to get her seat
-          const aliceSeat = await E(claimPayoff).unwrap();
-
-          // 7: Alice claims her portion of the outcome (what she put in,
-          // since it's an automatic refund)
-          const aliceResult = await E(aliceSeat).getPayoff();
+          const payoff = await payoffP;
 
           // 8: Alice deposits her refund to ensure she can
-          await E(moolaPurse).depositAll(aliceResult[0]);
-          await E(simoleanPurse).depositAll(aliceResult[1]);
+          await E(moolaPurse).depositAll(payoff[0]);
+          await E(simoleanPurse).depositAll(payoff[1]);
 
           await showPaymentBalance(moolaPurse, 'aliceMoolaPurse');
           await showPaymentBalance(simoleanPurse, 'aliceSimoleanPurse;');

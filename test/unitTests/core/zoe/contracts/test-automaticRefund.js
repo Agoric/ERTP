@@ -10,7 +10,6 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const assays = defaultAssays.slice(0, 2);
     const zoe = await makeZoe();
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
-    const seatAssay = zoe.getSeatAssay();
 
     // Setup Alice
     const aliceMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(3));
@@ -43,14 +42,13 @@ test('zoe.makeInstance with automaticRefund', async t => {
     ]);
     const alicePayments = [aliceMoolaPayment, undefined];
 
-    // Alice gets two kinds of ERTP payments back: an 'escrowReceipt' that
+    // Alice gets two kinds of things back: an 'escrowReceipt' that
     // represents what she escrowed and which she can use interact
-    // safely with untrusted contracts, and a 'claimPayoff'
-    // ERTP payment that represents the right to claim the winnings of
-    // the offer that she made.
+    // safely with untrusted contracts, and a payoff promise that resolves to
+    // the array of payments
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
-      claimPayoff: allegedAliceClaimPayoff,
+      payoff: alicePayoffP,
     } = await zoe.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. (This is
@@ -97,11 +95,11 @@ test('zoe.makeInstance with automaticRefund', async t => {
     ]);
     const bobPayments = [undefined, bobSimoleanPayment];
 
-    // Bob also gets two ERTP payments back: an escrowReceipt and a
-    // claimPayoff payment
+    // Bob also gets two things back: an escrowReceipt and a
+    // payoff
     const {
       escrowReceipt: allegedBobEscrowReceipt,
-      claimPayoff: allegedBobClaimPayoff,
+      payoff: bobPayoffP,
     } = await zoe.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment
@@ -117,41 +115,22 @@ test('zoe.makeInstance with automaticRefund', async t => {
     t.equals(bobOfferMadeDesc, bobOfferDesc);
     t.equals(aliceOfferMadeDesc, aliceOfferDesc);
 
-    // 9: Alice does a claimAll on her claimPayoff (she doesn't have
-    // to if she already trusts Zoe, but we will in the tests.)
-    const aliceClaimPayoff = await seatAssay.claimAll(allegedAliceClaimPayoff);
-
-    // 10: Bob does a claimAll on his claimPayoff (he doesn't have
-    // to, but we will in the tests.)
-    const bobClaimPayoff = await seatAssay.claimAll(allegedBobClaimPayoff);
-
-    // 11: Alice unwraps the claimPayoff to get her seat
-    const aliceSeat = await aliceClaimPayoff.unwrap();
-
-    // 12: Bob unwraps his claimPayoff to get his seat
-    const bobSeat = await bobClaimPayoff.unwrap();
-
-    // 9: Alice claims her portion of the outcome (what she put in,
-    // since it's an automatic refund)
-    const aliceResult = await aliceSeat.getPayoff();
-
-    // 10: Bob claims his position of the outcome (what he put in,
-    // since it's an automatic refund)
-    const bobResult = await bobSeat.getPayoff();
+    const alicePayoff = await alicePayoffP;
+    const bobPayoff = await bobPayoffP;
 
     // Alice got back what she put in
-    t.deepEquals(aliceResult[0].getBalance(), aliceOfferDesc[0].assetDesc);
+    t.deepEquals(alicePayoff[0].getBalance(), aliceOfferDesc[0].assetDesc);
 
     // Alice didn't get any of what she wanted
-    t.equals(aliceResult[1].getBalance().extent, 0);
+    t.equals(alicePayoff[1].getBalance().extent, 0);
 
-    // 11: Alice deposits her refund to ensure she can
-    await aliceMoolaPurse.depositAll(aliceResult[0]);
-    await aliceSimoleanPurse.depositAll(aliceResult[1]);
+    // 9: Alice deposits her refund to ensure she can
+    await aliceMoolaPurse.depositAll(alicePayoff[0]);
+    await aliceSimoleanPurse.depositAll(alicePayoff[1]);
 
-    // 12: Bob deposits his refund to ensure he can
-    await bobMoolaPurse.depositAll(bobResult[0]);
-    await bobSimoleanPurse.depositAll(bobResult[1]);
+    // 10: Bob deposits his refund to ensure he can
+    await bobMoolaPurse.depositAll(bobPayoff[0]);
+    await bobSimoleanPurse.depositAll(bobPayoff[1]);
 
     // Assert that the correct refund was achieved.
     // Alice had 3 moola and 0 simoleans.
@@ -214,19 +193,19 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     ]);
     const {
       escrowReceipt: aliceEscrowReceipt1,
-      claimPayoff: aliceClaimPayoff1,
+      payoff: payoffP1,
     } = await zoe.escrow(aliceOfferDesc, [aliceMoolaPayments[0], undefined]);
 
     // 3: Alice escrows with zoe
     const {
       escrowReceipt: aliceEscrowReceipt2,
-      claimPayoff: aliceClaimPayoff2,
+      payoff: payoffP2,
     } = await zoe.escrow(aliceOfferDesc, [aliceMoolaPayments[1], undefined]);
 
     // 4: Alice escrows with zoe
     const {
       escrowReceipt: aliceEscrowReceipt3,
-      claimPayoff: aliceClaimPayoff3,
+      payoff: payoffP3,
     } = await zoe.escrow(aliceOfferDesc, [aliceMoolaPayments[2], undefined]);
 
     // 5: Alice makes an offer with each of her escrow receipts
@@ -234,20 +213,14 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     await automaticRefund2.makeOffer(aliceEscrowReceipt2);
     await automaticRefund3.makeOffer(aliceEscrowReceipt3);
 
-    // 6: Alice unwraps her claimPayoffs
-    const aliceSeat1 = await aliceClaimPayoff1.unwrap();
-    const aliceSeat2 = await aliceClaimPayoff2.unwrap();
-    const aliceSeat3 = await aliceClaimPayoff3.unwrap();
-
-    // 7: Alice gets her payoffs
-    const aliceResult1 = await aliceSeat1.getPayoff();
-    const aliceResult2 = await aliceSeat2.getPayoff();
-    const aliceResult3 = await aliceSeat3.getPayoff();
+    const payoff1 = await payoffP1;
+    const payoff2 = await payoffP2;
+    const payoff3 = await payoffP3;
 
     // Ensure that she got what she put in for each
-    t.deepEquals(aliceResult1[0].getBalance(), aliceOfferDesc[0].assetDesc);
-    t.deepEquals(aliceResult2[0].getBalance(), aliceOfferDesc[0].assetDesc);
-    t.deepEquals(aliceResult3[0].getBalance(), aliceOfferDesc[0].assetDesc);
+    t.deepEquals(payoff1[0].getBalance(), aliceOfferDesc[0].assetDesc);
+    t.deepEquals(payoff2[0].getBalance(), aliceOfferDesc[0].assetDesc);
+    t.deepEquals(payoff3[0].getBalance(), aliceOfferDesc[0].assetDesc);
 
     // Ensure that the number of offers received by each instance is one
     t.equals(automaticRefund1.getOffersCount(), 1);

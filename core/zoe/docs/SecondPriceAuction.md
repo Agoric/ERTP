@@ -42,7 +42,7 @@ const aliceOfferDesc = harden([
 const alicePayments = [aliceMoolaPayment, undefined];
 const {
   escrowReceipt: allegedAliceEscrowReceipt,
-  claimPayoff: aliceClaimPayoff,
+  payoff: alicePayoffP,
 } = await zoe.escrow(aliceOfferDesc, alicePayments);
 
 const aliceOfferResult = await aliceAuction.makeOffer(aliceEscrowReceipt);
@@ -88,7 +88,7 @@ const bobOfferDesc = harden([
 const bobPayments = [undefined, bobSimoleanPayment];
 const {
   escrowReceipt: allegedBobEscrowReceipt,
-  claimPayoff: bobClaimPayoff,
+  payoff: bobPayoffP,
 } = await zoe.escrow(bobOfferDesc, bobPayments);
 
 const bobOfferResult = await bobAuction.makeOffer(bobEscrowReceipt);

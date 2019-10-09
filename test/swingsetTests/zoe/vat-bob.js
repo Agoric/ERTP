@@ -52,7 +52,7 @@ const makeBobMaker = async (E, log, zoe) => {
 
           const bobPayments = [undefined, bobSimoleanPayment];
 
-          const { escrowReceipt, claimPayoff } = await E(zoe).escrow(
+          const { escrowReceipt, payoff: payoffP } = await E(zoe).escrow(
             bobOfferDesc,
             bobPayments,
           );
@@ -64,11 +64,7 @@ const makeBobMaker = async (E, log, zoe) => {
 
           log(bobOfferMadeDesc);
 
-          // 3: Bob unwraps the claimPayoff to get his seat
-          const bobSeat = await E(claimPayoff).unwrap();
-
-          // 4: Bob claims his share of the outcome (what he put in)
-          const bobResult = await E(bobSeat).getPayoff();
+          const bobResult = await payoffP;
 
           // 5: Bob deposits his winnings
           await E(moolaPurse).depositAll(bobResult[0]);

@@ -24,7 +24,7 @@ const { instance: aliceSwap, instanceId } = await zoe.makeInstance(
 ```
 
 Then escrows her offer with Zoe and gets an escrowReceipt
-and a claimPayoff ERTP payment from which she can get her payoff:
+and a promise that resolves to her payoff:
 
 ```js
 const aliceOfferDesc = harden([
@@ -40,7 +40,7 @@ const aliceOfferDesc = harden([
 const alicePayments = [aliceMoolaPayment, undefined];
 const {
   escrowReceipt: allegedAliceEscrowReceipt,
-  claimPayoff: aliceClaimPayoff,
+  payoff: alicePayoffP,
 } = await zoe.escrow(aliceOfferDesc, alicePayments);
 ```
 
@@ -48,8 +48,6 @@ And then makes an offer using the escrowReceipt and tries to collect her winning
 
 ```js
 const aliceOfferResultP = aliceSwap.makeOffer(aliceEscrowReceipt);
-const aliceSeat = await aliceClaimPayoff.unwrap();
-const alicePayoffP = aliceSeat.getPayoff();
 
 ```
 
@@ -83,7 +81,7 @@ const bobPayments = [undefined, bobSimoleanPayment];
 
 const {
   escrowReceipt: bobEscrowReceipt,
-  claimPayoff: bobClaimPayoff,
+  payoff: bobPayoffP,
 } = await zoe.escrow(bobOfferDesc, bobPayments);
 
 const bobOfferResult = await bobSwap.makeOffer(bobEscrowReceipt);

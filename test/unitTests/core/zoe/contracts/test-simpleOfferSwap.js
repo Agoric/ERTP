@@ -41,7 +41,7 @@ test('zoe.makeInstance - simpleOfferSwap', async t => {
     const alicePayments = [aliceMoolaPayment, undefined];
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
-      claimPayoff: aliceClaimPayoff,
+      payoff: alicePayoffP,
     } = await zoe.escrow(aliceOfferDesc, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. It's
@@ -77,7 +77,7 @@ test('zoe.makeInstance - simpleOfferSwap', async t => {
     // 6: Bob escrows with zoe
     const {
       escrowReceipt: allegedBobEscrowReceipt,
-      claimPayoff: bobClaimPayoff,
+      payoff: bobPayoffP,
     } = await zoe.escrow(bobOfferDesc, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment. This is
@@ -98,31 +98,22 @@ test('zoe.makeInstance - simpleOfferSwap', async t => {
       'The offer has been accepted. Once the contract has been completed, please check your winnings',
     );
 
-    // 9: Alice unwraps the claimPayoff to get her seat
-    const aliceSeat = await aliceClaimPayoff.unwrap();
-
-    // 10: Bob unwraps his claimPayoff to get his seat
-    const bobSeat = await bobClaimPayoff.unwrap();
-
-    // 11: Alice claims her portion of the outcome (what Bob paid in)
-    const aliceResult = await aliceSeat.getPayoff();
-
-    // 12: Bob claims his position of the outcome (what Alice paid in)
-    const bobResult = await bobSeat.getPayoff();
+    const alicePayoff = await alicePayoffP;
+    const bobPayoff = await bobPayoffP;
 
     // Alice gets back what she wanted
-    t.deepEquals(aliceResult[1].getBalance(), aliceOfferDesc[1].assetDesc);
+    t.deepEquals(alicePayoff[1].getBalance(), aliceOfferDesc[1].assetDesc);
 
     // Alice didn't get any of what she put in
-    t.equals(aliceResult[0].getBalance().extent, 0);
+    t.equals(alicePayoff[0].getBalance().extent, 0);
 
     // 13: Alice deposits her winnings to ensure she can
-    await aliceMoolaPurse.depositAll(aliceResult[0]);
-    await aliceSimoleanPurse.depositAll(aliceResult[1]);
+    await aliceMoolaPurse.depositAll(alicePayoff[0]);
+    await aliceSimoleanPurse.depositAll(alicePayoff[1]);
 
     // 14: Bob deposits his original payments to ensure he can
-    await bobMoolaPurse.depositAll(bobResult[0]);
-    await bobSimoleanPurse.depositAll(bobResult[1]);
+    await bobMoolaPurse.depositAll(bobPayoff[0]);
+    await bobSimoleanPurse.depositAll(bobPayoff[1]);
 
     // Assert that the correct winnings were received.
     // Alice had 3 moola and 0 simoleans.

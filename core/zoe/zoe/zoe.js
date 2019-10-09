@@ -12,7 +12,6 @@ import {
   escrowEmptyOffer,
   escrowOffer,
   mintEscrowReceiptPayment,
-  mintClaimPayoffPayment,
   fillInUndefinedExtents,
 } from './zoeUtils';
 
@@ -31,9 +30,8 @@ import { makeCoveredCallMaker } from '../contracts/coveredCall';
 import { coveredCallSrcs } from '../contracts/coveredCallSrcs';
 
 const makeZoe = async () => {
-  // The seatAssay and escrowReceiptAssay are long-lived identities
-  // over many contract instances
-  const { seatMint, seatAssay, addUseObj } = makeSeatMint('zoeSeats');
+  // The escrowReceiptAssay is a long-lived identity over many
+  // contract instances
   const {
     seatMint: inviteMint,
     seatAssay: inviteAssay,
@@ -190,7 +188,6 @@ const makeZoe = async () => {
       getExtentOps: () => readOnlyState.getExtentOps(instanceId),
       getExtentsFor: readOnlyState.getExtentsFor,
       getOfferDescsFor: readOnlyState.getOfferDescsFor,
-      getSeatAssay: () => seatAssay,
       getInviteAssay: () => inviteAssay,
       getEscrowReceiptAssay: () => escrowReceiptAssay,
     });
@@ -199,10 +196,9 @@ const makeZoe = async () => {
   // installs a governing contract and creates an instance,
   // `getInstance` credibly retrieves an instance from zoe, and
   // `escrow` allows users to securely escrow and get an escrow
-  // receipt and claimPayoffs payment in return.
+  // receipt and payoffs in return.
 
   const publicFacet = harden({
-    getSeatAssay: () => seatAssay,
     getEscrowReceiptAssay: () => escrowReceiptAssay,
     getInviteAssay: () => inviteAssay,
     getAssaysForInstance: instanceId => readOnlyState.getAssays(instanceId),
@@ -265,16 +261,9 @@ const makeZoe = async () => {
         offerDesc,
       );
 
-      const claimPayoffPaymentP = mintClaimPayoffPayment(
-        seatMint,
-        addUseObj,
-        offerDesc,
-        result,
-      );
-
       return {
         escrowReceipt: escrowReceiptPaymentP,
-        claimPayoff: claimPayoffPaymentP,
+        payoff: result.p,
       };
     },
   });

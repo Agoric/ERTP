@@ -52,7 +52,7 @@ test('zoe - coveredCall', async t => {
     const alicePayments = [aliceMoolaPayment, undefined];
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
-      claimPayoff: aliceClaimPayoff,
+      payoff: alicePayoffP,
     } = await zoe.escrow(aliceOffer, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment
@@ -123,7 +123,7 @@ test('zoe - coveredCall', async t => {
     // 6: Bob escrows
     const {
       escrowReceipt: allegedBobEscrowReceipt,
-      claimPayoff: bobClaimPayoff,
+      payoff: bobPayoffP,
     } = await zoe.escrow(bobIntendedOffer, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment
@@ -137,17 +137,8 @@ test('zoe - coveredCall', async t => {
     t.equals(bobOutcome, 'offer successfully made');
     t.equals(aliceOutcome, 'offer successfully made');
 
-    // 7: Alice unwraps the claimPayoff to get her seat
-    const aliceSeat = await aliceClaimPayoff.unwrap();
-
-    // 8: Bob unwraps his claimPayoff to get his seat
-    const bobSeat = await bobClaimPayoff.unwrap();
-
-    // 9: Alice claims her portion of the outcome (what Bob paid in)
-    const aliceResult = await aliceSeat.getPayoff();
-
-    // 10: Bob claims his position of the outcome (what Alice paid in)
-    const bobResult = await bobSeat.getPayoff();
+    const aliceResult = await alicePayoffP;
+    const bobResult = await bobPayoffP;
 
     // Alice gets back 0 of the kind she put in
     t.equals(aliceResult[0].getBalance().extent, 0);

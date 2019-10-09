@@ -25,7 +25,7 @@ const { zoeInstance, governingContract: simpleSwap } = zoe.makeInstance(
 ```
 
 Then escrows her offer with the zoeInstance and gets an escrowReceipt
-and a claimPayoff ERTP payment from which she can get her winnings:
+and a payoff promise that resolves to an array of payments:
 
 ```js
 const aliceOfferDesc = harden([
@@ -41,7 +41,7 @@ const aliceOfferDesc = harden([
 const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment];
 const {
   escrowReceipt: allegedAliceEscrowReceipt,
-  claimPayoff: aliceClaimPayoff,
+  payoff: alicePayoffP,
 } = await zoeInstance.escrow(aliceOfferDesc, alicePayments);
 ```
 
@@ -49,9 +49,6 @@ And then makes an offer using the escrowReceipt and tries to collect her winning
 
 ```js
 const aliceOfferResultP = simpleSwap.makeOffer(aliceEscrowReceipt);
-const aliceSeat = await aliceClaimPayoff.unwrap();
-const alicePayoffP = aliceSeat.getPayoff();
-
 ```
 
 She then spreads the zoe instance widely, and Bob decides to be the

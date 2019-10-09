@@ -1,13 +1,12 @@
 /**
  * This is returned by a call to `escrow` on Zoe.
  * An escrowReceipt is an ERTP payment which acts as proof of escrow
- * and is normally passed in to a governingContract method. A
- * claimPayoff ERTP payment is what can be unwrapped to claim the
- * payoff of involvement with a contract. 
+ * and is normally passed in to a governingContract method. The payoff
+ * is a promise that resolves to an array of payments.
  */
 struct EscrowReceiptAndClaimPayoff ( ) {
   escrowReceipt :Payment;
-  claimPayoff :Payment;
+  payoff :List(Payment);
 }
 
 /**
@@ -95,10 +94,7 @@ interface ZoeGoverningContractFacet () {
 
   /** 
    * Eject the offer, taking the current allocation for that offer and
-   * creating payments to be returned to the user. The payments can be
-   * claimed by the user by taking the `claimPayoff` ERTP payment
-   * received after escrowing, calling `unwrap` and calling the `getPayoff`
-   * method on the resulting use object. No 'offer safety' checks are
+   * creating payments to be returned to the user. No 'offer safety' checks are
    * done here because any previous reallocation performed those checks.
    */
   complete (instanceId :Object, offerIds :List(Object));

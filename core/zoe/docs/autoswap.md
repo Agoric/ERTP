@@ -59,7 +59,7 @@ const alicePayments = [aliceMoolaPayment, aliceSimoleanPayment, undefined];
 
 const {
   escrowReceipt: allegedAliceEscrowReceipt,
-  claimPayoff: aliceClaimPayoff,
+  payoff,
 } = await zoeInstance.escrow(aliceOffer, alicePayments);
 
 ```
@@ -93,7 +93,7 @@ const bobMoolaForSimPayments = [bobMoolaPayment, undefined, undefined];
 
 const {
   escrowReceipt: allegedBobEscrowReceipt,
-  claimPayoff: bobClaimPayoff,
+  payoff: bobPayoffP,
 } = await zoeInstance.escrow(
   bobMoolaForSimOfferDesc,
   bobMoolaForSimPayments,
@@ -106,9 +106,8 @@ Then Bob uses this escrow receipt to make an offer.
 const offerOk = await autoswap.makeOffer(bobEscrowReceipt);
 ```
 
-Now Bob can claim his payoff:
+Now Bob can get his payoff:
 
 ```js
-const bobClaimPayoffSeat = await bobClaimPayoff.unwrap();
-const [bobMoolaPayoff, bobSimoleanPayoff, ...] = await bobClaimPayoffSeat.getPayoff();
+const [bobMoolaPayoff, bobSimoleanPayoff, ...] = await bobPayoffP;
 ```
