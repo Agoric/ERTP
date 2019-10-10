@@ -9,13 +9,17 @@ const makeState = () => {
   const offerIdToResults = new WeakMap();
   const offerIdToInstanceId = new WeakMap();
   const instanceIdToInstance = new WeakMap();
-  const instanceIdToLibraryName = new WeakMap();
+  const instanceIdToMiddleLayerId = new WeakMap();
+  const instanceIdToPureFnId = new WeakMap();
   const assayToPurse = new WeakMap();
   const instanceIdToDescOps = new WeakMap();
   const instanceIdToExtentOps = new WeakMap();
   const instanceIdToLabels = new WeakMap();
   const instanceIdToAssays = new WeakMap();
   const instanceIdToPurses = new WeakMap();
+
+  const installationIdToInstallation = new WeakMap();
+  const installationToInstallationId = new WeakMap();
 
   const readOnlyState = harden({
     // per instance id
@@ -36,9 +40,24 @@ const makeState = () => {
 
   // The adminState should never leave Zoe and should be closely held
   const adminState = harden({
-    addInstance: async (instanceId, instance, libraryName, assays) => {
+    addInstallation: installation => {
+      const installationId = harden({});
+      installationToInstallationId.set(installation, installationId);
+      installationIdToInstallation.set(installationId, installation);
+      return installationId;
+    },
+    getInstallation: installationId =>
+      installationIdToInstallation.get(installationId),
+    addInstance: async (
+      instanceId,
+      instance,
+      middleLayerId,
+      pureFnId,
+      assays,
+    ) => {
       instanceIdToInstance.set(instanceId, instance);
-      instanceIdToLibraryName.set(instanceId, libraryName);
+      instanceIdToMiddleLayerId.set(instanceId, middleLayerId);
+      instanceIdToPureFnId.set(instanceId, pureFnId);
       instanceIdToAssays.set(instanceId, assays);
 
       const descOps = await Promise.all(
@@ -65,7 +84,10 @@ const makeState = () => {
       instanceIdToPurses.set(instanceId, purses);
     },
     getInstance: instanceId => instanceIdToInstance.get(instanceId),
-    getLibraryName: instanceId => instanceIdToLibraryName.get(instanceId),
+    getMiddleLayerIdForInstanceId: instanceId =>
+      instanceIdToMiddleLayerId.get(instanceId),
+    getPureFnIdForInstanceId: instanceId =>
+      instanceIdToPureFnId.get(instanceId),
     getPurses: instanceId => instanceIdToPurses.get(instanceId),
     getOrMakePurseForAssay: async assay => {
       if (!assayToPurse.has(assay)) {

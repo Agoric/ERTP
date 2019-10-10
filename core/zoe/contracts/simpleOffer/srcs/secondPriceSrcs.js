@@ -125,12 +125,14 @@ const reallocate = (
   });
 };
 
-const makeSecondPriceSrcs = numBids =>
-  harden({
-    isValidOffer,
-    canReallocate: (offerIds, _offerIdsToOfferDescs) =>
-      offerIds.length >= numBids + 1,
-    reallocate,
+const makeSecondPriceSrcs = numBids => {
+  const canReallocate = (offerIds, _offerIdsToOfferDescs) =>
+    offerIds.length >= numBids + 1;
+  return harden({
+    isValidOffer: `${isValidOffer}`,
+    canReallocate: `${canReallocate}`,
+    reallocate: `${reallocate}`,
   });
+};
 
 export { makeSecondPriceSrcs };

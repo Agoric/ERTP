@@ -17,9 +17,8 @@ Let's say that Alice wants to create a swap that anyone can be the
 counter-party for. She creates the zoeInstance:
 
 ```js
-const makeSimpleSwap = makeSimpleOfferMaker(swapSrcs);
 const { zoeInstance, governingContract: simpleSwap } = zoe.makeInstance(
-  makeSimpleSwap,
+  installationId,
   assays,
 );
 ```

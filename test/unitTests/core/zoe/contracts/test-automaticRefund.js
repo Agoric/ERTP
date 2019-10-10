@@ -2,6 +2,7 @@ import { test } from 'tape-promise/tape';
 import harden from '@agoric/harden';
 import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
 import { setup } from '../setupBasicMints';
+import { automaticRefundSrcs } from '../../../../../core/zoe/contracts/automaticRefund';
 
 test('zoe.makeInstance with automaticRefund', async t => {
   try {
@@ -22,10 +23,11 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates an automatic refund instance
+    const installationId = zoe.install(automaticRefundSrcs);
     const {
       instance: aliceAutomaticRefund,
       instanceId,
-    } = await zoe.makeInstance('automaticRefund', assays);
+    } = await zoe.makeInstance(assays, installationId);
     // The assays in the instance are now defined
     t.deepEquals(zoe.getAssaysForInstance(instanceId), assays);
 
@@ -71,10 +73,11 @@ test('zoe.makeInstance with automaticRefund', async t => {
     // He will do a lookup on Zoe to get the automaticRefund instance
     // and make sure the library that he wants is installed.
 
-    const { instance: bobAutomaticRefund, libraryName } = zoe.getInstance(
-      instanceId,
-    );
-    t.equals(libraryName, 'automaticRefund');
+    const {
+      instance: bobAutomaticRefund,
+      middleLayerId: bobInstallationId,
+    } = zoe.getInstance(instanceId);
+    t.equals(bobInstallationId, installationId);
 
     // bob wants to know what assays this contract is about and in
     // what order. Is it what he expects?

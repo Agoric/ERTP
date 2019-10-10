@@ -4,6 +4,9 @@ import harden from '@agoric/harden';
 import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
 import { setup } from '../setupBasicMints';
 
+import { simpleOfferSrcs } from '../../../../../core/zoe/contracts/simpleOffer/simpleOffer';
+import { swapSrcs } from '../../../../../core/zoe/contracts/simpleOffer/srcs/swapSrcs';
+
 test('zoe.makeInstance - simpleOfferSwap', async t => {
   try {
     const { assays: originalAssays, mints } = setup();
@@ -26,9 +29,12 @@ test('zoe.makeInstance - simpleOfferSwap', async t => {
     const carolSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(0));
 
     // 1: Alice creates a simpleSwap instance
+    const simpleOfferInstallationId = zoe.install(simpleOfferSrcs);
+    const swapSrcsInstallationId = zoe.install(swapSrcs);
     const { instance: aliceSwap, instanceId } = await zoe.makeInstance(
-      'simpleOfferSwap',
       assays,
+      simpleOfferInstallationId,
+      swapSrcsInstallationId,
     );
 
     // 2: Alice escrows with zoe
@@ -80,8 +86,14 @@ test('zoe.makeInstance - simpleOfferSwap', async t => {
     // on how to use it and Bob decides he wants to be the
     // counter-party.
 
-    const { instance: bobSwap, libraryName } = zoe.getInstance(instanceId);
-    t.equals(libraryName, 'simpleOfferSwap');
+    const {
+      instance: bobSwap,
+      middleLayerId: bobMiddleLayerId,
+      pureFnId: bobPureFnId,
+    } = zoe.getInstance(instanceId);
+
+    t.equals(bobMiddleLayerId, simpleOfferInstallationId);
+    t.equals(bobPureFnId, swapSrcsInstallationId);
     const bobAssays = zoe.getAssaysForInstance(instanceId);
     t.deepEquals(bobAssays, assays);
 

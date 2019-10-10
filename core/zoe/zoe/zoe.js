@@ -1,12 +1,11 @@
 import harden from '@agoric/harden';
+import evaluate from '@agoric/evaluate';
 
 import { insist } from '../../../util/insist';
 import { isOfferSafeForAll } from './isOfferSafe';
 import { areRightsConserved } from './areRightsConserved';
 import { toAssetDescMatrix, makeEmptyExtents } from '../contractUtils';
 import makePromise from '../../../util/makePromise';
-
-import { importManager } from '../../../more/imports/importManager';
 
 import {
   makePayments,
@@ -21,15 +20,6 @@ import { makeState } from './state';
 import { makeSeatMint } from '../../seatMint';
 import { makeEscrowReceiptConfig } from './escrowReceiptConfig';
 import { makeMint } from '../../mint';
-
-// Governing contracts
-// TODO: move into own file
-import { makeAutomaticRefund } from '../contracts/automaticRefund';
-import { makeSimpleOfferMaker } from '../contracts/simpleOffer/simpleOffer';
-import { makeSecondPriceSrcs } from '../contracts/simpleOffer/srcs/secondPriceSrcs';
-import { swapSrcs } from '../contracts/simpleOffer/srcs/swapSrcs';
-import { makeCoveredCallMaker } from '../contracts/coveredCall';
-import { coveredCallSrcs } from '../contracts/coveredCallSrcs';
 
 const makeZoe = async () => {
   // The escrowReceiptAssay is a long-lived identity over many
@@ -52,13 +42,28 @@ const makeZoe = async () => {
   );
   const escrowReceiptAssay = escrowReceiptMint.getAssay();
 
-  const manager = importManager();
-  const contractLib = manager.addExports({
-    automaticRefund: makeAutomaticRefund,
-    secondPriceAuction3Bids: makeSimpleOfferMaker(makeSecondPriceSrcs(3)),
-    simpleOfferSwap: makeSimpleOfferMaker(swapSrcs),
-    coveredCall: makeCoveredCallMaker(coveredCallSrcs),
-  });
+  const evaluateStringToFn = functionSrcString => {
+    insist(typeof functionSrcString === 'string')`\n
+"${functionSrcString}" must be a string, but was ${typeof functionSrcString}`;
+    const fn = evaluate(functionSrcString, {
+      harden,
+      makePromise,
+    });
+    insist(typeof fn === 'function')`\n
+"${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;
+    return fn;
+  };
+
+  const makeInstallationFromSrcs = srcs => {
+    const installation = {};
+    for (const fname of Object.getOwnPropertyNames(srcs)) {
+      if (typeof fname === 'string') {
+        const fn = evaluateStringToFn(srcs[fname]);
+        installation[fname] = fn;
+      }
+    }
+    return installation;
+  };
 
   const { adminState, readOnlyState } = await makeState();
 
@@ -213,7 +218,11 @@ const makeZoe = async () => {
     getInviteAssay: () => inviteAssay,
     getPayoffAssay: () => payoffAssay,
     getAssaysForInstance: instanceId => readOnlyState.getAssays(instanceId),
-
+    install: srcs => {
+      const installation = makeInstallationFromSrcs(srcs);
+      const installationId = adminState.addInstallation(installation);
+      return installationId;
+    },
     /**
      * Installs a governing contract and returns a reference to the
      * instance object, a unique id for the instance that can be
@@ -225,16 +234,29 @@ const makeZoe = async () => {
      * description elements and offer payments accepted by the
      * governing contract.
      */
-    makeInstance: async (libraryName, assays) => {
-      const makeContractFn = contractLib[libraryName];
+    makeInstance: async (assays, middleLayerId, pureFnId) => {
+      const middleLayerFns = adminState.getInstallation(middleLayerId);
+      const pureFns = adminState.getInstallation(pureFnId);
+      if (!middleLayerFns) {
+        throw new Error('installation was not found');
+      }
+      // pureFns can be undefined.
       const instanceId = harden({});
       const governingContractFacet = makeGoverningContractFacet(instanceId);
+      const makeContractFn = middleLayerFns.makeContract(pureFns);
       const instance = makeContractFn(governingContractFacet);
-      await adminState.addInstance(instanceId, instance, libraryName, assays);
+      await adminState.addInstance(
+        instanceId,
+        instance,
+        middleLayerId,
+        pureFnId,
+        assays,
+      );
       return harden({
         instance,
         instanceId,
-        libraryName,
+        middleLayerId,
+        pureFnId,
       });
     },
     /**
@@ -243,11 +265,15 @@ const makeZoe = async () => {
      */
     getInstance: instanceId => {
       const instance = adminState.getInstance(instanceId);
-      const libraryName = adminState.getLibraryName(instanceId);
+      const middleLayerId = adminState.getMiddleLayerIdForInstanceId(
+        instanceId,
+      );
+      const pureFnId = adminState.getPureFnIdForInstanceId(instanceId);
       return harden({
         instance,
         instanceId,
-        libraryName,
+        middleLayerId,
+        pureFnId,
       });
     },
 
