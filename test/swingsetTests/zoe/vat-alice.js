@@ -13,7 +13,7 @@ const makeAliceMaker = async (E, log, zoe) => {
   return harden({
     make(moolaPurse, simoleanPurse) {
       const alice = harden({
-        doCreateAutomaticRefund: async bobP => {
+        doCreateAutomaticRefund: async (bobP, installationIdP) => {
           log(`=> alice.doCreateAutomaticRefund called`);
           // 1: Alice creates the automaticRefund instance
 
@@ -22,9 +22,10 @@ const makeAliceMaker = async (E, log, zoe) => {
 
           const assays = [moolaAssay, simoleanAssay];
 
+          const installationId = await installationIdP;
           const { instance: automaticRefund, instanceId } = await E(
             zoe,
-          ).makeInstance('automaticRefund', assays);
+          ).makeInstance(assays, installationId);
 
           // 2: Alice escrows with Zoe
           const offerDesc = harden([

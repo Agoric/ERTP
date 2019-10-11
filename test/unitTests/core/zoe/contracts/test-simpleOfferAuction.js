@@ -4,6 +4,9 @@ import harden from '@agoric/harden';
 import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
 import { setup } from '../setupBasicMints';
 
+import { simpleOfferSrcs } from '../../../../../core/zoe/contracts/simpleOffer/simpleOffer';
+import { secondPriceSrcs } from '../../../../../core/zoe/contracts/simpleOffer/srcs/secondPriceSrcs';
+
 test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
   try {
     const { assays: originalAssays, mints, descOps } = setup();
@@ -33,9 +36,12 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
 
     // 1: Alice creates a secondPriceAuction instance
 
+    const simpleOfferInstallationId = zoe.install(simpleOfferSrcs);
+    const secondPriceSrcsInstallationId = zoe.install(secondPriceSrcs);
     const { instance: aliceAuction, instanceId } = await zoe.makeInstance(
-      'secondPriceAuction3Bids',
       assays,
+      simpleOfferInstallationId,
+      secondPriceSrcsInstallationId,
     );
 
     // 2: Alice escrows with zoe
@@ -72,11 +78,14 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
     // 5: Alice spreads the instanceId far and wide with
     // instructions on how to use it and Bob decides he wants to
     // participate in the auction.
-    const { instance: bobAuction, libraryName } = zoe.getInstance(instanceId);
-    t.equals(libraryName, 'secondPriceAuction3Bids');
+    const {
+      instance: bobAuction,
+      middleLayerId: bobMiddleLayerId,
+      pureFnId: bobPureFnId,
+    } = zoe.getInstance(instanceId);
 
-    // bob wants to know what assays this contract is about and in
-    // what order. Is it what he expects?
+    t.equals(bobMiddleLayerId, simpleOfferInstallationId);
+    t.equals(bobPureFnId, secondPriceSrcsInstallationId);
     const bobAssays = zoe.getAssaysForInstance(instanceId);
     t.deepEquals(bobAssays, assays);
 
@@ -113,11 +122,18 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
     );
 
     // 9: Carol decides to bid for the one moola
+
     const {
       instance: carolAuction,
-      libraryName: carolLibraryName,
+      middleLayerId: carolMiddleLayerId,
+      pureFnId: carolPureFnId,
     } = zoe.getInstance(instanceId);
-    t.equals(carolLibraryName, 'secondPriceAuction3Bids');
+
+    t.equals(carolMiddleLayerId, simpleOfferInstallationId);
+    t.equals(carolPureFnId, secondPriceSrcsInstallationId);
+    const carolAssays = zoe.getAssaysForInstance(instanceId);
+    t.deepEquals(carolAssays, assays);
+
     const carolOfferDesc = harden([
       {
         rule: 'wantExactly',
@@ -147,9 +163,14 @@ test('zoe.makeInstance - secondPriceAuction3Bids', async t => {
     // 12: Dave decides to bid for the one moola
     const {
       instance: daveAuction,
-      libraryName: daveLibraryName,
+      middleLayerId: daveMiddleLayerId,
+      pureFnId: davePureFnId,
     } = zoe.getInstance(instanceId);
-    t.equals(daveLibraryName, 'secondPriceAuction3Bids');
+
+    t.equals(daveMiddleLayerId, simpleOfferInstallationId);
+    t.equals(davePureFnId, secondPriceSrcsInstallationId);
+    const daveAssays = zoe.getAssaysForInstance(instanceId);
+    t.deepEquals(daveAssays, assays);
     const daveOfferDesc = harden([
       {
         rule: 'wantExactly',

@@ -1,6 +1,7 @@
 import harden from '@agoric/harden';
 
 import { makeMint } from '../../../core/mint';
+import { automaticRefundSrcs } from '../../../core/zoe/contracts/automaticRefund';
 
 const setupBasicMints = () => {
   const moolaMint = makeMint('moola');
@@ -42,8 +43,10 @@ function build(E, log) {
         const bobSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(17));
         const bobP = E(bobMaker).make(bobMoolaPurse, bobSimoleanPurse);
 
+        const installationId = E(zoe).install(automaticRefundSrcs);
+
         log(`=> alice and bob are setup`);
-        await E(aliceP).doCreateAutomaticRefund(bobP);
+        await E(aliceP).doCreateAutomaticRefund(bobP, installationId);
       }
 
       switch (argv[0]) {

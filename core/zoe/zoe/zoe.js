@@ -48,6 +48,7 @@ const makeZoe = async () => {
     const fn = evaluate(functionSrcString, {
       harden,
       makePromise,
+      insist,
     });
     insist(typeof fn === 'function')`\n
 "${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;

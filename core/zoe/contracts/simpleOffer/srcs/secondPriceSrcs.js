@@ -1,77 +1,49 @@
 import harden from '@agoric/harden';
 
-import { makeHasOkRules } from '../../../contractUtils';
-
-// The assay array is ordered such that the item assay is first
-// and the price assay is second. All of the related arrays
-// (descOps, extentOps, etc.) also use this same ordering.
-const ITEM_INDEX = 0;
-const PRICE_INDEX = 1;
-
-// We expect the first offer to be the creator of the auction
-const CREATOR_OFFER_ID_INDEX = 0;
-
-const hasOkRulesInitialOffer = makeHasOkRules(
-  ['offerExactly', 'wantAtLeast'], // The initial offer
-);
-
-const hasOkRulesBids = makeHasOkRules(
-  ['wantExactly', 'offerAtMost'], // Subsequent bids
-);
-
-const isValidInitialOfferDesc = newOfferDesc =>
-  hasOkRulesInitialOffer(newOfferDesc);
-
-const isValidBid = (extentOps, initialOffer, newBid) =>
-  hasOkRulesBids(newBid) &&
-  extentOps[PRICE_INDEX].includes(
-    newBid[PRICE_INDEX].assetDesc.extent,
-    initialOffer[PRICE_INDEX].assetDesc.extent,
-  );
-
 const isValidOffer = (
   extentOps,
   offerIds,
   offerIdsToOfferDescs,
   offerMadeDesc,
 ) => {
+  const makeHasOkRules = validRules => offer =>
+    validRules.every((rule, i) => rule === offer[i].rule, true);
+
+  // The assay array is ordered such that the item assay is first
+  // and the price assay is second. All of the related arrays
+  // (descOps, extentOps, etc.) also use this same ordering.
+  const PRICE_INDEX = 1;
+
+  // We expect the first offer to be the creator of the auction
+  const CREATOR_OFFER_ID_INDEX = 0;
+
+  const hasOkRulesInitialOffer = makeHasOkRules(
+    ['offerExactly', 'wantAtLeast'], // The initial offer
+  );
+
+  const hasOkRulesBids = makeHasOkRules(
+    ['wantExactly', 'offerAtMost'], // Subsequent bids
+  );
+
+  const isValidInitialOfferDesc = newOfferDesc =>
+    hasOkRulesInitialOffer(newOfferDesc);
+
+  const isValidBid = (initialOffer, newBid) =>
+    hasOkRulesBids(newBid) &&
+    extentOps[PRICE_INDEX].includes(
+      newBid[PRICE_INDEX].assetDesc.extent,
+      initialOffer[PRICE_INDEX].assetDesc.extent,
+    );
+
   const isInitialOffer = offerIds.length === 0;
   return (
     (isInitialOffer && isValidInitialOfferDesc(offerMadeDesc)) ||
     (!isInitialOffer &&
       isValidBid(
-        extentOps,
         offerIdsToOfferDescs.get(offerIds[CREATOR_OFFER_ID_INDEX]),
         offerMadeDesc,
       ))
   );
-};
-
-// Iterate over all of the bids keeping the highest and second highest bid.
-const findWinnerAndPrice = (extentOps, bidOfferIds, bids) => {
-  let highestBid = extentOps.empty();
-  let secondHighestBid = extentOps.empty();
-  let offerIdHighestBid;
-  // If the bid is greater than the highest bid, it is the new highest
-  // bid.
-  // Has side effects
-  // eslint-disable-next-line array-callback-return
-  bidOfferIds.map((offerId, i) => {
-    const bid = bids[i];
-    if (extentOps.includes(bid, highestBid)) {
-      secondHighestBid = highestBid;
-      highestBid = bid;
-      offerIdHighestBid = offerId;
-    } else if (extentOps.includes(bid, secondHighestBid)) {
-      // If the bid is not greater than the highest bid, but is greater
-      // than the second highest bid, it is the new second highest bid.
-      secondHighestBid = bid;
-    }
-  });
-  return {
-    winnerOfferId: offerIdHighestBid,
-    price: secondHighestBid,
-  };
 };
 
 const reallocate = (
@@ -80,6 +52,38 @@ const reallocate = (
   _offerIdsToOfferDescs,
   getExtentsFor,
 ) => {
+  const ITEM_INDEX = 0;
+  const PRICE_INDEX = 1;
+
+  const CREATOR_OFFER_ID_INDEX = 0;
+
+  // Iterate over all of the bids keeping the highest and second highest bid.
+  const findWinnerAndPrice = (bidExtentOps, bidOfferIds, bids) => {
+    let highestBid = bidExtentOps.empty();
+    let secondHighestBid = bidExtentOps.empty();
+    let offerIdHighestBid;
+    // If the bid is greater than the highest bid, it is the new highest
+    // bid.
+    // Has side effects
+    // eslint-disable-next-line array-callback-return
+    bidOfferIds.map((offerId, i) => {
+      const bid = bids[i];
+      if (bidExtentOps.includes(bid, highestBid)) {
+        secondHighestBid = highestBid;
+        highestBid = bid;
+        offerIdHighestBid = offerId;
+      } else if (bidExtentOps.includes(bid, secondHighestBid)) {
+        // If the bid is not greater than the highest bid, but is greater
+        // than the second highest bid, it is the new second highest bid.
+        secondHighestBid = bid;
+      }
+    });
+    return {
+      winnerOfferId: offerIdHighestBid,
+      price: secondHighestBid,
+    };
+  };
+
   // We can expect that the first offer created the auction, and
   // subsequent offers are bids.
   const creatorOfferId = offerIds[CREATOR_OFFER_ID_INDEX];
@@ -92,7 +96,7 @@ const reallocate = (
   const priceExtentOps = extentOps[PRICE_INDEX];
 
   const { winnerOfferId, price } = findWinnerAndPrice(
-    priceExtentOps,
+    extentOps[PRICE_INDEX],
     bidOfferIds,
     bids,
   );
@@ -125,14 +129,14 @@ const reallocate = (
   });
 };
 
-const makeSecondPriceSrcs = numBids => {
-  const canReallocate = (offerIds, _offerIdsToOfferDescs) =>
-    offerIds.length >= numBids + 1;
-  return harden({
-    isValidOffer: `${isValidOffer}`,
-    canReallocate: `${canReallocate}`,
-    reallocate: `${reallocate}`,
-  });
+const canReallocate = (offerIds, _offerIdsToOfferDescs) => {
+  const numBids = 3;
+  return offerIds.length >= numBids + 1;
 };
+const secondPriceSrcs = harden({
+  isValidOffer: `${isValidOffer}`,
+  canReallocate: `${canReallocate}`,
+  reallocate: `${reallocate}`,
+});
 
-export { makeSecondPriceSrcs };
+export { secondPriceSrcs };

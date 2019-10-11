@@ -1,9 +1,9 @@
 import harden from '@agoric/harden';
 
 import makePromise from '../../../util/makePromise';
-import { makeStateMachine } from '../utils/stateMachine';
+import { insist } from '../../../util/insist';
 
-const makeCoveredCallMaker = srcs => zoe => {
+const makeCoveredCallMakerFn = srcs => zoe => {
   const makeOfferKeeper = () => {
     const validOfferIdsToDescs = new WeakMap();
     const validOfferIds = [];
@@ -18,13 +18,27 @@ const makeCoveredCallMaker = srcs => zoe => {
 
   const { keepOffer, getValidOfferIds } = makeOfferKeeper();
 
-  const allowedTransitions = [
+  const coveredCallallowedTransitions = [
     ['open', ['closed', 'cancelled']],
     ['closed', []],
     ['cancelled', []],
   ];
 
-  const sm = makeStateMachine('open', allowedTransitions);
+  const makeStateMachine = (initialState, allowedTransitionsArray) => {
+    let state = initialState;
+    const allowedTransitions = new Map(allowedTransitionsArray);
+    return harden({
+      canTransitionTo: nextState =>
+        allowedTransitions.get(state).includes(nextState),
+      transitionTo: nextState => {
+        insist(allowedTransitions.get(state).includes(nextState));
+        state = nextState;
+      },
+      getStatus: _ => state,
+    });
+  };
+
+  const sm = makeStateMachine('open', coveredCallallowedTransitions);
 
   const makeOfferMaker = offerToBeMadeDesc => {
     const makeOffer = async escrowReceipt => {
@@ -109,4 +123,9 @@ const makeCoveredCallMaker = srcs => zoe => {
   });
   return institution;
 };
-export { makeCoveredCallMaker };
+
+const makeCoveredCallSrcs = harden({
+  makeContract: `${makeCoveredCallMakerFn}`,
+});
+
+export { makeCoveredCallSrcs };

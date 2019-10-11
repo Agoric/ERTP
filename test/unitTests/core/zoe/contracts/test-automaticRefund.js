@@ -173,19 +173,20 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     ]);
 
     // 1: Alice creates 3 automatic refund instances
+    const installationId = zoe.install(automaticRefundSrcs);
     const { instance: automaticRefund1 } = await zoe.makeInstance(
-      'automaticRefund',
       assays,
+      installationId,
     );
 
     const { instance: automaticRefund2 } = await zoe.makeInstance(
-      'automaticRefund',
       assays,
+      installationId,
     );
 
     const { instance: automaticRefund3 } = await zoe.makeInstance(
-      'automaticRefund',
       assays,
+      installationId,
     );
 
     // 2: Alice escrows with zoe

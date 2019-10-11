@@ -15,13 +15,9 @@ const makeBobMaker = async (E, log, zoe) => {
     make(moolaPurse, simoleanPurse) {
       const bob = harden({
         doAutomaticRefund: async instanceId => {
-          const { instance: automaticRefund, libraryName } = await E(
-            zoe,
-          ).getInstance(instanceId);
-
-          insist(
-            libraryName === 'automaticRefund',
-          )`Alice was misrepresenting the contract she wanted bob to join`;
+          const { instance: automaticRefund } = await E(zoe).getInstance(
+            instanceId,
+          );
 
           const moolaAssay = await E(moolaPurse).getAssay();
           const simoleanAssay = await E(simoleanPurse).getAssay();

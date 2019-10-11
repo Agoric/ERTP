@@ -6,6 +6,9 @@ import { setup } from '../setupBasicMints';
 
 import { offerEqual } from '../../../../../core/zoe/contractUtils';
 
+import { makeCoveredCallSrcs } from '../../../../../core/zoe/contracts/coveredCall';
+import { coveredCallSrcs } from '../../../../../core/zoe/contracts/coveredCallSrcs';
+
 test('zoe - coveredCall', async t => {
   try {
     const {
@@ -30,9 +33,12 @@ test('zoe - coveredCall', async t => {
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a coveredCall instance
+    const coveredCallInstallationId = zoe.install(makeCoveredCallSrcs);
+    const coveredCallSrcsInstallationId = zoe.install(coveredCallSrcs);
     const { instance: aliceCoveredCall, instanceId } = await zoe.makeInstance(
-      'coveredCall',
       assays,
+      coveredCallInstallationId,
+      coveredCallSrcsInstallationId,
     );
 
     // The assays are defined at this step
