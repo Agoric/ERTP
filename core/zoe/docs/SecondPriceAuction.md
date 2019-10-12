@@ -100,4 +100,4 @@ as Bob, Carol bidding 7 simoleans, and Dave bidding 5 simoleans.
 Bob wins, and pays the second-highest price, which is Carol's bid of 7
 simoleans. Thus, when Alice claims her winnings, she gets 7 simoleans.
 Bob gets the 1 moola that was up for auction as well as a refund of 4
-moola (11-7), and Carol and Dave get a full refund.
+simoleans (11-7), and Carol and Dave get a full refund.

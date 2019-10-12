@@ -219,8 +219,19 @@ const makeZoe = async () => {
     getInviteAssay: () => inviteAssay,
     getPayoffAssay: () => payoffAssay,
     getAssaysForInstance: instanceId => readOnlyState.getAssays(instanceId),
-    install: srcs => {
-      const installation = makeInstallationFromSrcs(srcs);
+    install: (srcs, moduleFormat = 'object') => {
+      let installation;
+      if (moduleFormat === 'object') {
+        installation = makeInstallationFromSrcs(srcs);
+      } else if (moduleFormat === 'getExport') {
+        // Evaluate the export function, and use the resulting
+        // module namespace as our installation.
+        const getExport = evaluateStringToFn(srcs);
+        installation = getExport();
+      } else {
+        insist(false)`\
+Unrecognized moduleFormat ${moduleFormat}`;
+      }
       const installationId = adminState.addInstallation(installation);
       return installationId;
     },
