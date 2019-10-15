@@ -3,6 +3,8 @@ import harden from '@agoric/harden';
 import makePromise from '../../../util/makePromise';
 import { insist } from '../../../util/insist';
 
+// Will be refactored
+
 const makeCoveredCallMakerFn = srcs => zoe => {
   const makeOfferKeeper = () => {
     const validOfferIdsToDescs = new WeakMap();

@@ -5,7 +5,7 @@ import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
 import { makeAutoSwapMaker } from '../../../../../core/zoe/contracts/autoswap/autoswap';
 import { setup } from '../setupBasicMints';
 
-test('autoSwap with valid offers', async t => {
+test.skip('autoSwap with valid offers', async t => {
   try {
     const { assays: defaultAssays, mints } = setup();
     const assays = defaultAssays.slice(0, 2);
