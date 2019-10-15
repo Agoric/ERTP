@@ -9,7 +9,7 @@ import harden from '@agoric/harden';
  * @param {governingContractFacet} zoe - the governing
  * contract facet of zoe
  */
-const makeAutomaticRefundMakerFn = () => zoe => {
+const makeAutomaticRefundMakerFn = zoe => {
   let count = 0;
   return harden({
     makeOffer: async escrowReceipt => {
