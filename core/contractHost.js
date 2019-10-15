@@ -15,8 +15,14 @@ import { makeInviteConfig } from './config/inviteConfig';
 import { makeMint } from './mint';
 import makePromise from '../util/makePromise';
 
-/** Make a reusable host that can reliably install and execute contracts. */
-function makeContractHost(E, evaluate, endowments = {}) {
+/**
+ * Make a reusable host that can reliably install and execute contracts.
+ *
+ * @param E eventual-send method proxy
+ * @param evaluate function to evaluate with endowments
+ * @param additionalEndowments pure or pure-ish endowments to add to evaluator
+ */
+function makeContractHost(E, evaluate, additionalEndowments = {}) {
   // Maps from seat identity to seats
   const seats = makePrivateName();
   // from seat identity to invite description.
@@ -55,7 +61,7 @@ No invites left`;
   };
   const fullEndowments = Object.create(null, {
     ...Object.getOwnPropertyDescriptors(defaultEndowments),
-    ...Object.getOwnPropertyDescriptors(endowments),
+    ...Object.getOwnPropertyDescriptors(additionalEndowments),
   });
 
   function evaluateStringToFn(functionSrcString) {

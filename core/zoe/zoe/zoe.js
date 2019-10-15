@@ -21,7 +21,12 @@ import { makeSeatMint } from '../../seatMint';
 import { makeEscrowReceiptConfig } from './escrowReceiptConfig';
 import { makeMint } from '../../mint';
 
-const makeZoe = async (endowments = {}) => {
+/**
+ * Create an instance of Zoe.
+ *
+ * @param additionalEndowments pure or pure-ish endowments to add to evaluator
+ */
+const makeZoe = async (additionalEndowments = {}) => {
   // The escrowReceiptAssay is a long-lived identity over many
   // contract instances
   const {
@@ -49,7 +54,7 @@ const makeZoe = async (endowments = {}) => {
   };
   const fullEndowments = Object.create(null, {
     ...Object.getOwnPropertyDescriptors(defaultEndowments),
-    ...Object.getOwnPropertyDescriptors(endowments),
+    ...Object.getOwnPropertyDescriptors(additionalEndowments),
   });
   const evaluateStringToFn = functionSrcString => {
     insist(typeof functionSrcString === 'string')`\n
