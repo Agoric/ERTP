@@ -64,7 +64,7 @@ minimum bid in simoleans is.)
 
 ```js
 const bobAssays = zoe.getAssaysForInstance(instanceId);
-t.deepEquals(bobAssays, assays);
+sameStructure(bobAssays, assays);
 ```
 
 Bob decides to join the contract and

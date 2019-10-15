@@ -64,7 +64,7 @@ const {
 
 t.equals(bobInstallationId, installationId);
 const bobAssays = zoe.getAssaysForInstance(instanceId);
-t.deepEquals(bobAssays, assays);
+sameStructure(bobAssays, assays);
 ```
 
 Bob decides to be the counter-party. He also escrows his payment and
