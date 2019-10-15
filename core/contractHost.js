@@ -16,7 +16,7 @@ import { makeMint } from './mint';
 import makePromise from '../util/makePromise';
 
 /** Make a reusable host that can reliably install and execute contracts. */
-function makeContractHost(E, evaluate) {
+function makeContractHost(E, evaluate, endowments = {}) {
   // Maps from seat identity to seats
   const seats = makePrivateName();
   // from seat identity to invite description.
@@ -40,20 +40,28 @@ No invites left`;
     ).then(_ => seats.get(seatIdentity));
   }
 
+  const defaultEndowments = {
+    Nat,
+    harden,
+    console,
+    E,
+    makePromise,
+    // TODO: sameStructure is used in one check...() function. Figure out a
+    // more general approach to providing useful helpers.
+    // The best approach is to use the `getExport` moduleFormat, and
+    // bundle imported modules that implement the things we want to use.
+    sameStructure,
+    mustBeSameStructure,
+  };
+  const fullEndowments = Object.create(null, {
+    ...Object.getOwnPropertyDescriptors(defaultEndowments),
+    ...Object.getOwnPropertyDescriptors(endowments),
+  });
+
   function evaluateStringToFn(functionSrcString) {
     insist(typeof functionSrcString === 'string')`\n
 "${functionSrcString}" must be a string, but was ${typeof functionSrcString}`;
-    const fn = evaluate(functionSrcString, {
-      Nat,
-      harden,
-      console,
-      E,
-      makePromise,
-      // TODO: sameStructure is used in one check...() function. Figure out a
-      // more general approach to providing useful helpers.
-      sameStructure,
-      mustBeSameStructure,
-    });
+    const fn = evaluate(functionSrcString, fullEndowments);
     insist(typeof fn === 'function')`\n
 "${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;
     return fn;

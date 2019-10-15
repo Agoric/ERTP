@@ -21,7 +21,7 @@ import { makeSeatMint } from '../../seatMint';
 import { makeEscrowReceiptConfig } from './escrowReceiptConfig';
 import { makeMint } from '../../mint';
 
-const makeZoe = async () => {
+const makeZoe = async (endowments = {}) => {
   // The escrowReceiptAssay is a long-lived identity over many
   // contract instances
   const {
@@ -42,14 +42,19 @@ const makeZoe = async () => {
   );
   const escrowReceiptAssay = escrowReceiptMint.getAssay();
 
+  const defaultEndowments = {
+    harden,
+    makePromise,
+    insist,
+  };
+  const fullEndowments = Object.create(null, {
+    ...Object.getOwnPropertyDescriptors(defaultEndowments),
+    ...Object.getOwnPropertyDescriptors(endowments),
+  });
   const evaluateStringToFn = functionSrcString => {
     insist(typeof functionSrcString === 'string')`\n
 "${functionSrcString}" must be a string, but was ${typeof functionSrcString}`;
-    const fn = evaluate(functionSrcString, {
-      harden,
-      makePromise,
-      insist,
-    });
+    const fn = evaluate(functionSrcString, fullEndowments);
     insist(typeof fn === 'function')`\n
 "${functionSrcString}" must be a string for a function, but produced ${typeof fn}`;
     return fn;
