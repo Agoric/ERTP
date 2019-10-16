@@ -18,9 +18,10 @@ of [Cap'n Proto](https://capnproto.org/language.html#generic-methods) to describ
 core modules of ERTP: 
 [assays](https://github.com/Agoric/ERTP/blob/master/core/assays.chainmail),
 [contractHost](https://github.com/Agoric/ERTP/blob/master/core/contractHost.chainmail), and
-[issuers](https://github.com/Agoric/ERTP/blob/master/core/issuers.chainmail).
-
-We have several other ideas for making use of chainmail descriptions:
+[issuers](https://github.com/Agoric/ERTP/blob/master/core/issuers.chainmail). We're re-using
+the name chainmail because we intend to extend this IDL into a concrete syntax for the abstract
+specification language, and this IDL syntax seems a good place to start. We have several other
+ideas for making use of chainmail descriptions:
 
 * We might enable our CapTP protocol to detect and enforce compliance with object interfaces
 * Generate TypeScript code to cross-check type consistency
