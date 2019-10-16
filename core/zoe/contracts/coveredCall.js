@@ -1,6 +1,7 @@
 import harden from '@agoric/harden';
 
 import { insist } from '../../../util/insist';
+import { sameStructure } from '../../../util/sameStructure';
 
 const makeContract = harden(zoe => {
   let firstOfferId;
@@ -47,16 +48,26 @@ const makeContract = harden(zoe => {
       escrowReceipt,
     );
 
-    const isMatchingOfferDesc = (leftOffer, rightOffer) => {
+    const isMatchingOfferDesc = (extentOps, leftOffer, rightOffer) => {
       // "matching" means that assetDescs are the same, but that the
       // rules have switched places in the array
       return (
-        leftOffer[0].assetDesc.extent === rightOffer[0].assetDesc.extent &&
-        leftOffer[1].assetDesc.extent === rightOffer[1].assetDesc.extent &&
-        leftOffer[0].assetDesc.label.assay ===
-          rightOffer[0].assetDesc.label.assay &&
-        leftOffer[1].assetDesc.label.assay ===
-          rightOffer[1].assetDesc.label.assay &&
+        extentOps[0].equals(
+          leftOffer[0].assetDesc.extent,
+          rightOffer[0].assetDesc.extent,
+        ) &&
+        extentOps[1].equals(
+          leftOffer[1].assetDesc.extent,
+          rightOffer[1].assetDesc.extent,
+        ) &&
+        sameStructure(
+          leftOffer[0].assetDesc.label,
+          rightOffer[0].assetDesc.label,
+        ) &&
+        sameStructure(
+          leftOffer[1].assetDesc.label,
+          rightOffer[1].assetDesc.label,
+        ) &&
         leftOffer[0].rule === rightOffer[1].rule &&
         leftOffer[1].rule === rightOffer[0].rule
       );
@@ -65,7 +76,7 @@ const makeContract = harden(zoe => {
     // fail-fast if offers are not accepted or offer is not valid.
     if (
       sm.getStatus() !== 'acceptingOffers' ||
-      !isMatchingOfferDesc(firstOfferDesc, offerMadeDesc)
+      !isMatchingOfferDesc(zoe.getExtentOps(), firstOfferDesc, offerMadeDesc)
     ) {
       zoe.complete(harden([id]));
       return Promise.reject(
