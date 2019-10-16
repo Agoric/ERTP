@@ -15,7 +15,7 @@ test.only('zoe - simpleExchange', async t => {
 
     // Setup Alice
     const aliceMoolaPurse = mints[0].mint(assays[0].makeAssetDesc(3));
-    const aliceSimoleanPurse = mints[0].mint(assays[0].makeAssetDesc(0));
+    const aliceSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(0));
     const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
 
     // Setup Bob
