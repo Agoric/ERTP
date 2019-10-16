@@ -4,6 +4,7 @@ import harden from '@agoric/harden';
 import evaluate from '@agoric/evaluate';
 
 import { makeContractHost } from '../../../core/contractHost';
+import { makeNatExtentOps } from '../../../core/config/extentOps/natExtentOps';
 
 function setup(syscall, state, helpers) {
   return helpers.makeLiveSlots(
@@ -12,7 +13,7 @@ function setup(syscall, state, helpers) {
     E =>
       harden({
         makeHost() {
-          return harden(makeContractHost(E, evaluate));
+          return harden(makeContractHost(E, evaluate, { makeNatExtentOps }));
         },
       }),
     helpers.vatID,

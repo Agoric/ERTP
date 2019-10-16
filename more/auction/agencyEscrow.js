@@ -2,7 +2,7 @@
 // Copyright (C) 2019 Agoric, under Apache License 2.0
 
 import harden from '@agoric/harden';
-import { natExtentOps } from '../../core/config/extentOps/natExtentOps';
+import { makeNatExtentOps } from '../../core/config/extentOps/natExtentOps';
 
 // There are two parties to this transaction. The buyer is offering some amount
 // of currency (any fungible good) for a valuable item. The buyer will either
@@ -42,7 +42,7 @@ const agencyEscrow = {
         const wonGoodsPayment = E(goodsAssay).claimAll(goodsPayment, 'wins');
         const { assay: currencyAssayP } = currencyAssetDesc.label;
         // TODO(hibbert) look up extentOps from assay with extentOpsLib
-        const overbid = natExtentOps.without(originalOffer, finalPrice);
+        const overbid = makeNatExtentOps().without(originalOffer, finalPrice);
         const overbidAssetDescP = E(currencyAssayP).makeAssetDesc(overbid);
         const finalPriceAssetDescP = E(currencyAssayP).makeAssetDesc(
           finalPrice,

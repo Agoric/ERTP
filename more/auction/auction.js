@@ -3,7 +3,7 @@
 
 import harden from '@agoric/harden';
 import { mustBeSameStructure } from '../../util/sameStructure';
-import { natExtentOps } from '../../core/config/extentOps/natExtentOps';
+import { makeNatExtentOps } from '../../core/config/extentOps/natExtentOps';
 
 // A Seller will provide a good to be auctioned and a possibly empty purse to
 // show the currency in which bids must be expressed. The Auctioneer will create
@@ -50,6 +50,7 @@ const auction = {
     // By analogy with 'strictly greater than': x includes y and is not equal
     function strictlyIncludes(leftAssetDesc, rightAssetDesc) {
       // TODO(hibbert) look up strategy from assay with extentOpsLib
+      const natExtentOps = makeNatExtentOps();
       return (
         natExtentOps.includes(leftAssetDesc, rightAssetDesc) &&
         !natExtentOps.equals(leftAssetDesc, rightAssetDesc)
