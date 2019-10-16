@@ -1,5 +1,4 @@
 import harden from '@agoric/harden';
-import { sameStructure } from '../../../util/sameStructure';
 
 // This exchange only accepts limit orders. A limit order is defined
 // as either a sell order: [ { rule: 'offerExactly', assetDesc1 }, {
@@ -20,27 +19,6 @@ const makeContract = harden(zoe => {
   const getBuyOrders = () => buyOrderOfferIds.map(id => offerIdToOrder.get(id));
   const getSellOrders = () =>
     sellOrderOfferIds.map(id => offerIdToOrder.get(id));
-
-  // Alice:
-  // {
-  //   rule: 'offerExactly',
-  //   assetDesc: assays[0].makeAssetDesc(3),
-  // },
-  // {
-  //   rule: 'wantAtLeast',
-  //   assetDesc: assays[1].makeAssetDesc(4),
-  // },
-
-  // const bobBuyOrder = harden([
-  //   {
-  //     rule: 'wantExactly',
-  //     assetDesc: bobAssays[0].makeAssetDesc(3),
-  //   },
-  //   {
-  //     rule: 'offerAtMost',
-  //     assetDesc: bobAssays[1].makeAssetDesc(7),
-  //   },
-  // ]);
 
   return harden({
     addOrder: async escrowReceipt => {

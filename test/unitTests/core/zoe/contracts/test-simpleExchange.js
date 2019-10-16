@@ -6,7 +6,7 @@ import { setup } from '../setupBasicMints';
 
 import { simpleExchangeSrcs } from '../../../../../core/zoe/contracts/simpleExchange';
 
-test.only('zoe - simpleExchange', async t => {
+test('zoe - simpleExchange', async t => {
   try {
     const { assays: originalAssays, mints, descOps } = setup();
     const assays = originalAssays.slice(0, 2);
