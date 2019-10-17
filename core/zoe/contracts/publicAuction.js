@@ -1,6 +1,6 @@
 import harden from '@agoric/harden';
 
-export const makeContract = harden(zoe => {
+export const makeContract = harden((zoe, numBidsAllowed = 3) => {
   let creatorOfferId;
   let creatorOfferDesc;
   const bidIds = [];
@@ -13,9 +13,6 @@ export const makeContract = harden(zoe => {
   // the offerDesc array
   const ITEM_INDEX = 0;
   const BID_INDEX = 1;
-
-  // TODO: stop hard-coding this and allow installations to be parameterized
-  const numBidsAllowed = 3;
 
   const findWinnerAndPrice = (bidOfferIds, bids) => {
     let highestBid = bidExtentOps.empty();
@@ -44,9 +41,8 @@ export const makeContract = harden(zoe => {
 
   return harden({
     makeOffer: async escrowReceipt => {
-      const { id, offerMade: offerMadeDesc } = await zoe.burnEscrowReceipt(
-        escrowReceipt,
-      );
+      const { id, conditions } = await zoe.burnEscrowReceipt(escrowReceipt);
+      const { offerDesc: offerMadeDesc } = conditions;
 
       const isFirstOffer = creatorOfferId === undefined;
 
@@ -112,7 +108,8 @@ export const makeContract = harden(zoe => {
         const newCreatorExtents = [itemExtentOps.empty(), price];
         const newWinnerExtents = [itemExtentUpForAuction, winnerRefund];
 
-        // Everyone else gets a refund so their extents remain the same.
+        // Everyone else gets a refund so their extents remain the
+        // same.
         zoe.reallocate(
           harden([creatorOfferId, winnerOfferId]),
           harden([newCreatorExtents, newWinnerExtents]),

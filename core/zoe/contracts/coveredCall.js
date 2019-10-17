@@ -44,9 +44,8 @@ const makeContract = harden(zoe => {
     ]);
 
   const makeOffer = async escrowReceipt => {
-    const { id, offerMade: offerMadeDesc } = await zoe.burnEscrowReceipt(
-      escrowReceipt,
-    );
+    const { id, conditions } = await zoe.burnEscrowReceipt(escrowReceipt);
+    const { offerDesc: offerMadeDesc } = conditions;
 
     const isMatchingOfferDesc = (extentOps, leftOffer, rightOffer) => {
       // "matching" means that assetDescs are the same, but that the
@@ -107,9 +106,8 @@ const makeContract = harden(zoe => {
 
   const institution = harden({
     async init(escrowReceipt) {
-      const { id, offerMade: offerMadeDesc } = await zoe.burnEscrowReceipt(
-        escrowReceipt,
-      );
+      const { id, conditions } = await zoe.burnEscrowReceipt(escrowReceipt);
+      const { offerDesc: offerMadeDesc } = conditions;
 
       const isValidFirstOfferDesc = newOfferDesc =>
         ['offerExactly', 'wantExactly'].every(
@@ -135,7 +133,7 @@ const makeContract = harden(zoe => {
 
       const customInviteExtent = {
         status: sm.getStatus(),
-        offerMade: firstOfferDesc,
+        conditions,
         offerToBeMade: makeMatchingOfferDesc(firstOfferDesc),
       };
 

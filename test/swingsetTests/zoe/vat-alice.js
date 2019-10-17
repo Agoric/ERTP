@@ -28,23 +28,28 @@ const makeAliceMaker = async (E, log, zoe) => {
           ).makeInstance(assays, installationId);
 
           // 2: Alice escrows with Zoe
-          const offerDesc = harden([
-            {
-              rule: 'offerExactly',
-              assetDesc: await E(assays[0]).makeAssetDesc(3),
+          const conditions = harden({
+            offerDesc: [
+              {
+                rule: 'offerExactly',
+                assetDesc: await E(assays[0]).makeAssetDesc(3),
+              },
+              {
+                rule: 'wantExactly',
+                assetDesc: await E(assays[1]).makeAssetDesc(7),
+              },
+            ],
+            exit: {
+              kind: 'noExit',
             },
-            {
-              rule: 'wantExactly',
-              assetDesc: await E(assays[1]).makeAssetDesc(7),
-            },
-          ]);
+          });
 
           const aliceMoolaPayment = await E(moolaPurse).withdrawAll();
 
           const offerPayments = [aliceMoolaPayment, undefined];
 
           const { escrowReceipt, payoff: payoffP } = await E(zoe).escrow(
-            offerDesc,
+            conditions,
             offerPayments,
           );
 

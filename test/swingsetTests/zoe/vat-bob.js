@@ -33,23 +33,28 @@ const makeBobMaker = async (E, log, zoe) => {
           )`The second assay should be the simolean assay`;
 
           // 1. Bob escrows his offer
-          const bobOfferDesc = harden([
-            {
-              rule: 'wantExactly',
-              assetDesc: await E(assays[0]).makeAssetDesc(15),
+          const bobConditions = harden({
+            offerDesc: [
+              {
+                rule: 'wantExactly',
+                assetDesc: await E(assays[0]).makeAssetDesc(15),
+              },
+              {
+                rule: 'offerExactly',
+                assetDesc: await E(assays[1]).makeAssetDesc(17),
+              },
+            ],
+            exit: {
+              kind: 'noExit',
             },
-            {
-              rule: 'offerExactly',
-              assetDesc: await E(assays[1]).makeAssetDesc(17),
-            },
-          ]);
+          });
 
           const bobSimoleanPayment = await E(simoleanPurse).withdrawAll();
 
           const bobPayments = [undefined, bobSimoleanPayment];
 
           const { escrowReceipt, payoff: payoffP } = await E(zoe).escrow(
-            bobOfferDesc,
+            bobConditions,
             bobPayments,
           );
 
