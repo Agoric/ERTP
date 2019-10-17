@@ -26,37 +26,6 @@ const makeContract = harden(zoe => {
         escrowReceipt,
       );
 
-      // TODO: check assays as well
-      const isValidSellOrder = newOfferDesc =>
-        ['offerExactly', 'wantAtLeast'].every(
-          (rule, i) => rule === newOfferDesc[i].rule,
-          true,
-        );
-
-      const isValidBuyOrder = newOfferDesc =>
-        ['wantExactly', 'offerAtMost'].every(
-          (rule, i) => rule === newOfferDesc[i].rule,
-          true,
-        );
-
-      // Eject if the offer is invalid
-      if (!isValidSellOrder(offerMadeDesc) && !isValidBuyOrder(offerMadeDesc)) {
-        zoe.complete(harden([id]));
-        return Promise.reject(
-          new Error(`The offer was invalid. Please check your refund.`),
-        );
-      }
-
-      // Save the valid offer
-      const isSellOrder = offerMadeDesc[0].rule === 'offerExactly';
-      const isBuyOrder = !isSellOrder;
-      if (isSellOrder) {
-        sellOrderOfferIds.push(id);
-      } else {
-        buyOrderOfferIds.push(id);
-      }
-      offerIdToOrder.set(id, offerMadeDesc);
-
       const canMatch = (extentOps, sellOrder, buyOrder) => {
         const assetEqual = extentOps[0].equals(
           sellOrder[0].assetDesc.extent,
@@ -102,7 +71,25 @@ const makeContract = harden(zoe => {
         offerIdToOrder.delete(buyOrderOfferId);
       };
 
-      if (isSellOrder) {
+      // TODO: check assays as well
+      const isValidSellOrder = newOfferDesc =>
+        ['offerExactly', 'wantAtLeast'].every(
+          (rule, i) => rule === newOfferDesc[i].rule,
+        );
+
+      const isValidBuyOrder = newOfferDesc =>
+        ['wantExactly', 'offerAtMost'].every(
+          (rule, i) => rule === newOfferDesc[i].rule,
+        );
+
+      const offerAcceptedMessage = `The offer has been accepted. Once the contract has been completed, please check your winnings`;
+
+      if (isValidSellOrder(offerMadeDesc)) {
+        // Save the valid offer
+        sellOrderOfferIds.push(id);
+        offerIdToOrder.set(id, offerMadeDesc);
+
+        // Try to match
         const buyOrders = getBuyOrders(); // same order as buyOrderOfferIds
         for (let i = 0; i < buyOrders.length; i += 1) {
           const buyOrder = buyOrders[i];
@@ -111,7 +98,15 @@ const makeContract = harden(zoe => {
             reallocate(id, buyOrderOfferId);
           }
         }
-      } else if (isBuyOrder) {
+        return offerAcceptedMessage;
+      }
+
+      if (isValidBuyOrder(offerMadeDesc)) {
+        // Save the valid offer
+        buyOrderOfferIds.push(id);
+        offerIdToOrder.set(id, offerMadeDesc);
+
+        // Try to match
         const sellOrders = getSellOrders(); // same order as sellOrderOfferIds
         for (let i = 0; i < sellOrders.length; i += 1) {
           const sellOrder = sellOrders[i];
@@ -120,8 +115,14 @@ const makeContract = harden(zoe => {
             reallocate(sellOrderOfferId, id);
           }
         }
+        return offerAcceptedMessage;
       }
-      return `The offer has been accepted. Once the contract has been completed, please check your winnings`;
+
+      // Eject because the offer must be invalid
+      zoe.complete(harden([id]));
+      return Promise.reject(
+        new Error(`The offer was invalid. Please check your refund.`),
+      );
     },
   });
 });
