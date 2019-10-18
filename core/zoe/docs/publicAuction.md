@@ -60,6 +60,7 @@ can check that the installationId installed is the auction he is expecting.
 const {
   instance: bobAuction,
   installationId: bobInstallationId,
+  assays: contractAssays,
 } = zoe.getInstance(instanceId);
 ```
 He can also check that the item up for sale is the kind that he wants,
@@ -68,8 +69,7 @@ implementation, Alice will have to tell Bob out of band what the
 minimum bid in simoleans is.)
 
 ```js
-const bobAssays = zoe.getAssaysForInstance(instanceId);
-sameStructure(bobAssays, assays);
+insist(sameStructure(contractAssays, assays))`assays are not the same`;
 ```
 
 Bob decides to join the contract and

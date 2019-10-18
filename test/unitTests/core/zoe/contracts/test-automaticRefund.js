@@ -27,9 +27,9 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const {
       instance: aliceAutomaticRefund,
       instanceId,
+      assays: contractAssays,
     } = await zoe.makeInstance(assays, installationId);
-    // The assays in the instance are now defined
-    t.deepEquals(zoe.getAssaysForInstance(instanceId), assays);
+    t.deepEquals(contractAssays, assays);
 
     // 2: Alice escrows with zoe
     const aliceConditions = harden({
@@ -81,12 +81,12 @@ test('zoe.makeInstance with automaticRefund', async t => {
     const {
       instance: bobAutomaticRefund,
       installationId: bobInstallationId,
+      assays: bobAssays,
     } = zoe.getInstance(instanceId);
     t.equals(bobInstallationId, installationId);
 
     // bob wants to know what assays this contract is about and in
     // what order. Is it what he expects?
-    const bobAssays = zoe.getAssaysForInstance(instanceId);
     t.deepEquals(bobAssays, assays);
 
     // 6: Bob also wants to get an automaticRefund (why? we don't

@@ -59,7 +59,7 @@ const makeState = () => {
       offerIds.map(offerId => offerIdToOfferDesc.get(offerId)),
 
     // per offerId
-    isOfferIdActive: offerId => offerIdToInstanceId.has(offerId),
+    isOfferIdActive: offerId => offerIdToAssays.has(offerId),
   });
 
   // The adminState should never leave Zoe and should be closely held
@@ -116,7 +116,12 @@ const makeState = () => {
     },
     recordUsedInInstance: (instanceId, offerId) =>
       offerIdToInstanceId.init(offerId, instanceId),
-    getInstanceIdForOfferId: offerId => offerIdToInstanceId.get(offerId),
+    getInstanceIdForOfferId: offerId => {
+      if (offerIdToInstanceId.has(offerId)) {
+        return offerIdToInstanceId.get(offerId);
+      }
+      return undefined;
+    },
     setExtentsFor: (offerIds, reallocation) =>
       offerIds.map((offerId, i) =>
         offerIdToExtents.set(offerId, reallocation[i]),

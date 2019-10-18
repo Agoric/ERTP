@@ -319,9 +319,7 @@ Unrecognized moduleFormat ${moduleFormat}`;
             if (!readOnlyState.isOfferIdActive(offerId)) {
               throw new Error('offer has already completed');
             }
-            result.reject(
-              'A new payoff ERTP payment was made, making this invalid.',
-            );
+            result.res([]);
             const newResult = makePromise();
             adminState.replaceResult(offerId, newResult);
             return mintPayoffPayment(
@@ -342,8 +340,10 @@ Unrecognized moduleFormat ${moduleFormat}`;
           );
       }
       if (conditions.exit.kind === 'onDemand') {
-        escrowResult.cancel = () =>
-          completeOffers(adminState, readOnlyState, harden([offerId]));
+        escrowResult.cancelObj = {
+          cancel: () =>
+            completeOffers(adminState, readOnlyState, harden([offerId])),
+        };
       }
       return harden(escrowResult);
     },

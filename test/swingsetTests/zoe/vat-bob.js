@@ -17,6 +17,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const {
         instance: automaticRefund,
         installationId: automaticRefundInstallationId,
+        assays: contractAssays,
       } = await E(zoe).getInstance(instanceId);
 
       // Bob ensures it's the contract he expects
@@ -27,9 +28,8 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const moolaAssay = await E(moolaPurseP).getAssay();
       const simoleanAssay = await E(simoleanPurseP).getAssay();
 
-      const assays = [moolaAssay, simoleanAssay];
+      const assays = harden([moolaAssay, simoleanAssay]);
 
-      const contractAssays = await E(zoe).getAssaysForInstance(instanceId);
       insist(
         contractAssays[0] === moolaAssay,
       )`The first assay should be the moola assay`;
@@ -88,7 +88,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const moolaAssay = await E(moolaPurseP).getAssay();
       const simoleanAssay = await E(simoleanPurseP).getAssay();
 
-      const assays = [moolaAssay, simoleanAssay];
+      const assays = harden([moolaAssay, simoleanAssay]);
 
       const bobIntendedConditions = harden({
         offerDesc: [
@@ -146,6 +146,153 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const bobResult = await payoffP;
 
       // 5: Bob deposits his winnings
+      await E(moolaPurseP).depositAll(bobResult[0]);
+      await E(simoleanPurseP).depositAll(bobResult[1]);
+
+      await showPaymentBalance(moolaPurseP, 'bobMoolaPurse');
+      await showPaymentBalance(simoleanPurseP, 'bobSimoleanPurse;');
+    },
+    doPublicAuction: async instanceId => {
+      const moolaAssay = await E(moolaPurseP).getAssay();
+      const simoleanAssay = await E(simoleanPurseP).getAssay();
+
+      const assays = harden([moolaAssay, simoleanAssay]);
+      const {
+        instance: auction,
+        installationId,
+        assays: auctionAssays,
+      } = await E(zoe).getInstance(instanceId);
+
+      insist(installationId === installId)`wrong installation`;
+      insist(sameStructure(assays, auctionAssays))`assays were not as expected`;
+
+      const conditions = harden({
+        offerDesc: [
+          {
+            rule: 'wantExactly',
+            assetDesc: await E(assays[0]).makeAssetDesc(1),
+          },
+          {
+            rule: 'offerAtMost',
+            assetDesc: await E(assays[1]).makeAssetDesc(11),
+          },
+        ],
+        exit: {
+          kind: 'noExit',
+        },
+      });
+      const simoleanPayment = await E(simoleanPurseP).withdrawAll();
+      const offerPayments = [undefined, simoleanPayment];
+
+      const { escrowReceipt, payoff: payoffP } = await E(zoe).escrow(
+        conditions,
+        offerPayments,
+      );
+
+      const offerResult = await E(auction).makeOffer(escrowReceipt);
+
+      log(offerResult);
+
+      const bobResult = await payoffP;
+
+      await E(moolaPurseP).depositAll(bobResult[0]);
+      await E(simoleanPurseP).depositAll(bobResult[1]);
+
+      await showPaymentBalance(moolaPurseP, 'bobMoolaPurse');
+      await showPaymentBalance(simoleanPurseP, 'bobSimoleanPurse;');
+    },
+    doPublicSwap: async instanceId => {
+      const moolaAssay = await E(moolaPurseP).getAssay();
+      const simoleanAssay = await E(simoleanPurseP).getAssay();
+
+      const assays = harden([moolaAssay, simoleanAssay]);
+      const { instance: swap, installationId, assays: swapAssays } = await E(
+        zoe,
+      ).getInstance(instanceId);
+
+      insist(installationId === installId)`wrong installation`;
+      insist(sameStructure(assays, swapAssays))`assays were not as expected`;
+
+      const conditions = harden({
+        offerDesc: [
+          {
+            rule: 'wantExactly',
+            assetDesc: await E(assays[0]).makeAssetDesc(3),
+          },
+          {
+            rule: 'offerExactly',
+            assetDesc: await E(assays[1]).makeAssetDesc(7),
+          },
+        ],
+        exit: {
+          kind: 'noExit',
+        },
+      });
+      const simoleanPayment = await E(simoleanPurseP).withdrawAll();
+      const offerPayments = [undefined, simoleanPayment];
+
+      const { escrowReceipt, payoff: payoffP } = await E(zoe).escrow(
+        conditions,
+        offerPayments,
+      );
+
+      const offerResult = await E(swap).makeOffer(escrowReceipt);
+
+      log(offerResult);
+
+      const bobResult = await payoffP;
+
+      await E(moolaPurseP).depositAll(bobResult[0]);
+      await E(simoleanPurseP).depositAll(bobResult[1]);
+
+      await showPaymentBalance(moolaPurseP, 'bobMoolaPurse');
+      await showPaymentBalance(simoleanPurseP, 'bobSimoleanPurse;');
+    },
+    doSimpleExchange: async instanceId => {
+      const moolaAssay = await E(moolaPurseP).getAssay();
+      const simoleanAssay = await E(simoleanPurseP).getAssay();
+
+      const assays = harden([moolaAssay, simoleanAssay]);
+      const {
+        instance: exchange,
+        installationId,
+        assays: contractAssays,
+      } = await E(zoe).getInstance(instanceId);
+
+      insist(installationId === installId)`wrong installation`;
+      insist(
+        sameStructure(assays, contractAssays),
+      )`assays were not as expected`;
+
+      const bobBuyOrderConditions = harden({
+        offerDesc: [
+          {
+            rule: 'wantExactly',
+            assetDesc: await E(assays[0]).makeAssetDesc(3),
+          },
+          {
+            rule: 'offerAtMost',
+            assetDesc: await E(assays[1]).makeAssetDesc(7),
+          },
+        ],
+        exit: {
+          kind: 'noExit',
+        },
+      });
+      const simoleanPayment = await E(simoleanPurseP).withdrawAll();
+      const offerPayments = [undefined, simoleanPayment];
+
+      const { escrowReceipt, payoff: payoffP } = await E(zoe).escrow(
+        bobBuyOrderConditions,
+        offerPayments,
+      );
+
+      const offerResult = await E(exchange).addOrder(escrowReceipt);
+
+      log(offerResult);
+
+      const bobResult = await payoffP;
+
       await E(moolaPurseP).depositAll(bobResult[0]);
       await E(simoleanPurseP).depositAll(bobResult[1]);
 

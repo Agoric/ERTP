@@ -53,14 +53,8 @@ test('zoe - publicSwap', async t => {
     const alicePayments = [aliceMoolaPayment, undefined];
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
-      payoff: alicePayoffP,
       makePayoffPaymentObj,
     } = await zoe.escrow(aliceConditions, alicePayments);
-
-    t.rejects(
-      alicePayoffP,
-      /A new payoff ERTP payment was made, making this invalid./,
-    );
 
     // 3: Alice does a claimAll on the escrowReceipt payment. It's
     // unnecessary if she trusts Zoe but we will do it for the tests.
@@ -91,10 +85,10 @@ test('zoe - publicSwap', async t => {
     const {
       instance: bobSwap,
       installationId: bobInstallationId,
+      assays: bobAssays,
     } = zoe.getInstance(instanceId);
 
     t.equals(bobInstallationId, installationId);
-    const bobAssays = zoe.getAssaysForInstance(instanceId);
     t.deepEquals(bobAssays, assays);
 
     const bobConditions = harden({

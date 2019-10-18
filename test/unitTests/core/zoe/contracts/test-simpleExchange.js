@@ -69,10 +69,10 @@ test('zoe - simpleExchange', async t => {
     const {
       instance: bobExchange,
       installationId: bobInstallationId,
+      assays: bobAssays,
     } = zoe.getInstance(instanceId);
 
     t.equals(bobInstallationId, installationId);
-    const bobAssays = zoe.getAssaysForInstance(instanceId);
     t.deepEquals(bobAssays, assays);
 
     // Bob creates a buy order, saying that he wants exactly 3 moola,
