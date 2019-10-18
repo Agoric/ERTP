@@ -72,7 +72,7 @@ const insistValidRules = offerDesc => {
 const insistValidExitCondition = exit => {
   const acceptedExitConditionKinds = [
     'noExit',
-    // 'onDemand', // not yet supported
+    'onDemand',
     'afterDeadline',
     // 'onDemandAfterDeadline', // not yet supported
   ];

@@ -310,15 +310,7 @@ Unrecognized moduleFormat ${moduleFormat}`;
         conditions,
       );
 
-      if (conditions.exit.kind === 'afterDeadline') {
-        conditions.exit.timer
-          .delayUntil(conditions.exit.deadline)
-          .then(_ticks =>
-            completeOffers(adminState, readOnlyState, harden([offerId])),
-          );
-      }
-
-      return {
+      const escrowResult = {
         escrowReceipt: escrowReceiptPaymentP,
         payoff: result.p,
         makePayoffPaymentObj: harden({
@@ -342,6 +334,18 @@ Unrecognized moduleFormat ${moduleFormat}`;
           },
         }),
       };
+      if (conditions.exit.kind === 'afterDeadline') {
+        conditions.exit.timer
+          .delayUntil(conditions.exit.deadline)
+          .then(_ticks =>
+            completeOffers(adminState, readOnlyState, harden([offerId])),
+          );
+      }
+      if (conditions.exit.kind === 'onDemand') {
+        escrowResult.cancel = () =>
+          completeOffers(adminState, readOnlyState, harden([offerId]));
+      }
+      return harden(escrowResult);
     },
   });
   return publicFacet;
