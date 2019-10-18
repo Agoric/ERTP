@@ -17,7 +17,7 @@ async function main(withSES, basedir, argv) {
 
 const expectedAutomaticRefundOkLog = [
   '=> setup called',
-  '=> automaticRefundOk called',
+  '=> case automaticRefundOk',
   '=> alice and bob are setup',
   '=> alice.doCreateAutomaticRefund called',
   '{"offerDesc":[{"rule":"offerExactly","assetDesc":{"label":{"assay":{},"description":"moola"},"extent":3}},{"rule":"wantExactly","assetDesc":{"label":{"assay":{},"description":"simoleans"},"extent":7}}],"exit":{"kind":"noExit"}}',
