@@ -2,6 +2,11 @@ import harden from '@agoric/harden';
 
 import { makeMint } from '../../../core/mint';
 import { automaticRefundSrcs } from '../../../core/zoe/contracts/automaticRefund';
+import { coveredCallSrcs } from '../../../core/zoe/contracts/coveredCall';
+import { publicAuctionSrcs } from '../../../core/zoe/contracts/publicAuction';
+import { publicSwapSrcs } from '../../../core/zoe/contracts/publicSwap';
+import { simpleExchangeSrcs } from '../../../core/zoe/contracts/simpleExchange';
+// TODO: test autoswap
 
 const setupBasicMints = () => {
   const moolaMint = makeMint('moola');
@@ -69,7 +74,10 @@ function build(E, log) {
   const obj0 = {
     async bootstrap(argv, vats) {
       const zoe = await E(vats.zoe).getZoe();
-      const automaticRefundInstallId = E(zoe).install(automaticRefundSrcs);
+      const automaticRefundInstallId = await E(zoe).install(
+        automaticRefundSrcs,
+      );
+      const coveredCallInstallId = await E(zoe).install(coveredCallSrcs);
       const makeAliceAndBob = (aliceExtents, bobExtents, installId) =>
         makeVats(E, log, vats, zoe, aliceExtents, bobExtents, installId);
 
@@ -82,11 +90,23 @@ function build(E, log) {
         await E(aliceP).doCreateAutomaticRefund(bobP);
       }
 
+      async function coveredCallOk() {
+        const { aliceP, bobP } = makeAliceAndBob(
+          [3, 0],
+          [0, 7],
+          coveredCallInstallId,
+        );
+        await E(aliceP).doCreateCoveredCall(bobP);
+      }
+
       log(`=> case ${argv[0]}`);
 
       switch (argv[0]) {
         case 'automaticRefundOk': {
           return automaticRefundOk();
+        }
+        case 'coveredCallOk': {
+          return coveredCallOk();
         }
         default: {
           throw new Error(`unrecognized argument value ${argv[0]}`);

@@ -49,3 +49,38 @@ test('zoe - automaticRefund - valid inputs - no SES', async t => {
     t.end();
   }
 });
+
+const expectedCoveredCallOkLog = [
+  '=> setup called',
+  '=> case coveredCallOk',
+  '=> alice and bob are setup',
+  '=> alice.doCreateCoveredCall called',
+  'The offer has been accepted. Once the contract has been completed, please check your winnings',
+  'The offer has been accepted. Once the contract has been completed, please check your winnings',
+  'bobMoolaPurse: balance {"label":{"assay":{},"description":"moola"},"extent":3}',
+  'bobSimoleanPurse;: balance {"label":{"assay":{},"description":"simoleans"},"extent":0}',
+  'aliceMoolaPurse: balance {"label":{"assay":{},"description":"moola"},"extent":0}',
+  'aliceSimoleanPurse;: balance {"label":{"assay":{},"description":"simoleans"},"extent":7}',
+];
+
+test('zoe - coveredCall - valid inputs - with SES', async t => {
+  try {
+    const dump = await main(true, 'zoe', ['coveredCallOk']);
+    t.deepEquals(dump.log, expectedCoveredCallOkLog);
+  } catch (e) {
+    t.isNot(e, e, 'unexpected exception');
+  } finally {
+    t.end();
+  }
+});
+
+test('zoe - coveredCall - valid inputs - no SES', async t => {
+  try {
+    const dump = await main(false, 'zoe', ['coveredCallOk']);
+    t.deepEquals(dump.log, expectedCoveredCallOkLog);
+  } catch (e) {
+    t.isNot(e, e, 'unexpected exception');
+  } finally {
+    t.end();
+  }
+});
