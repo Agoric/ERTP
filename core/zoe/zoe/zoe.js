@@ -254,18 +254,13 @@ Unrecognized moduleFormat ${moduleFormat}`;
     makeInstance: async (assays, installationId, args = []) => {
       const installation = adminState.getInstallation(installationId);
       const instanceId = harden({});
+      await adminState.recordAssaysForInstance(instanceId, assays);
       const governingContractFacet = makeGoverningContractFacet(instanceId);
       const instance = installation.makeContract(
         governingContractFacet,
         ...args,
       );
-      await adminState.addInstance(
-        instanceId,
-        instance,
-        installationId,
-        assays,
-        args,
-      );
+      adminState.addInstance(instanceId, instance, installationId, args);
       return harden({
         instanceId,
         instance,

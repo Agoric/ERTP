@@ -2,14 +2,15 @@ import harden from '@agoric/harden';
 import { E } from '@agoric/eventual-send';
 
 import { extentOpsLib } from '../../config/extentOpsLib';
+import { makePrivateName } from '../../../util/PrivateName';
 
 const makeState = () => {
-  const offerIdToExtents = new WeakMap();
-  const offerIdToAssays = new WeakMap();
-  const offerIdToOfferDesc = new WeakMap();
-  const offerIdToExitCondition = new WeakMap();
-  const offerIdToResults = new WeakMap();
-  const offerIdToInstanceId = new WeakMap();
+  const offerIdToExtents = makePrivateName();
+  const offerIdToAssays = makePrivateName();
+  const offerIdToOfferDesc = makePrivateName();
+  const offerIdToExitCondition = makePrivateName();
+  const offerIdToResult = makePrivateName();
+  const offerIdToInstanceId = makePrivateName();
 
   const instanceIdToInstallationId = new WeakMap();
   const instanceIdToInstance = new WeakMap();
@@ -71,14 +72,16 @@ const makeState = () => {
     },
     getInstallation: installationId =>
       installationIdToInstallation.get(installationId),
-    addInstance: async (instanceId, instance, installationId, assays, args) => {
-      instanceIdToInstance.set(instanceId, instance);
-      instanceIdToInstallationId.set(instanceId, installationId);
+    recordAssaysForInstance: async (instanceId, assays) => {
       instanceIdToAssays.set(instanceId, assays);
-      instanceIdToArgs.set(instanceId, args);
       await Promise.all(
         assays.map(async assay => adminState.recordAssay(assay)),
       );
+    },
+    addInstance: (instanceId, instance, installationId, args) => {
+      instanceIdToInstance.set(instanceId, instance);
+      instanceIdToInstallationId.set(instanceId, installationId);
+      instanceIdToArgs.set(instanceId, args);
     },
     getInstance: instanceId => instanceIdToInstance.get(instanceId),
     getInstallationIdForInstanceId: instanceId =>
@@ -102,40 +105,33 @@ const makeState = () => {
     },
     recordOffer: (offerId, conditions, extents, assays, result) => {
       const { offerDesc, exit } = conditions;
-      offerIdToExtents.set(offerId, extents);
-      offerIdToAssays.set(offerId, assays);
-      offerIdToOfferDesc.set(offerId, offerDesc);
-      offerIdToExitCondition.set(offerId, exit);
-      offerIdToResults.set(offerId, result);
+      offerIdToExtents.init(offerId, extents);
+      offerIdToAssays.init(offerId, assays);
+      offerIdToOfferDesc.init(offerId, offerDesc);
+      offerIdToExitCondition.init(offerId, exit);
+      offerIdToResult.init(offerId, result);
     },
     replaceResult: (offerId, newResult) => {
-      // check exists first before replacing
-      if (!offerIdToResults.has(offerId)) {
-        throw new Error('offerId not found. Offer may have completed');
-      }
-      offerIdToResults.set(offerId, newResult);
+      offerIdToResult.set(offerId, newResult);
     },
-    recordUsedInInstance: (instanceId, offerId) => {
-      if (offerIdToInstanceId.has(offerId)) {
-        throw new Error('offer id was already used');
-      }
-      offerIdToInstanceId.set(offerId, instanceId);
-    },
+    recordUsedInInstance: (instanceId, offerId) =>
+      offerIdToInstanceId.init(offerId, instanceId),
     getInstanceIdForOfferId: offerId => offerIdToInstanceId.get(offerId),
     setExtentsFor: (offerIds, reallocation) =>
       offerIds.map((offerId, i) =>
         offerIdToExtents.set(offerId, reallocation[i]),
       ),
     getResultsFor: offerIds =>
-      offerIds.map(objId => offerIdToResults.get(objId)),
+      offerIds.map(objId => offerIdToResult.get(objId)),
     removeOffers: offerIds => {
       // has-side-effects
       // eslint-disable-next-line array-callback-return
       offerIds.map(objId => {
         offerIdToExtents.delete(objId);
+        offerIdToAssays.delete(objId);
         offerIdToOfferDesc.delete(objId);
         offerIdToExitCondition.delete(objId);
-        offerIdToResults.delete(objId);
+        offerIdToResult.delete(objId);
         offerIdToInstanceId.delete(objId);
       });
     },

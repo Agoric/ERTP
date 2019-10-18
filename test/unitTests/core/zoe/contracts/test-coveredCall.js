@@ -189,7 +189,7 @@ test('zoe - coveredCall', async t => {
   }
 });
 
-test('zoe - coveredCall - cancel conditions - no ticks', async t => {
+test(`zoe - coveredCall - alice's deadline expires, cancelling alice and bob`, async t => {
   try {
     const { mints: defaultMints, assays: defaultAssays } = setup();
     const mints = defaultMints.slice(0, 2);
@@ -232,7 +232,7 @@ test('zoe - coveredCall - cancel conditions - no ticks', async t => {
       ],
       exit: {
         kind: 'afterDeadline',
-        deadline: 10,
+        deadline: 1,
         timer,
       },
     });
@@ -271,6 +271,8 @@ test('zoe - coveredCall - cancel conditions - no ticks', async t => {
       },
     ]);
 
+    timer.tick();
+
     // 3: Imagine that Alice sends the invite to Bob (not done here
     // since this test doesn't actually have separate vats/parties)
 
@@ -290,9 +292,7 @@ test('zoe - coveredCall - cancel conditions - no ticks', async t => {
         },
       ],
       exit: {
-        kind: 'afterDeadline',
-        deadline: 10,
-        timer,
+        kind: 'noExit',
       },
     });
 
@@ -329,12 +329,11 @@ test('zoe - coveredCall - cancel conditions - no ticks', async t => {
     );
 
     // 8: Bob makes an offer with his escrow receipt
-    const bobOutcome = await bobInvite.makeOffer(bobEscrowReceipt);
-
-    t.equals(
-      bobOutcome,
-      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+    t.rejects(
+      bobInvite.makeOffer(bobEscrowReceipt),
+      /The offer was invalid or the contract is not accepting offers. Please check your refund./,
     );
+
     t.equals(
       aliceOutcome,
       'The offer has been accepted. Once the contract has been completed, please check your winnings',
@@ -343,14 +342,11 @@ test('zoe - coveredCall - cancel conditions - no ticks', async t => {
     const aliceResult = await alicePayoffP;
     const bobResult = await bobPayoffP;
 
-    // Alice gets back 0 of the kind she put in
-    t.equals(aliceResult[0].getBalance().extent, 0);
+    // Alice gets back what she put in
+    t.deepEquals(aliceResult[0].getBalance(), assays[0].makeAssetDesc(3));
 
-    // Alice got what she wanted
-    t.deepEquals(
-      aliceResult[1].getBalance(),
-      aliceConditions.offerDesc[1].assetDesc,
-    );
+    // Alice doesn't get what she wanted
+    t.deepEquals(aliceResult[1].getBalance(), assays[1].makeAssetDesc(0));
 
     // 11: Alice deposits her winnings to ensure she can
     await aliceMoolaPurse.depositAll(aliceResult[0]);
@@ -363,12 +359,10 @@ test('zoe - coveredCall - cancel conditions - no ticks', async t => {
     // Assert that the correct outcome was achieved.
     // Alice had 3 moola and 0 simoleans.
     // Bob had 0 moola and 7 simoleans.
-    // Now, Alice should have 0 moola and 7 simoleans.
-    // Bob should have 3 moola and 0 simoleans.
-    t.equals(aliceMoolaPurse.getBalance().extent, 0);
-    t.equals(aliceSimoleanPurse.getBalance().extent, 7);
-    t.equals(bobMoolaPurse.getBalance().extent, 3);
-    t.equals(bobSimoleanPurse.getBalance().extent, 0);
+    t.deepEquals(aliceMoolaPurse.getBalance(), assays[0].makeAssetDesc(3));
+    t.deepEquals(aliceSimoleanPurse.getBalance(), assays[1].makeAssetDesc(0));
+    t.deepEquals(bobMoolaPurse.getBalance(), assays[0].makeAssetDesc(0));
+    t.deepEquals(bobSimoleanPurse.getBalance(), assays[1].makeAssetDesc(7));
   } catch (e) {
     t.isNot(e, e, 'unexpected exception');
   } finally {

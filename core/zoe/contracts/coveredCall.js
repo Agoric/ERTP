@@ -5,8 +5,8 @@ import { sameStructure } from '../../../util/sameStructure';
 
 const makeContract = harden(zoe => {
   let firstOfferId;
-  let firstOfferDesc;
   let matchingOfferId;
+  const extentOpsArray = zoe.getExtentOpsArray();
 
   const coveredCallAllowedTransitions = [
     ['uninitialized', ['acceptingOffers']],
@@ -31,7 +31,7 @@ const makeContract = harden(zoe => {
 
   const sm = makeStateMachine('uninitialized', coveredCallAllowedTransitions);
 
-  const makeMatchingOfferDesc = () =>
+  const makeMatchingOfferDesc = firstOfferDesc =>
     harden([
       {
         rule: firstOfferDesc[1].rule,
@@ -43,50 +43,50 @@ const makeContract = harden(zoe => {
       },
     ]);
 
+  const isMatchingOfferDesc = (extentOps, leftOffer, rightOffer) => {
+    // "matching" means that assetDescs are the same, but that the
+    // rules have switched places in the array
+    return (
+      extentOps[0].equals(
+        leftOffer[0].assetDesc.extent,
+        rightOffer[0].assetDesc.extent,
+      ) &&
+      extentOps[1].equals(
+        leftOffer[1].assetDesc.extent,
+        rightOffer[1].assetDesc.extent,
+      ) &&
+      sameStructure(
+        leftOffer[0].assetDesc.label,
+        rightOffer[0].assetDesc.label,
+      ) &&
+      sameStructure(
+        leftOffer[1].assetDesc.label,
+        rightOffer[1].assetDesc.label,
+      ) &&
+      leftOffer[0].rule === rightOffer[1].rule &&
+      leftOffer[1].rule === rightOffer[0].rule
+    );
+  };
+
   const makeOffer = async escrowReceipt => {
     const { id, conditions } = await zoe.burnEscrowReceipt(escrowReceipt);
     const { offerDesc: offerMadeDesc } = conditions;
 
-    const isMatchingOfferDesc = (extentOps, leftOffer, rightOffer) => {
-      // "matching" means that assetDescs are the same, but that the
-      // rules have switched places in the array
-      return (
-        extentOps[0].equals(
-          leftOffer[0].assetDesc.extent,
-          rightOffer[0].assetDesc.extent,
-        ) &&
-        extentOps[1].equals(
-          leftOffer[1].assetDesc.extent,
-          rightOffer[1].assetDesc.extent,
-        ) &&
-        sameStructure(
-          leftOffer[0].assetDesc.label,
-          rightOffer[0].assetDesc.label,
-        ) &&
-        sameStructure(
-          leftOffer[1].assetDesc.label,
-          rightOffer[1].assetDesc.label,
-        ) &&
-        leftOffer[0].rule === rightOffer[1].rule &&
-        leftOffer[1].rule === rightOffer[0].rule
-      );
-    };
-
     // fail-fast if offers are not accepted or offer is not valid.
-    if (
-      sm.getStatus() !== 'acceptingOffers' ||
-      !isMatchingOfferDesc(
-        zoe.getExtentOpsArray(),
-        firstOfferDesc,
-        offerMadeDesc,
-      )
-    ) {
+    try {
+      const [firstOfferDesc] = zoe.getOfferDescsFor(harden([firstOfferId]));
+      if (
+        sm.getStatus() !== 'acceptingOffers' ||
+        !isMatchingOfferDesc(extentOpsArray, firstOfferDesc, offerMadeDesc)
+      ) {
+        throw new Error();
+      }
+    } catch (err) {
       zoe.complete(harden([id]));
-      return Promise.reject(
-        new Error(
-          `The offer was invalid or the contract is not accepting offers. Please check your refund.`,
-        ),
+      const externalError = new Error(
+        `The offer was invalid or the contract is not accepting offers. Please check your refund.`,
       );
+      return Promise.reject(externalError);
     }
 
     // Save the valid offer
@@ -112,7 +112,6 @@ const makeContract = harden(zoe => {
       const isValidFirstOfferDesc = newOfferDesc =>
         ['offerExactly', 'wantExactly'].every(
           (rule, i) => rule === newOfferDesc[i].rule,
-          true,
         );
 
       // Eject if the offer is invalid
@@ -128,13 +127,12 @@ const makeContract = harden(zoe => {
 
       // Save the valid offer
       firstOfferId = id;
-      firstOfferDesc = offerMadeDesc;
       sm.transitionTo('acceptingOffers');
 
       const customInviteExtent = {
         status: sm.getStatus(),
         conditions,
-        offerToBeMade: makeMatchingOfferDesc(firstOfferDesc),
+        offerToBeMade: makeMatchingOfferDesc(offerMadeDesc),
       };
 
       const invite = await zoe.makeInvite(
