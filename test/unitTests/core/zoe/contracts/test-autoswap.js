@@ -5,7 +5,7 @@ import { makeZoe } from '../../../../../core/zoe/zoe/zoe';
 import { setup } from '../setupBasicMints';
 import { autoswapSrcs } from '../../../../../core/zoe/contracts/autoswap';
 
-test.skip('autoSwap with valid offers', async t => {
+test('autoSwap with valid offers', async t => {
   try {
     const { assays: defaultAssays, mints } = setup();
     const zoe = await makeZoe();
@@ -247,7 +247,7 @@ test.skip('autoSwap with valid offers', async t => {
       alicePayoffPayments[2].getBalance(),
       allAssays[2].makeAssetDesc(0),
     );
-    t.deepEquals(aliceAutoswap.getPoolExtents(), [0, 0, 0]);
+    t.deepEquals(aliceAutoswap.getPoolExtents(), [0, 0, 10]);
   } catch (e) {
     t.assert(false, e);
     console.log(e);

@@ -1,8 +1,6 @@
 import harden from '@agoric/harden';
 import Nat from '@agoric/nat';
 
-import makePromise from '../../util/makePromise';
-
 // These utilities are likely to be helpful to developers writing
 // governing contracts.
 

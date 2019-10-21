@@ -172,10 +172,10 @@ export const makeContract = harden((zoe, terms) => {
       divide(multiply(liquidityTokenIn, poolQ), liqTokenSupply),
     );
 
-    const newPoolExtents = vectorWithout(
+    const newPoolExtents = vectorWith(
       extentOpsArray,
-      poolExtents,
-      newPlayerExtents,
+      vectorWithout(extentOpsArray, poolExtents, newPlayerExtents),
+      [0, 0, liquidityTokenIn],
     );
 
     liqTokenSupply -= liquidityTokenIn;

@@ -104,7 +104,7 @@ const makeContract = harden((zoe, terms) => {
       );
     },
   });
-  
+
   return harden({
     instance: simpleExchange,
     assays: terms.assays,
