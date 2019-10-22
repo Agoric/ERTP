@@ -1,5 +1,8 @@
 import harden from '@agoric/harden';
-import { isMatchingOfferDesc, isValidFirstOfferDesc } from '../utils/publicSwap';
+import {
+  isMatchingOfferDesc,
+  isValidFirstOfferDesc,
+} from '../utils/publicSwap';
 
 export const makeContract = harden((zoe, terms) => {
   let firstOfferId;

@@ -6,11 +6,18 @@ import fs from 'fs';
 import bundleSource from '@agoric/bundle-source';
 
 const TO_BUNDLE = ['publicSwapESM'];
-const generateBundlesP = Promise.all(TO_BUNDLE.map(async contract => {
-  const { source, moduleFormat } = await bundleSource(`${__dirname}/../../../core/zoe/contracts/${contract}`);
-  const obj = { source, moduleFormat, contract };
-  fs.writeFileSync(`${__dirname}/bundle-${contract}.js`, `export default ${JSON.stringify(obj)};`);
-}));
+const generateBundlesP = Promise.all(
+  TO_BUNDLE.map(async contract => {
+    const { source, moduleFormat } = await bundleSource(
+      `${__dirname}/../../../core/zoe/contracts/${contract}`,
+    );
+    const obj = { source, moduleFormat, contract };
+    fs.writeFileSync(
+      `${__dirname}/bundle-${contract}.js`,
+      `export default ${JSON.stringify(obj)};`,
+    );
+  }),
+);
 
 async function main(withSES, basedir, argv) {
   const dir = path.resolve('test/swingsetTests', basedir);
@@ -21,12 +28,6 @@ async function main(withSES, basedir, argv) {
   config.devices = [['loopbox', ldSrcPath, {}]];
 
   await generateBundlesP;
-  const contract = argv[1];
-  if (TO_BUNDLE.includes(contract)) {
-  } else {
-    console.log('bundling false');
-    fs.writeFileSync(`${__dirname}/bundledSource.js`, `export default false;`);
-  }
 
   const controller = await buildVatController(config, withSES, argv);
   await controller.run();

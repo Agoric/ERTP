@@ -111,7 +111,10 @@ function build(E, log) {
         coveredCall: await E(zoe).install(coveredCallSrcs),
         publicAuction: await E(zoe).install(publicAuctionSrcs),
         publicSwap: await E(zoe).install(publicSwapSrcs),
-        publicSwapESM: await E(zoe).install(publicSwapBundle.source, publicSwapBundle.moduleFormat),
+        publicSwapESM: await E(zoe).install(
+          publicSwapBundle.source,
+          publicSwapBundle.moduleFormat,
+        ),
         simpleExchange: await E(zoe).install(simpleExchangeSrcs),
       };
 

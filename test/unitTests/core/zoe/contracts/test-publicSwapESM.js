@@ -27,7 +27,9 @@ test('zoe - publicSwapESM', async t => {
     const carolSimoleanPurse = mints[1].mint(assays[1].makeAssetDesc(0));
 
     // Pack the contract.
-    const { source, moduleFormat } = await bundleSource(`${__dirname}/../../../../../core/zoe/contracts/publicSwapESM`);
+    const { source, moduleFormat } = await bundleSource(
+      `${__dirname}/../../../../../core/zoe/contracts/publicSwapESM`,
+    );
 
     // 1: Alice creates a publicSwap instance
     const installationId = zoe.install(source, moduleFormat);

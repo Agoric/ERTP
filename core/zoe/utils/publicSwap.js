@@ -26,6 +26,6 @@ export const isMatchingOfferDesc = (extentOps, leftOffer, rightOffer) => {
 };
 
 export const isValidFirstOfferDesc = newOfferDesc =>
-['offerExactly', 'wantExactly'].every(
-  (rule, i) => rule === newOfferDesc[i].rule,
-);
+  ['offerExactly', 'wantExactly'].every(
+    (rule, i) => rule === newOfferDesc[i].rule,
+  );
