@@ -309,7 +309,7 @@ Unrecognized moduleFormat ${moduleFormat}`;
         installationId,
         instanceId,
         instance,
-        newTerms,
+        terms: newTerms,
       });
     },
     /**
