@@ -2,6 +2,16 @@ import { test } from 'tape-promise/tape';
 import { loadBasedir, buildVatController } from '@agoric/swingset-vat';
 import path from 'path';
 
+import fs from 'fs';
+import bundleSource from '@agoric/bundle-source';
+
+const TO_BUNDLE = ['publicSwapESM'];
+const generateBundlesP = Promise.all(TO_BUNDLE.map(async contract => {
+  const { source, moduleFormat } = await bundleSource(`${__dirname}/../../../core/zoe/contracts/${contract}`);
+  const obj = { source, moduleFormat, contract };
+  fs.writeFileSync(`${__dirname}/bundle-${contract}.js`, `export default ${JSON.stringify(obj)};`);
+}));
+
 async function main(withSES, basedir, argv) {
   const dir = path.resolve('test/swingsetTests', basedir);
   const config = await loadBasedir(dir);
@@ -9,6 +19,14 @@ async function main(withSES, basedir, argv) {
     '@agoric/swingset-vat/src/devices/loopbox-src',
   );
   config.devices = [['loopbox', ldSrcPath, {}]];
+
+  await generateBundlesP;
+  const contract = argv[1];
+  if (TO_BUNDLE.includes(contract)) {
+  } else {
+    console.log('bundling false');
+    fs.writeFileSync(`${__dirname}/bundledSource.js`, `export default false;`);
+  }
 
   const controller = await buildVatController(config, withSES, argv);
   await controller.run();
@@ -180,6 +198,38 @@ test('zoe - publicSwap - valid inputs - no SES', async t => {
     const dump = await main(false, 'zoe', [
       'publicSwapOk',
       'publicSwap',
+      startingExtents,
+    ]);
+    t.deepEquals(dump.log, expectedPublicSwapOkLog);
+  } catch (e) {
+    t.isNot(e, e, 'unexpected exception');
+  } finally {
+    t.end();
+  }
+});
+
+test('zoe - publicSwapESM - valid inputs - with SES', async t => {
+  try {
+    const startingExtents = [[3, 0], [0, 7], [0, 0]];
+    const dump = await main(true, 'zoe', [
+      'publicSwapOk',
+      'publicSwapESM',
+      startingExtents,
+    ]);
+    t.deepEquals(dump.log, expectedPublicSwapOkLog);
+  } catch (e) {
+    t.isNot(e, e, 'unexpected exception');
+  } finally {
+    t.end();
+  }
+});
+
+test('zoe - publicSwapESM - valid inputs - no SES', async t => {
+  try {
+    const startingExtents = [[3, 0], [0, 7], [0, 0]];
+    const dump = await main(false, 'zoe', [
+      'publicSwapOk',
+      'publicSwapESM',
       startingExtents,
     ]);
     t.deepEquals(dump.log, expectedPublicSwapOkLog);

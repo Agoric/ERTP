@@ -1,6 +1,9 @@
 import harden from '@agoric/harden';
 
 import { makeMint } from '../../../core/mint';
+
+import publicSwapBundle from './bundle-publicSwapESM';
+
 import { automaticRefundSrcs } from '../../../core/zoe/contracts/automaticRefund';
 import { coveredCallSrcs } from '../../../core/zoe/contracts/coveredCall';
 import { publicAuctionSrcs } from '../../../core/zoe/contracts/publicAuction';
@@ -108,6 +111,7 @@ function build(E, log) {
         coveredCall: await E(zoe).install(coveredCallSrcs),
         publicAuction: await E(zoe).install(publicAuctionSrcs),
         publicSwap: await E(zoe).install(publicSwapSrcs),
+        publicSwapESM: await E(zoe).install(publicSwapBundle.source, publicSwapBundle.moduleFormat),
         simpleExchange: await E(zoe).install(simpleExchangeSrcs),
       };
 
