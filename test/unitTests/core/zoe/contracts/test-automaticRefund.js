@@ -7,7 +7,58 @@ import { setup } from '../setupBasicMints';
 
 const automaticRefundRoot = `${__dirname}/../../../../../core/zoe/contracts/automaticRefund`;
 
-test('zoe.makeInstance with automaticRefund', async t => {
+test('zoe - simplest automaticRefund', async t => {
+  try {
+    // Setup zoe and mints
+    const { assays, mints } = setup();
+    const [moolaAssay] = assays;
+    const [moolaMint] = mints;
+    const zoe = await makeZoe({ require });
+    // Pack the contract.
+    const { source, moduleFormat } = await bundleSource(automaticRefundRoot);
+    const installationId = zoe.install(source, moduleFormat);
+
+    // Setup Alice
+    const aliceMoolaPurse = moolaMint.mint(moolaAssay.makeAssetDesc(3));
+    const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
+
+    // 1: Alice creates an automatic refund instance
+    const { instance: automaticRefund } = await zoe.makeInstance(
+      installationId,
+      { assays: harden([moolaAssay]) },
+    );
+    const aliceConditions = harden({
+      offerDesc: [
+        {
+          rule: 'offerExactly',
+          assetDesc: moolaAssay.makeAssetDesc(3),
+        },
+      ],
+    });
+    const alicePayments = [aliceMoolaPayment];
+
+    const { escrowReceipt, payoff: payoffP } = await zoe.escrow(
+      aliceConditions,
+      alicePayments,
+    );
+
+    automaticRefund.makeOffer(escrowReceipt);
+    const alicePayoff = await payoffP;
+
+    // Alice got back what she put in
+    t.deepEquals(
+      alicePayoff[0].getBalance(),
+      aliceConditions.offerDesc[0].assetDesc,
+    );
+  } catch (e) {
+    t.assert(false, e);
+    console.log(e);
+  } finally {
+    t.end();
+  }
+});
+
+test('zoe with automaticRefund', async t => {
   try {
     // Setup zoe and mints
     const { assays: defaultAssays, mints } = setup();

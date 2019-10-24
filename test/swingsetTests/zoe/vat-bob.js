@@ -211,6 +211,21 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       insist(installationId === installId)`wrong installation`;
       insist(sameStructure(assays, terms.assays))`assays were not as expected`;
 
+      const firstOfferDesc = await E(swap).getFirstOfferDesc();
+      const expectedFirstOfferDesc = harden([
+        {
+          rule: 'offerExactly',
+          assetDesc: await E(assays[0]).makeAssetDesc(3),
+        },
+        {
+          rule: 'wantExactly',
+          assetDesc: await E(assays[1]).makeAssetDesc(7),
+        },
+      ]);
+      insist(
+        sameStructure(firstOfferDesc, expectedFirstOfferDesc),
+      )`Alice's first offer was not what she said`;
+
       const conditions = harden({
         offerDesc: [
           {
@@ -234,7 +249,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
         offerPayments,
       );
 
-      const offerResult = await E(swap).makeOffer(escrowReceipt);
+      const offerResult = await E(swap).matchOffer(escrowReceipt);
 
       log(offerResult);
 

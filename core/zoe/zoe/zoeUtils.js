@@ -89,7 +89,7 @@ const escrowOffer = async (
   offerPayments,
 ) => {
   const result = makePromise();
-  const { offerDesc, exit = { kind: 'noExit' } } = conditions;
+  const { offerDesc, exit = { kind: 'onDemand' } } = conditions;
 
   insistValidRules(offerDesc);
   insistValidExitCondition(exit);

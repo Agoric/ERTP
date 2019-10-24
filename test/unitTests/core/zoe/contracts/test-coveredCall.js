@@ -611,11 +611,11 @@ test('zoe - coveredCall with swap for invite', async t => {
     } = await zoe.escrow(bobConditionsSwap, bobPayments);
 
     // 8: Bob makes an offer to the swap with his "higher order" escrow receipt
-    const bobOutcome = await bobSwap.makeOffer(bobEscrowReceipt);
+    const bobOutcome = await bobSwap.makeFirstOffer(bobEscrowReceipt);
 
     t.equals(
       bobOutcome,
-      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+      'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
 
     // Bob passes the swap instance id to Dave and tells him about
@@ -676,12 +676,12 @@ test('zoe - coveredCall with swap for invite', async t => {
       payoff: daveSwapPayoffP,
     } = await zoe.escrow(daveSwapConditions, daveSwapPayments);
 
-    const daveSwapOutcome = await daveSwapInstance.makeOffer(
+    const daveSwapOutcome = await daveSwapInstance.matchOffer(
       daveSwapEscrowReceipt,
     );
     t.equals(
       daveSwapOutcome,
-      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+      'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
 
     const [coveredCallInvite, daveBucksPayoff] = await daveSwapPayoffP;

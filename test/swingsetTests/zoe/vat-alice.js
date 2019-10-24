@@ -190,7 +190,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       offerPayments,
     );
 
-    const offerResult = await E(swap).makeOffer(escrowReceipt);
+    const offerResult = await E(swap).makeFirstOffer(escrowReceipt);
 
     const payoffPaymentForCarolP = await E(
       makePayoffPaymentObj,
@@ -203,7 +203,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       payoffPaymentForCarolP,
     );
     const bobDoneP = E(bobP).doPublicSwap(instanceId);
-    await Promise.all(carolDoneP, bobDoneP);
+    await Promise.all([carolDoneP, bobDoneP]);
 
     await showPaymentBalance(moolaPurseP, 'aliceMoolaPurse');
     await showPaymentBalance(simoleanPurseP, 'aliceSimoleanPurse;');

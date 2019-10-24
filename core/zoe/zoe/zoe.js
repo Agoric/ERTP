@@ -377,14 +377,15 @@ Unrecognized moduleFormat ${moduleFormat}`;
           },
         }),
       };
-      if (conditions.exit.kind === 'afterDeadline') {
+      const { exit: exitCondition = { kind: 'onDemand' } } = conditions;
+      if (exitCondition.kind === 'afterDeadline') {
         conditions.exit.timer
           .delayUntil(conditions.exit.deadline)
           .then(_ticks =>
             completeOffers(adminState, readOnlyState, harden([offerId])),
           );
       }
-      if (conditions.exit.kind === 'onDemand') {
+      if (exitCondition.kind === 'onDemand') {
         escrowResult.cancelObj = {
           cancel: () =>
             completeOffers(adminState, readOnlyState, harden([offerId])),

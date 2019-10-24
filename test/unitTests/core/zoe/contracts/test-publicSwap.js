@@ -9,14 +9,14 @@ const publicSwapRoot = `${__dirname}/../../../../../core/zoe/contracts/publicSwa
 
 test('zoe - publicSwap', async t => {
   try {
-    const { assays: originalAssays, mints } = setup();
-    const assays = originalAssays.slice(0, 2);
+    const { assays: defaultAssays, mints } = setup();
+    const assays = defaultAssays.slice(0, 2);
     const zoe = await makeZoe({ require });
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
     const payoffAssay = zoe.getPayoffAssay();
-    // Pack the contract.
+    // pack the contract
     const { source, moduleFormat } = await bundleSource(publicSwapRoot);
-
+    // install the contract
     const installationId = zoe.install(source, moduleFormat);
 
     // Setup Alice
@@ -68,7 +68,7 @@ test('zoe - publicSwap', async t => {
     );
 
     // 4: Alice initializes the swap with her escrow receipt
-    const aliceOfferResult = await aliceSwap.makeOffer(aliceEscrowReceipt);
+    const aliceOfferResult = await aliceSwap.makeFirstOffer(aliceEscrowReceipt);
 
     // Alice gives Carol her payoff by creating a payoff payment.
     // Carol is able to inspect the payoff payment to see what she can
@@ -95,6 +95,9 @@ test('zoe - publicSwap', async t => {
 
     t.equals(bobInstallationId, installationId);
     t.deepEquals(bobTerms.assays, assays);
+
+    const firstOfferDesc = bobSwap.getFirstOfferDesc();
+    t.deepEquals(firstOfferDesc, aliceConditions.offerDesc);
 
     const bobConditions = harden({
       offerDesc: [
@@ -126,15 +129,15 @@ test('zoe - publicSwap', async t => {
     );
 
     // 8: Bob makes an offer with his escrow receipt
-    const bobOfferResult = await bobSwap.makeOffer(bobEscrowReceipt);
+    const bobOfferResult = await bobSwap.matchOffer(bobEscrowReceipt);
 
     t.equals(
       bobOfferResult,
-      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+      'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
     t.equals(
       aliceOfferResult,
-      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+      'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
     const bobPayoff = await bobPayoffP;
     const carolPayoff = await carolPayoffP;
@@ -148,7 +151,7 @@ test('zoe - publicSwap', async t => {
     // Carol didn't get any of what Alice put in
     t.equals(carolPayoff[0].getBalance().extent, 0);
 
-    // 13: Carol deposits her winnings to ensure she can
+    // 13: Carol deposits her payout to ensure she can
     await carolMoolaPurse.depositAll(carolPayoff[0]);
     await carolSimoleanPurse.depositAll(carolPayoff[1]);
 
@@ -156,7 +159,7 @@ test('zoe - publicSwap', async t => {
     await bobMoolaPurse.depositAll(bobPayoff[0]);
     await bobSimoleanPurse.depositAll(bobPayoff[1]);
 
-    // Assert that the correct winnings were received.
+    // Assert that the correct payouts were received.
     // Alice had 3 moola and 0 simoleans.
     // Bob had 0 moola and 7 simoleans.
     t.equals(carolMoolaPurse.getBalance().extent, 0);
