@@ -14,7 +14,7 @@ ERTP is also home to Zoe, our smart contract framework. Zoe enforces
 what we call "offer-safety". Offer-safety means that a user of a smart
 contract is guaranteed to either get what they wanted or get a refund.
 Smart contracts built on Zoe can't steal a user's money, even if they
-are buggy or backdoored.
+are buggy or malicious.
 
 For smart contract developers, Zoe makes things easier. Zoe handles
 escrowing and payouts and checks invariants like offer-safety and

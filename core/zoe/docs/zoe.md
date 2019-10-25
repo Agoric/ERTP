@@ -8,8 +8,8 @@ This guide assumes some knowledge of the [ERTP fundamentals](./README.md).
 ## What is Zoe? 
 
 __For users__: Zoe guarantees that as a user of a smart contract, you
-will either get what you wanted or get a refund back, even if the
-smart contract is buggy or backdoored. (In fact, the smart contract
+will either get back what you wanted or get back a full refund, even if the
+smart contract is buggy or malicious. (In fact, the smart contract
 never has access to your digital assets.)
 
 __For developers__: Zoe provides a safety net so you can focus on what
@@ -20,7 +20,7 @@ written in the familiar language of JavaScript.
 
 ## Sounds like magic. How does it actually work?
 
-To use Zoe, we have to put things in terms of "offers". An offer is a
+To use Zoe, we put things in terms of "offers". An offer is a
 statement about what you want and what you're willing to offer. It
 turns out, many smart contracts (apart from gifts and one-way
 payments) involve an exchange of digital assets that can be put in
@@ -30,7 +30,7 @@ In this version of Zoe, our offers are simple (see [our roadmap](TODO) for
 more complex offer types and their expected release). We can say
 things like, "I'll give you [three
 wood for two bricks](https://en.wikipedia.org/wiki/Catan)." We can
-also say something like, "I'll give you three wood, and *the most* I'm
+also say something like, "I want three wood, and *the most* I'm
 willing to pay is two bricks." Or even: "I can pay you two bricks and
 I expect *at least* three wood back." [Learn more about the particulars
 of structuring an offer here](TODO). 
@@ -56,8 +56,8 @@ themselves.
 
 Zoe guarantees offer-safety, meaning that when a user makes an offer
 that is escrowed with Zoe, Zoe guarantees that the user will either
-get what they said they wanted, or the user will get what they
-originally offered back. 
+get back why they said they wanted, or the user will get back what they
+originally offered. 
 
 When a user escrows with Zoe, they get two things back immediately: an escrow
 receipt, and a JavaScript promise for a future payout. This escrow
@@ -71,10 +71,10 @@ Let's look a particular example to see how this works.
 I want to trade my three bricks for five wool. You realize you have
 five wool and agree to the deal. Without Zoe, though, you might send
 me the five wool, and I might disappear without ever giving you the
-three bricks in return. With Zoe, we can safely trade with each
-other, even if we don't trust one another. We can also safely rely on
-the swap smart contract. At worst, if the swap contract behaves badly,
-we will both get a refund, and at best, we'll get what we each wanted.
+three bricks in return. With Zoe, we can safely trade with each other,
+even if we don't trust one another. We are assured that at worst, if
+the swap contract behaves badly, we will both get a refund, and at
+best, we'll get what we each wanted.
 
 Let's use the basic `publicSwap` contract ([full text of
 the real contract](/core/zoe/contracts/publicSwap.js)). 
@@ -127,14 +127,13 @@ deep-freeze it with `@agoric/harden`. You can [learn more about `harden` here](h
 complete the offer and send the user their payout. 
 
 A smart contract on Zoe must export a function `makeContract` that
-takes two parameters: `zoe`, which is the governing contract facet of
-Zoe, and `terms`, which are the contract terms that a contract
-instance is made with. `Terms` must include a property called
-`assays`, which is an array of assays, the public faces of mints. For
-instance, in our bricks-for-wool example above, the contract terms
-would include the brick assay and the wool assay. `Terms` would also
-include any other contract-specific parameters that the author
-specified.
+takes two parameters: `zoe`, which is the contract-specific API for Zoe, and
+`terms`, which are the contract terms that a contract instance is made
+with. `Terms` must include a property called `assays`, which is an
+array of assays, the public API of mints. For instance, in our
+bricks-for-wool example above, the contract terms would include the
+brick assay and the wool assay. `Terms` would also include any other
+contract-specific parameters that the author specified.
 
 The smart contract must return an object with two properties:
 `instance`, which is the user-facing API of the
