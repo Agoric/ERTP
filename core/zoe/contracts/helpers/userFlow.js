@@ -2,10 +2,10 @@ import harden from '@agoric/harden';
 
 export const rejectOffer = (
   zoe,
-  offerId,
+  offerHandle,
   message = `The offer was invalid. Please check your refund.`,
 ) => {
-  zoe.complete(harden([offerId]));
+  zoe.complete(harden([offerHandle]));
   return Promise.reject(new Error(`${message}`));
 };
 

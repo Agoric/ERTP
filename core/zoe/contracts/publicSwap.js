@@ -8,61 +8,61 @@ import {
 } from './helpers/offerDesc';
 
 export const makeContract = harden((zoe, terms) => {
-  let firstOfferId;
+  let firstOfferHandle;
   let firstOfferDesc;
 
   const publicSwap = harden({
     makeFirstOffer: async escrowReceipt => {
       const {
-        id: offerId,
+        offerHandle,
         conditions: { offerDesc: offerMadeDesc },
       } = await zoe.burnEscrowReceipt(escrowReceipt);
 
       if (!hasRules(['offerExactly', 'wantExactly'], offerMadeDesc)) {
-        return rejectOffer(zoe, offerId);
+        return rejectOffer(zoe, offerHandle);
       }
 
       if (!hasAssays(terms.assays, offerMadeDesc)) {
-        return rejectOffer(zoe, offerId);
+        return rejectOffer(zoe, offerHandle);
       }
 
       // The offer is valid, so save information about the first offer
-      firstOfferId = offerId;
+      firstOfferHandle = offerHandle;
       firstOfferDesc = offerMadeDesc;
       return defaultAcceptanceMsg;
     },
     getFirstOfferDesc: () => firstOfferDesc,
     matchOffer: async escrowReceipt => {
       const {
-        id: matchingOfferId,
+        offerHandle: matchingOfferHandle,
         conditions: { offerDesc: offerMadeDesc },
       } = await zoe.burnEscrowReceipt(escrowReceipt);
 
-      if (!firstOfferId) {
-        return rejectOffer(zoe, matchingOfferId, `no offer to match`);
+      if (!firstOfferHandle) {
+        return rejectOffer(zoe, matchingOfferHandle, `no offer to match`);
       }
 
-      const { inactive } = zoe.getStatusFor(harden([firstOfferId]));
+      const { inactive } = zoe.getStatusFor(harden([firstOfferHandle]));
       if (inactive.length > 0) {
         return rejectOffer(
           zoe,
-          matchingOfferId,
+          matchingOfferHandle,
           `The first offer was withdrawn or completed.`,
         );
       }
 
       if (!isExactlyMatchingOfferDesc(zoe, firstOfferDesc, offerMadeDesc)) {
-        return rejectOffer(zoe, matchingOfferId);
+        return rejectOffer(zoe, matchingOfferHandle);
       }
       const [firstOfferExtents, matchingOfferExtents] = zoe.getExtentsFor(
-        harden([firstOfferId, matchingOfferId]),
+        harden([firstOfferHandle, matchingOfferHandle]),
       );
       // reallocate by switching the extents of the firstOffer and matchingOffer
       zoe.reallocate(
-        harden([firstOfferId, matchingOfferId]),
+        harden([firstOfferHandle, matchingOfferHandle]),
         harden([matchingOfferExtents, firstOfferExtents]),
       );
-      zoe.complete(harden([firstOfferId, matchingOfferId]));
+      zoe.complete(harden([firstOfferHandle, matchingOfferHandle]));
       return defaultAcceptanceMsg;
     },
   });

@@ -84,8 +84,8 @@ Here's a high-level overview of what would happen:
 2. I escrow my three bricks with Zoe and get an escrow receipt and a
    promise for a payout in return.
 3. I send my escrow receipt to the swap as the first offer.
-4. I tell you the swap's `instanceId`
-5. Using the `instanceId`, you look up the swap with Zoe.
+4. I tell you the swap's `instanceHandle`
+5. Using the `instanceHandle`, you look up the swap with Zoe.
 6. You verify that it's using the `publicSwap` contract
    code you expect, and can ask the swap about the offers made so far.
 7. You escrow your offer (offering five wool for three bricks) with
@@ -110,8 +110,8 @@ export const makeContract = (zoe, terms) => {
   return {
     instance: {
       makeOffer: async escrowReceipt => {
-        const { id: offerId} = await zoe.burnEscrowReceipt(escrowReceipt);
-        zoe.complete([offerId]);
+        const { offerHandle } = await zoe.burnEscrowReceipt(escrowReceipt);
+        zoe.complete([offerHandle]);
       },
     },
     assays: terms.assays,
@@ -132,15 +132,17 @@ Zoe, and `terms`, which are the contract terms that a contract
 instance is made with. `Terms` must include a property called
 `assays`, which is an array of assays, the public faces of mints. For
 instance, in our bricks-for-wool example above, the contract terms
-would include the brick assay and the wool assay. `Terms` can also
-include any other contract-specific parameters that a user wants to
-pass in. 
+would include the brick assay and the wool assay. `Terms` would also
+include any other contract-specific parameters that the author
+specified.
 
 The smart contract must return an object with two properties:
 `instance`, which is the user-facing API of the
 contract, and `assays`, which is what the contract has decided is the
-canonical list of assays for the contract. If no change are necessary,
+canonical list of assays for the contract. If no change is necessary,
 `assays` may just be the assays in the terms. 
+
+## Diving Deeper
 
 To get a better idea of the usual control flow, let's look at a more
 complex smart contract, such as the `publicSwap` contract that we
@@ -150,20 +152,20 @@ make sure our user-facing API has a method for that:
 ```js
 const makeFirstOffer = async escrowReceipt => {
   const {
-    id: offerId,
+    offerHandle,
     conditions: { offerDesc: offerMadeDesc },
   } = await zoe.burnEscrowReceipt(escrowReceipt);
 
   if (!hasRules(['offerExactly', 'wantExactly'], offerMadeDesc)) {
-    return rejectOffer(zoe, offerId);
+    return rejectOffer(zoe, offerHandle);
   }
 
   if (!hasAssays(terms.assays, offerMadeDesc)) {
-    return rejectOffer(zoe, offerId);
+    return rejectOffer(zoe, offerHandle);
   }
 
   // The offer is valid, so save information about the first offer
-  firstOfferId = offerId;
+  firstOfferHandle = offerHandle;
   firstOfferDesc = offerMadeDesc;
   return defaultAcceptanceMsg;
 };
@@ -194,26 +196,26 @@ method, `matchOffer`:
 ```js
 const matchOffer = async escrowReceipt => {
   const {
-    id: matchingOfferId,
+    offerHandle: matchingOfferHandle,
     conditions: { offerDesc: offerMadeDesc },
   } = await zoe.burnEscrowReceipt(escrowReceipt);
 
-  if (!firstOfferId) {
-    return rejectOffer(zoe, matchingOfferId, `no offer to match`);
+  if (!firstOfferHandle) {
+    return rejectOffer(zoe, matchingOfferHandle, `no offer to match`);
   }
 
   if (!isExactlyMatchingOfferDesc(zoe, firstOfferDesc, offerMadeDesc)) {
-    return rejectOffer(zoe, matchingOfferId);
+    return rejectOffer(zoe, matchingOfferHandle);
   }
   const [firstOfferExtents, matchingOfferExtents] = zoe.getExtentsFor(
-    harden([firstOfferId, matchingOfferId]),
+    harden([firstOfferHandle, matchingOfferHandle]),
   );
   // reallocate by switching the extents of the firstOffer and matchingOffer
   zoe.reallocate(
-    harden([firstOfferId, matchingOfferId]),
+    harden([firstOfferHandle, matchingOfferHandle]),
     harden([matchingOfferExtents, firstOfferExtents]),
   );
-  zoe.complete(harden([firstOfferId, matchingOfferId]));
+  zoe.complete(harden([firstOfferHandle, matchingOfferHandle]));
   return defaultAcceptanceMsg;
 };
 ```
