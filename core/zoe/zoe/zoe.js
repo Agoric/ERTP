@@ -380,7 +380,7 @@ Unrecognized moduleFormat ${moduleFormat}`;
           wake: () =>
             completeOffers(adminState, readOnlyState, harden([offerHandle])),
         });
-        offerRules.exitRule.timer.schedule(offerRules.exitRule.deadline, exit);
+        offerRules.exitRule.timer.setWakeup(offerRules.exitRule.deadline, exit);
       }
       if (exitRule.kind === 'onDemand') {
         escrowResult.cancelObj = {

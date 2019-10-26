@@ -28,9 +28,9 @@ function build(E, log) {
   }
 
   const fakeNeverTimer = harden({
-    delayUntil(deadline, _resolution = undefined) {
+    setWakeup(deadline, _resolution = undefined) {
       log(`Pretend ${deadline} never happens`);
-      return new Promise(_r => {});
+      return deadline;
     },
   });
 
