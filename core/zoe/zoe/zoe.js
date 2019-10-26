@@ -77,10 +77,10 @@ const makeZoe = async (additionalEndowments = {}) => {
         installation[fname] = fn;
       }
     }
-    return installation;
+    return harden(installation);
   };
 
-  const { adminState, readOnlyState } = await makeState();
+  const { adminState, readOnlyState } = makeState();
 
   // Zoe has two different facets: the public facet and the
   // governingContract facet. Neither facet should give direct access
