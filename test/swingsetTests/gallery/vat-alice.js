@@ -33,7 +33,9 @@ function makeAliceMaker(E, log, contractHost) {
         return Promise.resolve(pixelPaymentP).then(async pixelPayment => {
           const { pixelAssay, dustAssay } = await E(gallery).getAssays();
           const pixelAssetDesc = await E(pixelPayment).getBalance();
-          const dustAssetDesc = await E(E(dustAssay).getDescOps()).make(37);
+          const dustAssetDesc = await E(E(dustAssay).getAssetDescOps()).make(
+            37,
+          );
           const terms = harden({ left: dustAssetDesc, right: pixelAssetDesc });
           const escrowExchangeInstallationP = E(contractHost).install(
             escrowExchangeSrcs,
@@ -46,7 +48,7 @@ function makeAliceMaker(E, log, contractHost) {
           E(E(seatP).getWinnings())
             .getBalance()
             .then(b =>
-              log(`Alice collected ${b.extent} ${b.label.description}`),
+              log(`Alice collected ${b.extent} ${b.label.allegedName}`),
             );
           const pixelPurseP = E(pixelAssay).makeEmptyPurse();
           collect(seatP, dustPurseP, pixelPurseP, 'alice escrow');
@@ -262,8 +264,8 @@ function makeAliceMaker(E, log, contractHost) {
                 return useObj.changeColor(asset.getBalance(), newColor);
               },
               getRawPixels() {
-                const descOps = assay.getDescOps();
-                const pixelList = descOps.extent(asset.getBalance());
+                const assetDescOps = assay.getAssetDescOps();
+                const pixelList = assetDescOps.extent(asset.getBalance());
                 return pixelList;
               },
               getColors() {
@@ -288,7 +290,7 @@ function makeAliceMaker(E, log, contractHost) {
 
           // use the fakeChildMint to create a payment to trick Bob
           const fakeChildAssay = E(fakeChildMint).getAssay();
-          const fakeChildDescOps = await E(fakeChildAssay).getDescOps();
+          const fakeChildDescOps = await E(fakeChildAssay).getAssetDescOps();
           const fakeChildPurse = E(fakeChildMint).mint(
             fakeChildDescOps.make(harden([{ x: 0, y: 1 }])),
           );

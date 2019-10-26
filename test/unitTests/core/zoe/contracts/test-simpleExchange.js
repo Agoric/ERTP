@@ -9,7 +9,7 @@ const simpleExchangeRoot = `${__dirname}/../../../../../core/zoe/contracts/simpl
 
 test('zoe - simpleExchange', async t => {
   try {
-    const { assays: originalAssays, mints, descOps } = setup();
+    const { assays: originalAssays, mints, assetDescOps } = setup();
     const assays = originalAssays.slice(0, 2);
     const zoe = await makeZoe({ require });
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
@@ -37,7 +37,7 @@ test('zoe - simpleExchange', async t => {
     // 2: Alice escrows with zoe to create a sell order. She wants to
     // sell 3 moola and wants to receive at least 4 simoleans in
     // return.
-    const aliceSellOrderConditions = harden({
+    const aliceSellOrderOfferRules = harden({
       offerDesc: [
         {
           rule: 'offerExactly',
@@ -56,7 +56,7 @@ test('zoe - simpleExchange', async t => {
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
       payout: alicePayoutP,
-    } = await zoe.escrow(aliceSellOrderConditions, alicePayments);
+    } = await zoe.escrow(aliceSellOrderOfferRules, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. It's
     // unnecessary if she trusts Zoe but we will do it for the tests.
@@ -82,7 +82,7 @@ test('zoe - simpleExchange', async t => {
     // Bob creates a buy order, saying that he wants exactly 3 moola,
     // and is willing to pay up to 7 simoleans.
 
-    const bobBuyOrderConditions = harden({
+    const bobBuyOrderOfferRules = harden({
       offerDesc: [
         {
           rule: 'wantExactly',
@@ -103,7 +103,7 @@ test('zoe - simpleExchange', async t => {
     const {
       escrowReceipt: allegedBobEscrowReceipt,
       payout: bobPayoutP,
-    } = await zoe.escrow(bobBuyOrderConditions, bobPayments);
+    } = await zoe.escrow(bobBuyOrderOfferRules, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment. This is
     // unnecessary but we will do it anyways for the test
@@ -116,27 +116,27 @@ test('zoe - simpleExchange', async t => {
 
     t.equals(
       bobOfferResult,
-      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+      'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
     t.equals(
       aliceOfferResult,
-      'The offer has been accepted. Once the contract has been completed, please check your winnings',
+      'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
     const bobPayout = await bobPayoutP;
     const [aliceMoolaPayout, aliceSimoleanPayout] = await alicePayoutP;
 
     // Alice gets paid at least what she wanted
     t.ok(
-      descOps[1].includes(
+      assetDescOps[1].includes(
         aliceSimoleanPayout.getBalance(),
-        aliceSellOrderConditions.offerDesc[1].assetDesc,
+        aliceSellOrderOfferRules.offerDesc[1].assetDesc,
       ),
     );
 
     // Alice sold all of her moola
     t.equals(aliceMoolaPayout.getBalance().extent, 0);
 
-    // 13: Alice deposits her winnings to ensure she can
+    // 13: Alice deposits her payout to ensure she can
     await aliceMoolaPurse.depositAll(aliceMoolaPayout);
     await aliceSimoleanPurse.depositAll(aliceSimoleanPayout);
 
@@ -144,7 +144,7 @@ test('zoe - simpleExchange', async t => {
     await bobMoolaPurse.depositAll(bobPayout[0]);
     await bobSimoleanPurse.depositAll(bobPayout[1]);
 
-    // Assert that the correct winnings were received.
+    // Assert that the correct payout were received.
     // Alice had 3 moola and 0 simoleans.
     // Bob had 0 moola and 7 simoleans.
     t.equals(aliceMoolaPurse.getBalance().extent, 0);

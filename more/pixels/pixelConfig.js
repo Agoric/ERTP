@@ -41,8 +41,8 @@ function makePixelConfigMaker(
           canvasSize,
           assay,
         );
-        const { description } = assay.getLabel();
-        childMint = makeMint(description, makePixelConfigChild);
+        const { allegedName } = assay.getLabel();
+        childMint = makeMint(allegedName, makePixelConfigChild);
         childAssay = childMint.getAssay();
       }
     }
@@ -108,7 +108,7 @@ function makePixelConfigMaker(
         },
       });
     }
-    function* makeMintTrait(_coreMint, assay, descOps, mintKeeper) {
+    function* makeMintTrait(_coreMint, assay, assetDescOps, mintKeeper) {
       yield harden({
         // revoke destroys the assetDesc from this mint and calls
         // revoke on the childMint with an assetDesc of the same
@@ -118,7 +118,7 @@ function makePixelConfigMaker(
         // payments that include those particular pixels and remove
         // the particular pixels from those purses or payments
         revoke(assetDesc) {
-          assetDesc = descOps.coerce(assetDesc);
+          assetDesc = assetDescOps.coerce(assetDesc);
 
           mintKeeper.destroy(assetDesc);
           if (childMint !== undefined) {

@@ -152,7 +152,7 @@ make sure our user-facing API has a method for that:
 const makeFirstOffer = async escrowReceipt => {
   const {
     offerHandle,
-    conditions: { offerDesc: offerMadeDesc },
+    offerRules: { offerDesc: offerMadeDesc },
   } = await zoe.burnEscrowReceipt(escrowReceipt);
 
   if (!hasRules(['offerExactly', 'wantExactly'], offerMadeDesc)) {
@@ -196,7 +196,7 @@ method, `matchOffer`:
 const matchOffer = async escrowReceipt => {
   const {
     offerHandle: matchingOfferHandle,
-    conditions: { offerDesc: offerMadeDesc },
+    offerRules: { offerDesc: offerMadeDesc },
   } = await zoe.burnEscrowReceipt(escrowReceipt);
 
   if (!firstOfferHandle) {
@@ -255,7 +255,7 @@ reallocating, depending on the logic of the contract.
 
 More:
 
-* [How do I write a governing contract and upload and install it?](TODO)
+* [How do I write a smart contract on Zoe and upload and install it?](TODO)
 
 * [How can I build an application with my Zoe smart contract?](TODO)
 

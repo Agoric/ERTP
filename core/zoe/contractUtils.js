@@ -2,7 +2,7 @@ import harden from '@agoric/harden';
 import Nat from '@agoric/nat';
 
 // These utilities are likely to be helpful to developers writing
-// governing contracts.
+// smart contracts on Zoe.
 
 // https://stackoverflow.com/questions/17428587/transposing-a-2d-array-in-javascript/41772644#41772644
 const transpose = matrix =>
@@ -70,7 +70,7 @@ const makeAssetDesc = (extentOps, label, allegedExtent) => {
 };
 
 // Transform a extentsMatrix to a matrix of assetDescs given an array
-// of the associated descOps.
+// of the associated assetDescOps.
 const toAssetDescMatrix = (extentOps, labels, extentsMatrix) =>
   extentsMatrix.map(extents =>
     extents.map((extent, i) => makeAssetDesc(extentOps[i], labels[i], extent)),

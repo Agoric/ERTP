@@ -42,7 +42,7 @@ function build(E, log) {
     },
   });
 
-  // This is written in the full descOps style, where bare number
+  // This is written in the full assetDescOps style, where bare number
   // objects are never used in lieu of full assetDesc objects. This has
   // the virtue of unit typing, where 3 dollars cannot be confused
   // with 3 seconds.
@@ -52,10 +52,10 @@ function build(E, log) {
     const mAssayP = E(mMintP).getAssay();
     Promise.resolve(mAssayP).then(assay => {
       // By using an unforgeable assay presence and a pass-by-copy
-      // description together as a unit label, we check that both
-      // agree. The veracity of the description is, however, only as
+      // allegedName together as a unit label, we check that both
+      // agree. The veracity of the allegedName is, however, only as
       // good as the assay doing the check.
-      const label = harden({ assay, description: 'bucks' });
+      const label = harden({ assay, allegedName: 'bucks' });
       const bucks1000 = harden({ label, extent: 1000 });
       const bucks50 = harden({ label, extent: 50 });
 
@@ -69,7 +69,7 @@ function build(E, log) {
   }
 
   // Uses raw numbers rather than assetDescs. Until we have support for
-  // pass-by-presence, the full descOps style shown in mintTestDescOps is
+  // pass-by-presence, the full assetDescOps style shown in mintTestDescOps is
   // too awkward.
   function mintTestNumber(mint) {
     log('starting mintTestNumber');
