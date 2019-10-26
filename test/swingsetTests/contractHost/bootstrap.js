@@ -27,14 +27,6 @@ function build(E, log) {
     ]);
   }
 
-  /*
-  const fakeNowTimer = harden({
-    delayUntil(deadline, resolution = undefined) {
-      log(`Pretend ${deadline} passed`);
-      return Promise.resolve(resolution);
-    },
-  });
-  */
   const fakeNeverTimer = harden({
     delayUntil(deadline, _resolution = undefined) {
       log(`Pretend ${deadline} never happens`);
