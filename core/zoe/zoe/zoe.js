@@ -27,7 +27,7 @@ import { makeMint } from '../../mint';
  *
  * @param additionalEndowments pure or pure-ish endowments to add to evaluator
  */
-const makeZoe = async (additionalEndowments = {}) => {
+const makeZoe = (additionalEndowments = {}) => {
   // The escrowReceiptAssay is a long-lived identity over many
   // contract instances
   const {
