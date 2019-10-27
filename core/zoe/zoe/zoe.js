@@ -69,17 +69,6 @@ const makeZoe = async (additionalEndowments = {}) => {
     return fn;
   };
 
-  const makeInstallationFromSrcs = srcs => {
-    const installation = {};
-    for (const fname of Object.getOwnPropertyNames(srcs)) {
-      if (typeof fname === 'string') {
-        const fn = evaluateStringToFn(srcs[fname]);
-        installation[fname] = fn;
-      }
-    }
-    return harden(installation);
-  };
-
   const { adminState, readOnlyState } = makeState();
 
   // Zoe has two different facets: the public Zoe service and the
@@ -114,7 +103,7 @@ const makeZoe = async (additionalEndowments = {}) => {
        * of the full extentsMatrix.
        */
       reallocate: (offerHandles, reallocation) => {
-        const offerDescs = readOnlyState.getOfferDescsFor(offerHandles);
+        const payoutRulesArray = readOnlyState.getPayoutRulesFor(offerHandles);
         const currentExtents = readOnlyState.getExtentsFor(offerHandles);
         const extentOpsArray = readOnlyState.getExtentOpsArrayForInstanceHandle(
           instanceHandle,
@@ -127,7 +116,7 @@ const makeZoe = async (additionalEndowments = {}) => {
 
         // 2) ensure 'offer safety' for each player
         insist(
-          isOfferSafeForAll(extentOpsArray, offerDescs, reallocation),
+          isOfferSafeForAll(extentOpsArray, payoutRulesArray, reallocation),
         )`The proposed reallocation was not offer safe`;
 
         // 3) save the reallocation
@@ -214,20 +203,20 @@ const makeZoe = async (additionalEndowments = {}) => {
         return invitePaymentP;
       },
 
-      makeOfferRules: (rules, extents, exit) => {
+      makeOfferRules: (kinds, extents, exitRule) => {
         const extentOpsArray = readOnlyState.getExtentOpsArrayForInstanceHandle(
           instanceHandle,
         );
         const labels = readOnlyState.getLabelsForInstanceHandle(instanceHandle);
-        const offerDesc = extentOpsArray.map((extentOps, i) =>
+        const payoutRules = extentOpsArray.map((extentOps, i) =>
           harden({
-            rule: rules[i],
+            kind: kinds[i],
             assetDesc: makeAssetDesc(extentOps, labels[i], extents[i]),
           }),
         );
         return harden({
-          offerDesc,
-          exit,
+          payoutRules,
+          exitRule,
         });
       },
 
@@ -241,7 +230,7 @@ const makeZoe = async (additionalEndowments = {}) => {
         readOnlyState.getExtentOpsArrayForInstanceHandle(instanceHandle),
       getLabels: () => readOnlyState.getLabelsForInstanceHandle(instanceHandle),
       getExtentsFor: readOnlyState.getExtentsFor,
-      getOfferDescsFor: readOnlyState.getOfferDescsFor,
+      getPayoutRulesFor: readOnlyState.getPayoutRulesFor,
       getInviteAssay: () => inviteAssay,
       getEscrowReceiptAssay: () => escrowReceiptAssay,
     });
@@ -261,19 +250,11 @@ const makeZoe = async (additionalEndowments = {}) => {
     getPayoutAssay: () => payoutAssay,
     getAssaysForInstance: instanceHandle =>
       readOnlyState.getAssays(instanceHandle),
-    install: (srcs, moduleFormat = 'object') => {
-      let installation;
-      if (moduleFormat === 'object') {
-        installation = makeInstallationFromSrcs(srcs);
-      } else if (moduleFormat === 'getExport') {
-        // Evaluate the export function, and use the resulting
-        // module namespace as our installation.
-        const getExport = evaluateStringToFn(srcs);
-        installation = getExport();
-      } else {
-        insist(false)`\
-Unrecognized moduleFormat ${moduleFormat}`;
-      }
+    install: bundle => {
+      // Evaluate the export function, and use the resulting
+      // module namespace as our installation.
+      const getExport = evaluateStringToFn(bundle);
+      const installation = getExport();
       const installationHandle = adminState.addInstallation(installation);
       return installationHandle;
     },
@@ -329,8 +310,8 @@ Unrecognized moduleFormat ${moduleFormat}`;
     },
 
     /**
-     * @param  {offerDescElem[]} offerDesc - the offer description, an
-     * array of objects with `rule` and `assetDesc` properties.
+     * @param  {payoutRule[]} payoutRules - the offer description, an
+     * array of objects with `kind` and `assetDesc` properties.
      * @param  {payment[]} offerPayments - payments corresponding to
      * the offer description. A payment may be `undefined` in the case
      * of specifying a `want`.
@@ -374,15 +355,15 @@ Unrecognized moduleFormat ${moduleFormat}`;
           },
         }),
       };
-      const { exit: exitCondition = { kind: 'onDemand' } } = offerRules;
-      if (exitCondition.kind === 'afterDeadline') {
-        offerRules.exit.timer
-          .delayUntil(offerRules.exit.deadline)
-          .then(_ticks =>
+      const { exitRule = { kind: 'onDemand' } } = offerRules;
+      if (exitRule.kind === 'afterDeadline') {
+        const exit = harden({
+          wake: () =>
             completeOffers(adminState, readOnlyState, harden([offerHandle])),
-          );
+        });
+        offerRules.exitRule.timer.setWakeup(offerRules.exitRule.deadline, exit);
       }
-      if (exitCondition.kind === 'onDemand') {
+      if (exitRule.kind === 'onDemand') {
         escrowResult.cancelObj = {
           cancel: () =>
             completeOffers(adminState, readOnlyState, harden([offerHandle])),

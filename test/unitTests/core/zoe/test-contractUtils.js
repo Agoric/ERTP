@@ -6,9 +6,8 @@ import {
   offerEqual,
   toAssetDescMatrix,
   makeEmptyExtents,
-  vectorWith,
   makeAssetDesc,
-  makeOfferDesc,
+  makePayoutRules,
 } from '../../../../core/zoe/contractUtils';
 import { setup } from './setupBasicMints';
 
@@ -76,15 +75,15 @@ test('offerEqual - offers are equal', t => {
   try {
     const offer1 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(3),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[1].makeAssetDesc(7),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
@@ -101,29 +100,29 @@ test('offerEqual - throws bc offers have different assays', t => {
   try {
     const offer1 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(3),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[1].makeAssetDesc(7),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     const offer2 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[1].makeAssetDesc(3),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[0].makeAssetDesc(7),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
@@ -140,29 +139,29 @@ test('offerEqual - returns false bc different extent', t => {
   try {
     const offer1 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(3),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[1].makeAssetDesc(7),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     const offer2 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(4),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[1].makeAssetDesc(7),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
@@ -174,34 +173,34 @@ test('offerEqual - returns false bc different extent', t => {
   }
 });
 
-test('offerEqual - returns false bc different rule', t => {
+test('offerEqual - returns false bc different kind', t => {
   const { assays, extentOps } = setup();
   try {
     const offer1 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(3),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[1].makeAssetDesc(7),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     const offer2 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(3),
       },
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[1].makeAssetDesc(7),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
@@ -218,46 +217,33 @@ test('offerEqual - wantExactly vs wantAtLeast - returns false', t => {
   try {
     const offer1 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(3),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[1].makeAssetDesc(7),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     const offer2 = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(3),
       },
       {
-        rule: 'wantExactly',
+        kind: 'wantExactly',
         assetDesc: assays[1].makeAssetDesc(7),
       },
       {
-        rule: 'wantAtLeast',
+        kind: 'wantAtLeast',
         assetDesc: assays[2].makeAssetDesc(7),
       },
     ];
     t.notOk(offerEqual(extentOps, offer1, offer2));
-  } catch (e) {
-    t.assert(false, e);
-  } finally {
-    t.end();
-  }
-});
-
-test('vectorWith', t => {
-  try {
-    const { extentOps } = setup();
-    const leftExtents = [4, 5, 6];
-    const rightExtents = [3, 5, 10];
-    t.deepEquals(vectorWith(extentOps, leftExtents, rightExtents), [7, 10, 16]);
   } catch (e) {
     t.assert(false, e);
   } finally {
@@ -279,28 +265,33 @@ test('makeAssetDesc', t => {
   }
 });
 
-test('makeOfferDesc', t => {
+test('makePayoutRules', t => {
   try {
     const { extentOps, labels, assays } = setup();
-    const rules = ['offerExactly', 'offerAtMost', 'wantAtLeast'];
+    const kinds = ['offerExactly', 'offerAtMost', 'wantAtLeast'];
     const extents = [4, 6, 2];
-    const actualOfferDesc = makeOfferDesc(extentOps, labels, rules, extents);
+    const actualPayoutRules = makePayoutRules(
+      extentOps,
+      labels,
+      kinds,
+      extents,
+    );
 
-    const expectedOfferDesc = [
+    const expectedPayoutRules = [
       {
-        rule: 'offerExactly',
+        kind: 'offerExactly',
         assetDesc: assays[0].makeAssetDesc(4),
       },
       {
-        rule: 'offerAtMost',
+        kind: 'offerAtMost',
         assetDesc: assays[1].makeAssetDesc(6),
       },
       {
-        rule: 'wantAtLeast',
+        kind: 'wantAtLeast',
         assetDesc: assays[2].makeAssetDesc(2),
       },
     ];
-    t.deepEquals(actualOfferDesc, expectedOfferDesc);
+    t.deepEquals(actualPayoutRules, expectedPayoutRules);
   } catch (e) {
     t.assert(false, e);
   } finally {

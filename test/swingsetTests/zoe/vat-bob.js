@@ -39,17 +39,17 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
 
       // 1. Bob escrows his offer
       const bobOfferRules = harden({
-        offerDesc: [
+        payoutRules: [
           {
-            rule: 'wantExactly',
+            kind: 'wantExactly',
             assetDesc: await E(assays[0]).makeAssetDesc(15),
           },
           {
-            rule: 'offerExactly',
+            kind: 'offerExactly',
             assetDesc: await E(assays[1]).makeAssetDesc(17),
           },
         ],
-        exit: {
+        exitRule: {
           kind: 'onDemand',
         },
       });
@@ -91,17 +91,17 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const assays = harden([moolaAssay, simoleanAssay]);
 
       const bobIntendedOfferRules = harden({
-        offerDesc: [
+        payoutRules: [
           {
-            rule: 'wantExactly',
+            kind: 'wantExactly',
             assetDesc: await E(assays[0]).makeAssetDesc(3),
           },
           {
-            rule: 'offerExactly',
+            kind: 'offerExactly',
             assetDesc: await E(assays[1]).makeAssetDesc(7),
           },
         ],
-        exit: {
+        exitRule: {
           kind: 'onDemand',
         },
       });
@@ -110,11 +110,10 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const { extent: inviteExtent } = await E(invite).getBalance();
       insist(inviteExtent.instanceHandle === instanceHandle)`wrong instance`;
       insist(inviteExtent.installationHandle === installId)`wrong installation`;
-      insist(inviteExtent.status, 'acceptingOffers')`not accepting offers`;
       insist(
         sameStructure(
           inviteExtent.offerToBeMade,
-          bobIntendedOfferRules.offerDesc,
+          bobIntendedOfferRules.payoutRules,
         ),
       )`the offer to be made was not as expected`;
 
@@ -139,7 +138,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       );
 
       // 8: Bob makes an offer with his escrow receipt
-      const bobOutcome = await E(unwrappedInvite).makeOffer(escrowReceipt);
+      const bobOutcome = await E(unwrappedInvite).matchOffer(escrowReceipt);
 
       log(bobOutcome);
 
@@ -165,17 +164,17 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       insist(sameStructure(assays, terms.assays))`assays were not as expected`;
 
       const offerRules = harden({
-        offerDesc: [
+        payoutRules: [
           {
-            rule: 'wantExactly',
+            kind: 'wantExactly',
             assetDesc: await E(assays[0]).makeAssetDesc(1),
           },
           {
-            rule: 'offerAtMost',
+            kind: 'offerAtMost',
             assetDesc: await E(assays[1]).makeAssetDesc(11),
           },
         ],
-        exit: {
+        exitRule: {
           kind: 'onDemand',
         },
       });
@@ -211,33 +210,33 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       insist(installationHandle === installId)`wrong installation`;
       insist(sameStructure(assays, terms.assays))`assays were not as expected`;
 
-      const firstOfferDesc = await E(swap).getFirstOfferDesc();
-      const expectedFirstOfferDesc = harden([
+      const firstPayoutRules = await E(swap).getFirstPayoutRules();
+      const expectedFirstPayoutRules = harden([
         {
-          rule: 'offerExactly',
+          kind: 'offerExactly',
           assetDesc: await E(assays[0]).makeAssetDesc(3),
         },
         {
-          rule: 'wantExactly',
+          kind: 'wantExactly',
           assetDesc: await E(assays[1]).makeAssetDesc(7),
         },
       ]);
       insist(
-        sameStructure(firstOfferDesc, expectedFirstOfferDesc),
+        sameStructure(firstPayoutRules, expectedFirstPayoutRules),
       )`Alice's first offer was not what she said`;
 
       const offerRules = harden({
-        offerDesc: [
+        payoutRules: [
           {
-            rule: 'wantExactly',
+            kind: 'wantExactly',
             assetDesc: await E(assays[0]).makeAssetDesc(3),
           },
           {
-            rule: 'offerExactly',
+            kind: 'offerExactly',
             assetDesc: await E(assays[1]).makeAssetDesc(7),
           },
         ],
-        exit: {
+        exitRule: {
           kind: 'onDemand',
         },
       });
@@ -274,17 +273,17 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       insist(sameStructure(assays, terms.assays))`assays were not as expected`;
 
       const bobBuyOrderOfferRules = harden({
-        offerDesc: [
+        payoutRules: [
           {
-            rule: 'wantExactly',
+            kind: 'wantExactly',
             assetDesc: await E(assays[0]).makeAssetDesc(3),
           },
           {
-            rule: 'offerAtMost',
+            kind: 'offerAtMost',
             assetDesc: await E(assays[1]).makeAssetDesc(7),
           },
         ],
-        exit: {
+        exitRule: {
           kind: 'onDemand',
         },
       });
@@ -334,21 +333,21 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       log(simoleanAssetDesc);
 
       const moolaForSimOfferRules = harden({
-        offerDesc: [
+        payoutRules: [
           {
-            rule: 'offerExactly',
+            kind: 'offerExactly',
             assetDesc: await E(allAssays[0]).makeAssetDesc(2),
           },
           {
-            rule: 'wantAtLeast',
+            kind: 'wantAtLeast',
             assetDesc: await E(allAssays[1]).makeAssetDesc(1),
           },
           {
-            rule: 'wantAtLeast',
+            kind: 'wantAtLeast',
             assetDesc: await E(allAssays[2]).makeAssetDesc(0),
           },
         ],
-        exit: {
+        exitRule: {
           kind: 'onDemand',
         },
       });
@@ -379,21 +378,21 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
 
       // Bob makes another offer and swaps
       const bobSimsForMoolaOfferRules = harden({
-        offerDesc: [
+        payoutRules: [
           {
-            rule: 'wantAtLeast',
+            kind: 'wantAtLeast',
             assetDesc: await E(allAssays[0]).makeAssetDesc(6),
           },
           {
-            rule: 'offerExactly',
+            kind: 'offerExactly',
             assetDesc: await E(allAssays[1]).makeAssetDesc(3),
           },
           {
-            rule: 'wantAtLeast',
+            kind: 'wantAtLeast',
             assetDesc: await E(allAssays[2]).makeAssetDesc(0),
           },
         ],
-        exit: {
+        exitRule: {
           kind: 'onDemand',
         },
       });

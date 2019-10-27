@@ -1,5 +1,4 @@
 import harden from '@agoric/harden';
-import Nat from '@agoric/nat';
 
 // These utilities are likely to be helpful to developers writing
 // smart contracts on Zoe.
@@ -19,7 +18,7 @@ const mapArrayOnMatrix = (matrix, arrayFn) => {
   return matrix.map(row => row.map((x, i) => arrayFn[i](x, i)));
 };
 
-const ruleEqual = (leftRule, rightRule) => leftRule.rule === rightRule.rule;
+const ruleEqual = (leftRule, rightRule) => leftRule.kind === rightRule.kind;
 
 const extentEqual = (extentOps, leftRule, rightRule) =>
   extentOps.equals(leftRule.assetDesc.extent, rightRule.assetDesc.extent);
@@ -46,21 +45,6 @@ const offerEqual = (extentOps, leftOffer, rightOffer) => {
 const makeEmptyExtents = extentOpsArray =>
   extentOpsArray.map(extentOps => extentOps.empty());
 
-// validRules is the rule portion of a offer description in array
-// form, such as ['offerExactly', 'wantExactly']
-const makeHasOkRules = validRules => offer =>
-  validRules.every((rule, i) => rule === offer[i].rule, true);
-
-// Vector addition of two extent arrays
-const vectorWith = (extentOpsArray, leftExtents, rightExtents) =>
-  leftExtents.map((leftQ, i) => extentOpsArray[i].with(leftQ, rightExtents[i]));
-
-// Vector subtraction of two extent arrays
-const vectorWithout = (extentOpsArray, leftExtents, rightExtents) =>
-  leftExtents.map((leftQ, i) =>
-    extentOpsArray[i].without(leftQ, rightExtents[i]),
-  );
-
 const makeAssetDesc = (extentOps, label, allegedExtent) => {
   extentOps.insistKind(allegedExtent);
   return harden({
@@ -76,24 +60,13 @@ const toAssetDescMatrix = (extentOps, labels, extentsMatrix) =>
     extents.map((extent, i) => makeAssetDesc(extentOps[i], labels[i], extent)),
   );
 
-const makeOfferDesc = (extentOpsArray, labels, rules, extents) =>
+const makePayoutRules = (extentOpsArray, labels, kinds, extents) =>
   extentOpsArray.map((extentOps, i) =>
     harden({
-      rule: rules[i],
+      kind: kinds[i],
       assetDesc: makeAssetDesc(extentOps, labels[i], extents[i]),
     }),
   );
-
-/**
- * These operations should be used for calculations with the
- * extents of basic fungible tokens.
- */
-const basicFungibleTokenOperations = harden({
-  add: (x, y) => Nat(x + y),
-  subtract: (x, y) => Nat(x - y),
-  multiply: (x, y) => Nat(x * y),
-  divide: (x, y) => Nat(Math.floor(x / y)),
-});
 
 const assetDescsToExtentsArray = (extentOps, assetDescs) =>
   assetDescs.map((assetDesc, i) =>
@@ -105,12 +78,8 @@ export {
   mapArrayOnMatrix,
   offerEqual,
   makeEmptyExtents,
-  makeHasOkRules,
-  vectorWith,
-  vectorWithout,
-  basicFungibleTokenOperations,
   makeAssetDesc,
-  makeOfferDesc,
+  makePayoutRules,
   toAssetDescMatrix,
   assetDescsToExtentsArray,
 };

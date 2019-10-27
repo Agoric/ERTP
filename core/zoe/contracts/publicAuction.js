@@ -1,7 +1,7 @@
 import harden from '@agoric/harden';
 
 import { rejectOffer, defaultAcceptanceMsg } from './helpers/userFlow';
-import { hasRulesAndAssays } from './helpers/offerDesc';
+import { hasValidPayoutRules } from './helpers/payoutRules';
 import {
   isOverMinimumBid,
   secondPriceLogic,
@@ -12,9 +12,11 @@ export const makeContract = harden((zoe, terms) => {
   const numBidsAllowed = terms.numBidsAllowed || 3;
 
   let creatorOfferHandle;
+  let minimumBid;
+  let auctionedAssets;
   const allBidHandles = [];
 
-  // The item up for auction is described first in the offerDesc array
+  // The item up for auction is described first in the payoutRules array
   const ITEM_INDEX = 0;
   const BID_INDEX = 1;
 
@@ -22,22 +24,29 @@ export const makeContract = harden((zoe, terms) => {
     startAuction: async escrowReceipt => {
       const {
         offerHandle,
-        offerRules: { offerDesc: offerMadeDesc },
+        offerRules: { payoutRules },
       } = await zoe.burnEscrowReceipt(escrowReceipt);
 
-      const ruleFormat = ['offerExactly', 'wantAtLeast'];
-      if (!hasRulesAndAssays(ruleFormat, terms.assays, offerMadeDesc)) {
+      const ruleKinds = ['offerExactly', 'wantAtLeast'];
+      if (
+        creatorOfferHandle ||
+        !hasValidPayoutRules(ruleKinds, terms.assays, payoutRules)
+      ) {
         return rejectOffer(offerHandle);
       }
 
       // Save the valid offer
       creatorOfferHandle = offerHandle;
+      auctionedAssets = payoutRules[0].assetDesc;
+      minimumBid = payoutRules[1].assetDesc;
       return defaultAcceptanceMsg;
     },
+    getMinimumBid: () => minimumBid,
+    getAuctionedAssets: () => auctionedAssets,
     bid: async escrowReceipt => {
       const {
         offerHandle,
-        offerRules: { offerDesc: offerMadeDesc },
+        offerRules: { payoutRules },
       } = await zoe.burnEscrowReceipt(escrowReceipt);
 
       // Check that the item is still up for auction
@@ -54,8 +63,8 @@ export const makeContract = harden((zoe, terms) => {
         return rejectOffer(zoe, offerHandle, `No further bids allowed.`);
       }
 
-      const ruleFormat = ['wantExactly', 'offerAtMost'];
-      if (!hasRulesAndAssays(ruleFormat, terms.assays, offerMadeDesc)) {
+      const ruleKinds = ['wantExactly', 'offerAtMost'];
+      if (!hasValidPayoutRules(ruleKinds, terms.assays, payoutRules)) {
         return rejectOffer(zoe, offerHandle);
       }
 
