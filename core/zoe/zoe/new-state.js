@@ -124,6 +124,7 @@ const makeState = () => {
     },
     getInstallationHandleForInstanceHandle: instanceHandle =>
       instanceHandleToInstanceRecord.get(instanceHandle).installationHandle,
+    getInstanceHandleForOfferHandle: offerHandleToInstanceHandle.get,
   });
 
   // holds mutable escrow pool
@@ -185,12 +186,6 @@ const makeState = () => {
     replaceResult: offerHandleToResult.set,
     recordUsedInInstance: (instanceHandle, offerHandle) =>
       offerHandleToInstanceHandle.set(offerHandle, instanceHandle),
-    getInstanceHandleForOfferHandle: offerHandle => {
-      if (offerHandleToInstanceHandle.has(offerHandle)) {
-        return offerHandleToInstanceHandle.get(offerHandle);
-      }
-      return undefined;
-    },
     getResultsFor: offerHandles => offerHandles.map(offerHandleToResult.get),
     setOffersAsInactive: offerHandles => {
       offerHandles.map(offerHandle => activeOffers.delete(offerHandle));
