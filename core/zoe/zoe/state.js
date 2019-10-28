@@ -72,8 +72,7 @@ const makeState = () => {
       installationHandleToInstallation.init(installationHandle, installation);
       return installationHandle;
     },
-    getInstallation: installationHandle =>
-      installationHandleToInstallation.get(installationHandle),
+    getInstallation: installationHandleToInstallation.get,
     addInstance: async (
       instanceHandle,
       instance,
@@ -140,28 +139,14 @@ const makeState = () => {
         offerHandleToExtents.set(offerHandle, reallocation[i]),
       ),
     getResultsFor: offerHandles => offerHandles.map(offerHandleToResult.get),
-    removeOffers: offerHandles => {
-      // has-side-effects
-      // eslint-disable-next-line array-callback-return
-      offerHandles.map(offerHandle => {
-        offerHandleToExtents.delete(offerHandle);
-        offerHandleToAssays.delete(offerHandle);
-        offerHandleToPayoutRules.delete(offerHandle);
-        offerHandleToExitRule.delete(offerHandle);
-        offerHandleToResult.delete(offerHandle);
-        if (offerHandleToInstanceHandle.has(offerHandle)) {
-          offerHandleToInstanceHandle.delete(offerHandle);
-        }
-      });
-    },
     setOffersAsInactive: offerHandles => {
       offerHandles.map(offerHandle => activeOffers.delete(offerHandle));
     },
   });
-  return {
+  return harden({
     adminState,
     readOnlyState,
-  };
+  });
 };
 
 export { makeState };
