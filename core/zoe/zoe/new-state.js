@@ -6,23 +6,38 @@ import { makePrivateName } from '../../../util/PrivateName';
 
 const makeState = () => {
   const offerHandleToOfferRecord = makePrivateName();
-  const makeOfferRecord = (offerRules, instanceHandle) => {
+  const makeOfferRecord = offerRules => {
     const offerHandle = harden({});
+    const { payoutRules, exitRule } = offerRules;
     const offerRecord = harden({
       offerHandle,
-      offerRules,
-      instanceHandle,
+      payoutRules,
+      exitRule,
     });
     offerHandleToOfferRecord.init(offerHandle, offerRecord);
     return offerRecord;
   };
+  // mutable collections holding only descriptive info
+  const offerHandleToExtents = makePrivateName();
+  const offerHandleToResult = makePrivateName();
+  const offerHandleToInstanceHandle = makePrivateName();
+  const activeOffers = new WeakSet();
+
+  const recordOffer = (offerRules, extents, result) => {
+    const offerRecord = makeOfferRecord(offerRules);
+    const { offerHandle } = offerRecord;
+    offerHandleToExtents.init(offerHandle, extents);
+    offerHandleToResult.init(offerHandle, result);
+    offerHandleToInstanceHandle.init(offerHandle, undefined);
+    activeOffers.add(offerHandle);
+    return offerRecord;
+  };
 
   const assayToAssayRecord = makePrivateName();
-  const makeAssayRecord = (assay, extentOps, assetDescOps, label) => {
+  const makeAssayRecord = (assay, extentOps, label) => {
     const assayRecord = harden({
       assay,
       extentOps,
-      assetDescOps,
       label,
     });
     assayToAssayRecord.init(assay, assayRecord);
@@ -49,100 +64,76 @@ const makeState = () => {
     const installationHandle = harden({});
     installationHandleToInstallation.init(installationHandle, installation);
     return installationHandle;
-  }
+  };
 
   const readOnlyState = harden({
+    // stable
     getOfferRecord: offerHandleToOfferRecord.get,
     getAssayRecord: assayToAssayRecord.get,
     getInstanceRecord: instanceHandleToInstanceRecord.get,
     getInstallation: installationHandleToInstallation.get,
+
+    // readonly view
+    getOfferExtents: offerHandleToExtents.get,
+    getOfferResult: offerHandleToResult.get,
+    getOfferInstance: offerHandleToInstanceHandle.get,
+    isOfferActive: activeOffers.has,
+
+    // compat
+    getTerms: instanceHandle =>
+      instanceHandleToInstanceRecord.get(instanceHandle).terms,
+    getAssays: instanceHandle =>
+      instanceHandleToInstanceRecord.get(instanceHandle).assays,
+    getExtentOpsArrayForInstanceHandle: instanceHandle =>
+      readOnlyState
+        .getAssays(instanceHandle)
+        .map(assay => assayToAssayRecord.get(assay).extentOps),
+    getLabelsForInstanceHandle: instanceHandle =>
+      readOnlyState
+        .getAssays(instanceHandle)
+        .map(assay => assayToAssayRecord.get(assay).label),
+    getExtentOpsArrayForAssays: assays =>
+      assays.map(assay => assayToAssayRecord.get(assay).extentOps),
+    getLabelsForAssays: assays =>
+      assays.map(assay => assayToAssayRecord.get(assay).extentOps.label),
   });
 
-  // has mutable state
-  const activeOffers = new WeakSet();
+  // holds mutable escrow pool
   const assayToPurse = makePrivateName();
+
+  const recordAssayLater = assayP => {
+    const extentOpsDescP = E(assayP).getExtentOps();
+    const labelP = E(assayP).getLabel();
+    const purseP = E(assayP).makeEmptyPurse();
+    return Promise.all([assayP, extentOpsDescP, labelP, purseP]).then(
+      ([assay, extentOpsDesc, label, purse]) => {
+        const { name, extentOpsArgs = [] } = extentOpsDesc;
+        const extentOps = extentOpsLib[name](...extentOpsArgs);
+        assayToPurse.init(assay, purse);
+        return makeAssayRecord(assay, extentOps, label);
+      },
+    );
+  };
 
   // The adminState should never leave Zoe and should be closely held
   const adminState = harden({
     readOnly: readOnlyState,
-    makeOfferRecord,
-    makeAssayRecord,
+    recordOffer,
+    recordAssayLater,
     makeInstanceRecord,
     registerInstallation,
 
-    registerAssayPurse: assayToPurse.init,
+    setOfferExtents: offerHandleToExtents.set,
+    setOfferResult: offerHandleToResult.set,
+    setOfferInstance: offerHandleToInstanceHandle.set,
+    dropOffer: activeOffers.delete,
+
     getPurses: assays => assays.map(assay => assayToPurse.get(assay)),
 
-    recordAssay: async assay => {
-      if (!assayToPurse.has(assay)) {
-        const assetDescOpsP = E(assay).getAssetDescOps();
-        const labelP = E(assay).getLabel();
-        const purseP = E(assay).makeEmptyPurse();
-        const extentOpsDescP = E(assay).getExtentOps();
-
-        const [assetDescOps, label, purse, extentOpsDesc] = await Promise.all([
-          assetDescOpsP,
-          labelP,
-          purseP,
-          extentOpsDescP,
-        ]);
-
-        assayToDescOps.init(assay, assetDescOps);
-        assayToLabel.init(assay, label);
-        assayToPurse.init(assay, purse);
-        const { name, extentOpArgs = [] } = extentOpsDesc;
-        assayToExtentOps.init(assay, extentOpsLib[name](...extentOpArgs));
-      }
-      return harden({
-        assetDescOps: assayToDescOps.get(assay),
-        label: assayToLabel.get(assay),
-        purse: assayToPurse.get(assay),
-        extentOps: assayToExtentOps.get(assay),
-      });
-    },
-    recordOffer: (offerHandle, offerRules, extents, assays, result) => {
-      const { payoutRules, exitRule } = offerRules;
-      offerHandleToExtents.init(offerHandle, extents);
-      offerHandleToAssays.init(offerHandle, assays);
-      offerHandleToPayoutRules.init(offerHandle, payoutRules);
-      offerHandleToExitRule.init(offerHandle, exitRule);
-      offerHandleToResult.init(offerHandle, result);
-      activeOffers.add(offerHandle);
-    },
-    replaceResult: (offerHandle, newResult) => {
-      offerHandleToResult.set(offerHandle, newResult);
-    },
-    recordUsedInInstance: (instanceHandle, offerHandle) =>
-      offerHandleToInstanceHandle.init(offerHandle, instanceHandle),
-    getInstanceHandleForOfferHandle: offerHandle => {
-      if (offerHandleToInstanceHandle.has(offerHandle)) {
-        return offerHandleToInstanceHandle.get(offerHandle);
-      }
-      return undefined;
-    },
     setExtentsFor: (offerHandles, reallocation) =>
       offerHandles.map((offerHandle, i) =>
         offerHandleToExtents.set(offerHandle, reallocation[i]),
       ),
-    getResultsFor: offerHandles =>
-      offerHandles.map(offerHandle => offerHandleToResult.get(offerHandle)),
-    removeOffers: offerHandles => {
-      // has-side-effects
-      // eslint-disable-next-line array-callback-return
-      offerHandles.map(offerHandle => {
-        offerHandleToExtents.delete(offerHandle);
-        offerHandleToAssays.delete(offerHandle);
-        offerHandleToPayoutRules.delete(offerHandle);
-        offerHandleToExitRule.delete(offerHandle);
-        offerHandleToResult.delete(offerHandle);
-        if (offerHandleToInstanceHandle.has(offerHandle)) {
-          offerHandleToInstanceHandle.delete(offerHandle);
-        }
-      });
-    },
-    setOffersAsInactive: offerHandles => {
-      offerHandles.map(offerHandle => activeOffers.delete(offerHandle));
-    },
   });
   return {
     adminState,
