@@ -60,7 +60,7 @@ const makeState = () => {
   };
 
   const installationHandleToInstallation = makePrivateName();
-  const registerInstallation = installation => {
+  const addInstallation = installation => {
     const installationHandle = harden({});
     installationHandleToInstallation.init(installationHandle, installation);
     return installationHandle;
@@ -77,7 +77,7 @@ const makeState = () => {
     getOfferExtents: offerHandleToExtents.get,
     getOfferResult: offerHandleToResult.get,
     getOfferInstance: offerHandleToInstanceHandle.get,
-    isOfferActive: activeOffers.has,
+    isOfferActive: offerHandle => activeOffers.has(offerHandle),
 
     // compat
     getTerms: instanceHandle =>
@@ -96,6 +96,33 @@ const makeState = () => {
       assays.map(assay => assayToAssayRecord.get(assay).extentOps),
     getLabelsForAssays: assays =>
       assays.map(assay => assayToAssayRecord.get(assay).extentOps.label),
+
+    getAssaysFor: offerHandles =>
+      offerHandles.map(offerHandle =>
+        instanceHandleToInstanceRecord.get(
+          offerHandleToInstanceHandle.get(offerHandle).assays,
+        ),
+      ),
+    getExtentsFor: offerHandles => offerHandles.map(offerHandleToExtents.get),
+    getPayoutRulesFor: offerHandles =>
+      offerHandles.map(
+        offerHandle => offerHandleToOfferRecord.get(offerHandle).payoutRules,
+      ),
+    getStatusFor: offerHandles => {
+      const active = [];
+      const inactive = [];
+      for (const offerHandle of offerHandles) {
+        if (activeOffers.has(offerHandle)) {
+          active.push(offerHandle);
+        } else {
+          inactive.push(offerHandle);
+        }
+      }
+      return harden({
+        active,
+        inactive,
+      });
+    },
   });
 
   // holds mutable escrow pool
@@ -121,12 +148,12 @@ const makeState = () => {
     recordOffer,
     recordAssayLater,
     makeInstanceRecord,
-    registerInstallation,
+    addInstallation,
 
     setOfferExtents: offerHandleToExtents.set,
     setOfferResult: offerHandleToResult.set,
     setOfferInstance: offerHandleToInstanceHandle.set,
-    dropOffer: activeOffers.delete,
+    dropOffer: offerHandle => activeOffers.delete(offerHandle),
 
     getPurses: assays => assays.map(assay => assayToPurse.get(assay)),
 
@@ -134,6 +161,9 @@ const makeState = () => {
       offerHandles.map((offerHandle, i) =>
         offerHandleToExtents.set(offerHandle, reallocation[i]),
       ),
+
+    // compat
+    getInstallation: installationHandleToInstallation.get,
   });
   return {
     adminState,

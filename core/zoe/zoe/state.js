@@ -27,8 +27,8 @@ const makeState = () => {
 
   const readOnlyState = harden({
     // per instanceHandle
-    getTerms: instanceHandle => instanceHandleToTerms.get(instanceHandle),
-    getAssays: instanceHandle => instanceHandleToAssays.get(instanceHandle),
+    getTerms: instanceHandleToTerms.get,
+    getAssays: instanceHandleToAssays.get,
     getExtentOpsArrayForInstanceHandle: instanceHandle =>
       readOnlyState.getExtentOpsArrayForAssays(
         readOnlyState.getAssays(instanceHandle),
@@ -38,15 +38,12 @@ const makeState = () => {
 
     // per assays array (this can be used before an offer is
     // associated with an instance)
-    getExtentOpsArrayForAssays: assays =>
-      assays.map(assay => assayToExtentOps.get(assay)),
-    getLabelsForAssays: assays => assays.map(assay => assayToLabel.get(assay)),
+    getExtentOpsArrayForAssays: assays => assays.map(assayToExtentOps.get),
+    getLabelsForAssays: assays => assays.map(assayToLabel.get),
 
     // per offerHandles array
-    getAssaysFor: offerHandles =>
-      offerHandles.map(offerHandle => offerHandleToAssays.get(offerHandle)),
-    getExtentsFor: offerHandles =>
-      offerHandles.map(offerHandle => offerHandleToExtents.get(offerHandle)),
+    getAssaysFor: offerHandles => offerHandles.map(offerHandleToAssays.get),
+    getExtentsFor: offerHandles => offerHandles.map(offerHandleToExtents.get),
     getPayoutRulesFor: offerHandles =>
       offerHandles.map(offerHandle =>
         offerHandleToPayoutRules.get(offerHandle),
@@ -91,12 +88,12 @@ const makeState = () => {
       );
       instanceHandleToTerms.init(instanceHandle, terms);
       instanceHandleToAssays.init(instanceHandle, assays);
-      await Promise.all(assays.map(assay => adminState.recordAssay(assay)));
+      await Promise.all(assays.map(adminState.recordAssay));
     },
-    getInstance: instanceHandle => instanceHandleToInstance.get(instanceHandle),
-    getInstallationHandleForInstanceHandle: instanceHandle =>
-      instanceHandleToInstallationHandle.get(instanceHandle),
-    getPurses: assays => assays.map(assay => assayToPurse.get(assay)),
+    getInstance: instanceHandleToInstance.get,
+    getInstallationHandleForInstanceHandle:
+      instanceHandleToInstallationHandle.get,
+    getPurses: assays => assays.map(assayToPurse.get),
     recordAssay: async assay => {
       if (!assayToPurse.has(assay)) {
         const labelP = E(assay).getLabel();
@@ -129,9 +126,7 @@ const makeState = () => {
       offerHandleToResult.init(offerHandle, result);
       activeOffers.add(offerHandle);
     },
-    replaceResult: (offerHandle, newResult) => {
-      offerHandleToResult.set(offerHandle, newResult);
-    },
+    replaceResult: offerHandleToResult.set,
     recordUsedInInstance: (instanceHandle, offerHandle) =>
       offerHandleToInstanceHandle.init(offerHandle, instanceHandle),
     getInstanceHandleForOfferHandle: offerHandle => {
@@ -144,8 +139,7 @@ const makeState = () => {
       offerHandles.map((offerHandle, i) =>
         offerHandleToExtents.set(offerHandle, reallocation[i]),
       ),
-    getResultsFor: offerHandles =>
-      offerHandles.map(offerHandle => offerHandleToResult.get(offerHandle)),
+    getResultsFor: offerHandles => offerHandles.map(offerHandleToResult.get),
     removeOffers: offerHandles => {
       // has-side-effects
       // eslint-disable-next-line array-callback-return
