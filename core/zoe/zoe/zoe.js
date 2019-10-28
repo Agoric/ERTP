@@ -187,7 +187,7 @@ const makeZoe = (additionalEndowments = {}) => {
       },
 
       makeInvite: (contractDefinedProperties, useObj) => {
-        const installationHandle = adminState.getInstallationHandleForInstanceHandle(
+        const installationHandle = readOnlyState.getInstallationHandleForInstanceHandle(
           instanceHandle,
         );
         const inviteExtent = harden({
@@ -269,7 +269,7 @@ const makeZoe = (additionalEndowments = {}) => {
      * property, which is required.
      */
     makeInstance: async (installationHandle, terms) => {
-      const installation = adminState.getInstallation(installationHandle);
+      const installation = readOnlyState.getInstallation(installationHandle);
       const instanceHandle = harden({});
       const contractFacet = makeContractFacet(instanceHandle);
       const { instance, assays } = installation.makeContract(
@@ -296,8 +296,8 @@ const makeZoe = (additionalEndowments = {}) => {
      * @param {object} instanceHandle - the unique object for the instance
      */
     getInstance: instanceHandle => {
-      const instance = adminState.getInstance(instanceHandle);
-      const installationHandle = adminState.getInstallationHandleForInstanceHandle(
+      const instance = readOnlyState.getInstance(instanceHandle);
+      const installationHandle = readOnlyState.getInstallationHandleForInstanceHandle(
         instanceHandle,
       );
       const terms = readOnlyState.getTerms(instanceHandle);
@@ -350,7 +350,7 @@ const makeZoe = (additionalEndowments = {}) => {
               payoutAddUseObj,
               offerRules,
               newResult,
-              adminState.getInstanceHandleForOfferHandle(offerHandle),
+              readOnlyState.getInstanceHandleForOfferHandle(offerHandle),
             );
           },
         }),

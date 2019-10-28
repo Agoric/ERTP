@@ -180,7 +180,6 @@ const completeOffers = async (adminState, readOnlyState, offerHandles) => {
   const payments = await makePayments(purses, assetDescs);
   const results = adminState.getResultsFor(offerHandles);
   results.map((result, i) => result.res(payments[i]));
-  adminState.removeOffers(offerHandles);
 };
 
 export {

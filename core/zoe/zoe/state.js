@@ -63,6 +63,16 @@ const makeState = () => {
         inactive,
       });
     },
+    getInstallation: installationHandleToInstallation.get,
+    getInstance: instanceHandleToInstance.get,
+    getInstallationHandleForInstanceHandle:
+      instanceHandleToInstallationHandle.get,
+    getInstanceHandleForOfferHandle: offerHandle => {
+      if (offerHandleToInstanceHandle.has(offerHandle)) {
+        return offerHandleToInstanceHandle.get(offerHandle);
+      }
+      return undefined;
+    },
   });
 
   // The adminState should never leave Zoe and should be closely held
@@ -72,7 +82,6 @@ const makeState = () => {
       installationHandleToInstallation.init(installationHandle, installation);
       return installationHandle;
     },
-    getInstallation: installationHandleToInstallation.get,
     addInstance: async (
       instanceHandle,
       instance,
@@ -89,9 +98,6 @@ const makeState = () => {
       instanceHandleToAssays.init(instanceHandle, assays);
       await Promise.all(assays.map(adminState.recordAssay));
     },
-    getInstance: instanceHandleToInstance.get,
-    getInstallationHandleForInstanceHandle:
-      instanceHandleToInstallationHandle.get,
     getPurses: assays => assays.map(assayToPurse.get),
     recordAssay: async assay => {
       if (!assayToPurse.has(assay)) {
@@ -128,12 +134,6 @@ const makeState = () => {
     replaceResult: offerHandleToResult.set,
     recordUsedInInstance: (instanceHandle, offerHandle) =>
       offerHandleToInstanceHandle.init(offerHandle, instanceHandle),
-    getInstanceHandleForOfferHandle: offerHandle => {
-      if (offerHandleToInstanceHandle.has(offerHandle)) {
-        return offerHandleToInstanceHandle.get(offerHandle);
-      }
-      return undefined;
-    },
     setExtentsFor: (offerHandles, reallocation) =>
       offerHandles.map((offerHandle, i) =>
         offerHandleToExtents.set(offerHandle, reallocation[i]),
@@ -143,6 +143,7 @@ const makeState = () => {
       offerHandles.map(offerHandle => activeOffers.delete(offerHandle));
     },
   });
+
   return harden({
     adminState,
     readOnlyState,

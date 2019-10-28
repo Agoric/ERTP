@@ -23,7 +23,7 @@ const makeState = () => {
   const offerHandleToInstanceHandle = makePrivateName();
   const activeOffers = new WeakSet();
 
-  const recordOffer = (offerRules, extents, result) => {
+  const createOfferRecord = (offerRules, extents, result) => {
     const offerRecord = makeOfferRecord(offerRules);
     const { offerHandle } = offerRecord;
     offerHandleToExtents.init(offerHandle, extents);
@@ -123,6 +123,9 @@ const makeState = () => {
         inactive,
       });
     },
+    getInstallation: installationHandleToInstallation.get,
+    getInstallationHandleForInstanceHandle: instanceHandle =>
+      instanceHandleToInstanceRecord.get(instanceHandle).installationHandle,
   });
 
   // holds mutable escrow pool
@@ -134,6 +137,9 @@ const makeState = () => {
     const purseP = E(assayP).makeEmptyPurse();
     return Promise.all([assayP, extentOpsDescP, labelP, purseP]).then(
       ([assay, extentOpsDesc, label, purse]) => {
+        if (assayToAssayRecord.has(assay)) {
+          return assayToAssayRecord.get(assay);
+        }
         const { name, extentOpsArgs = [] } = extentOpsDesc;
         const extentOps = extentOpsLib[name](...extentOpsArgs);
         assayToPurse.init(assay, purse);
@@ -144,8 +150,7 @@ const makeState = () => {
 
   // The adminState should never leave Zoe and should be closely held
   const adminState = harden({
-    readOnly: readOnlyState,
-    recordOffer,
+    createOfferRecord,
     recordAssayLater,
     makeInstanceRecord,
     addInstallation,
@@ -163,62 +168,30 @@ const makeState = () => {
       ),
 
     // compat
-    getInstallation: installationHandleToInstallation.get,
-    addInstance: async (
+    addInstance: (
       instanceHandle,
       instance,
       installationHandle,
       terms,
       assays,
     ) => {
-      instanceHandleToInstance.init(instanceHandle, instance);
-      instanceHandleToInstallationHandle.init(
-        instanceHandle,
+      // TODO BUG: instanceRecord inside or outside
+      const instanceRecord = makeInstanceRecord(
         installationHandle,
+        instance,
+        terms,
+        assays,
       );
-      instanceHandleToTerms.init(instanceHandle, terms);
-      instanceHandleToAssays.init(instanceHandle, assays);
-      await Promise.all(assays.map(adminState.recordAssay));
+      return Promise.all(assays.map(recordAssayLater));
     },
-    getInstance: instanceHandleToInstance.get,
-    getInstallationHandleForInstanceHandle:
-      instanceHandleToInstallationHandle.get,
     getPurses: assays => assays.map(assayToPurse.get),
-    recordAssay: async assay => {
-      if (!assayToPurse.has(assay)) {
-        const labelP = E(assay).getLabel();
-        const purseP = E(assay).makeEmptyPurse();
-        const extentOpsDescP = E(assay).getExtentOps();
-
-        const [label, purse, extentOpsDesc] = await Promise.all([
-          labelP,
-          purseP,
-          extentOpsDescP,
-        ]);
-
-        assayToLabel.init(assay, label);
-        assayToPurse.init(assay, purse);
-        const { name, extentOpArgs = [] } = extentOpsDesc;
-        assayToExtentOps.init(assay, extentOpsLib[name](...extentOpArgs));
-      }
-      return harden({
-        label: assayToLabel.get(assay),
-        purse: assayToPurse.get(assay),
-        extentOps: assayToExtentOps.get(assay),
-      });
-    },
-    recordOffer: (offerHandle, offerRules, extents, assays, result) => {
-      const { payoutRules, exit } = offerRules;
-      offerHandleToExtents.init(offerHandle, extents);
-      offerHandleToAssays.init(offerHandle, assays);
-      offerHandleToPayoutRules.init(offerHandle, payoutRules);
-      offerHandleToExitRule.init(offerHandle, exit);
-      offerHandleToResult.init(offerHandle, result);
-      activeOffers.add(offerHandle);
-    },
+    recordAssay: recordAssayLater,
+    recordOffer: (offerHandle, offerRules, extents, assays, result) =>
+      // TODO BUG offerHandle inside or outside?
+      createOfferRecord(offerRules, extents, result),
     replaceResult: offerHandleToResult.set,
     recordUsedInInstance: (instanceHandle, offerHandle) =>
-      offerHandleToInstanceHandle.init(offerHandle, instanceHandle),
+      offerHandleToInstanceHandle.set(offerHandle, instanceHandle),
     getInstanceHandleForOfferHandle: offerHandle => {
       if (offerHandleToInstanceHandle.has(offerHandle)) {
         return offerHandleToInstanceHandle.get(offerHandle);
