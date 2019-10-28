@@ -175,7 +175,7 @@ const makeState = () => {
       terms,
       assays,
     ) =>
-      // TODO BUG: instanceRecord inside or outside
+      // TODO BUG: instanceHandle inside or outside
       Promise.all(assays.map(recordAssayLater)).then(_ =>
         makeInstanceRecord(installationHandle, instance, terms, assays),
       ),
