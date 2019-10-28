@@ -75,7 +75,6 @@ const makeState = () => {
 
     // readonly view
     getOfferExtents: offerHandleToExtents.get,
-    getOfferResult: offerHandleToResult.get,
     getOfferInstance: offerHandleToInstanceHandle.get,
     isOfferActive: offerHandle => activeOffers.has(offerHandle),
 
@@ -123,7 +122,6 @@ const makeState = () => {
         inactive,
       });
     },
-    getInstallation: installationHandleToInstallation.get,
     getInstallationHandleForInstanceHandle: instanceHandle =>
       instanceHandleToInstanceRecord.get(instanceHandle).installationHandle,
   });
@@ -156,6 +154,7 @@ const makeState = () => {
     addInstallation,
 
     setOfferExtents: offerHandleToExtents.set,
+    getOfferResult: offerHandleToResult.get,
     setOfferResult: offerHandleToResult.set,
     setOfferInstance: offerHandleToInstanceHandle.set,
     dropOffer: offerHandle => activeOffers.delete(offerHandle),
@@ -174,17 +173,11 @@ const makeState = () => {
       installationHandle,
       terms,
       assays,
-    ) => {
+    ) =>
       // TODO BUG: instanceRecord inside or outside
-      const instanceRecord = makeInstanceRecord(
-        installationHandle,
-        instance,
-        terms,
-        assays,
-      );
-      return Promise.all(assays.map(recordAssayLater));
-    },
-    getPurses: assays => assays.map(assayToPurse.get),
+      Promise.all(assays.map(recordAssayLater)).then(_ =>
+        makeInstanceRecord(installationHandle, instance, terms, assays),
+      ),
     recordAssay: recordAssayLater,
     recordOffer: (offerHandle, offerRules, extents, assays, result) =>
       // TODO BUG offerHandle inside or outside?
@@ -198,10 +191,6 @@ const makeState = () => {
       }
       return undefined;
     },
-    setExtentsFor: (offerHandles, reallocation) =>
-      offerHandles.map((offerHandle, i) =>
-        offerHandleToExtents.set(offerHandle, reallocation[i]),
-      ),
     getResultsFor: offerHandles => offerHandles.map(offerHandleToResult.get),
     setOffersAsInactive: offerHandles => {
       offerHandles.map(offerHandle => activeOffers.delete(offerHandle));
