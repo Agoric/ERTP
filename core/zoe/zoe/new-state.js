@@ -38,7 +38,7 @@ const makeState = () => {
       instance,
       terms,
       assays,
-      get assayRecords() { return assays.map(assayToAssayRecord.get); };
+      assayRecords: assays.map(assayToAssayRecord.get),
     });
     instanceHandleToInstanceRecord.init(instanceHandle, instanceRecord);
     return instanceRecord;
@@ -64,7 +64,7 @@ const makeState = () => {
 
   // The adminState should never leave Zoe and should be closely held
   const adminState = harden({
-    ...readOnlyState,
+    readOnly: readOnlyState,
     makeOfferRecord,
     makeAssayRecord,
     makeInstanceRecord,
