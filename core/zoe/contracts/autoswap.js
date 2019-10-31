@@ -178,8 +178,6 @@ export const makeContract = harden((zoe, terms) => {
     tokenInE,
     feeInTenthOfPercent = 3,
   ) => {
-    debugger;
-
     // Constant product invariant means:
     // tokenInPoolE * tokenOutPoolE =
     //   (tokenInPoolE + tokenInE) *

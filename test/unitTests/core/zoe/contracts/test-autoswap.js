@@ -326,7 +326,7 @@ test('autoSwap - test fee', async t => {
 
     t.equals(liquidityOk, 'Added liquidity.');
 
-    const liquidityPayments = await aliceAddLiquidityPayoutP;
+    await aliceAddLiquidityPayoutP;
 
     t.deepEquals(aliceAutoswap.getPoolExtents(), [10000, 10000, 0]);
 
