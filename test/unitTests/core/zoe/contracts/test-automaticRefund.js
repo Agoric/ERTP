@@ -61,17 +61,12 @@ test('zoe - simplest automaticRefund', async t => {
 test('zoe - automaticRefund same assay', async t => {
   try {
     // Setup zoe and mints
-    const { assays, mints } = setup();
+    const { assays } = setup();
     const [moolaAssay] = assays;
-    const [moolaMint] = mints;
     const zoe = await makeZoe({ require });
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(automaticRefundRoot);
     const installationHandle = zoe.install(source, moduleFormat);
-
-    // Setup Alice
-    const aliceMoolaPurse = moolaMint.mint(moolaAssay.makeUnits(3));
-    const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
 
     // 1: Alice creates an automatic refund instance
     const { instance: automaticRefund } = await zoe.makeInstance(
@@ -112,7 +107,6 @@ test('zoe - automaticRefund same assay', async t => {
     t.end();
   }
 });
-
 
 test('zoe with automaticRefund', async t => {
   try {
