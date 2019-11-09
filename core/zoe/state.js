@@ -1,6 +1,10 @@
 import harden from '@agoric/harden';
-import { makePrivateName } from '../../../../util/PrivateName';
-import { insist } from '../../../../util/insist';
+import { E } from '@agoric/eventual-send';
+
+import { makePrivateName } from '../../util/PrivateName';
+import { insist } from '../../util/insist';
+
+import { extentOpsLib } from '../config/extentOpsLib';
 
 // Installation Table
 // Columns: installationHandle | installation
@@ -98,17 +102,17 @@ const makeOfferTable = () => {
     delete: handleToRecord.delete,
 
     // Custom methods below. //
-    createExtent: (payoutRuleHandle, extent) => {
-      const payoutRuleRecord = handleToRecord.get(payoutRuleHandle);
+    createUnits: (offerHandle, units) => {
+      const offerRecord = handleToRecord.get(offerHandle);
       insist(
-        payoutRuleRecord.extent === undefined,
-      )`extents must be undefined to be created`;
-      payoutRuleRecord.extent = extent;
+        offerRecord.units === undefined,
+      )`units must be undefined to be created`;
+      offerRecord.units = units;
     },
-    updateExtent: (payoutRuleHandle, extent) => {
-      // TODO: check offer safety
+    updateUnits: (offerHandle, units) => {
+      const offerRecord = handleToRecord.get(offerHandle);
+      offerRecord.units = units;
     },
-
     getPayoutRuleMatrix: (offerHandles, _assays) => {
       // Currently, we assume that all of the payoutRules for these
       // offerHandles are in the same order as the `assays` array. In
@@ -120,25 +124,48 @@ const makeOfferTable = () => {
         offerHandle => offerTable.get(offerHandle).payoutRules,
       );
     },
-    getExtentMatrix: (offerHandles, _assays) =>
-      // Currently, we assume that all of the extents for these
+    getUnitMatrix: (offerHandles, _assays) =>
+      // Currently, we assume that all of the units for these
       // offerHandles are in the same order as the `assays` array. In
       // the future, we want to be able to use the offerHandle and assay
-      // to select the extent. Note that there may be more than one
-      // extent per offerHandle and assay, so (offerHandle, assay)
+      // to select the unit. Note that there may be more than one
+      // payoutRule per offerHandle and assay, so (offerHandle, assay)
       // is not unique and cannot be used as a key.
-      offerHandles.map(offerHandle => offerTable.get(offerHandle).extents),
-      
-    setExtentMatrix: (offerHandles, assays, newUnitMatrix) => {
-
+      offerHandles.map(offerHandle => offerTable.get(offerHandle).units),
+    updateUnitMatrix: (offerHandles, _assays, newUnitMatrix) =>
+      // Currently, we assume that all of the units for these
+      // offerHandles are in the same order as the `assays` array. In
+      // the future, we want to be able to use the offerHandle and assay
+      // to select the unit. Note that there may be more than one
+      // unit per offerHandle and assay, so (offerHandle, assay)
+      // is not unique and cannot be used as a key.
+      offerHandles.map((offerHandle, i) =>
+        offerTable.updateUnits(offerHandle, newUnitMatrix[i]),
+      ),
+    getOfferStatuses: offerHandles => {
+      const active = [];
+      const inactive = [];
+      for (const offerHandle of offerHandles) {
+        if (handleToRecord.has(offerHandle)) {
+          active.push(offerHandle);
+        } else {
+          inactive.push(offerHandle);
+        }
+      }
+      return harden({
+        active,
+        inactive,
+      });
     },
+    deleteOffers: offerHandles =>
+      offerHandles.map(offerHandle => offerTable.delete(offerHandle)),
   });
 
   return offerTable;
 };
 
 // Assay Table
-// Columns: assay | purse | extentOps | unitOps | label
+// Columns: assay | purse | unitOps | label
 const makeAssayTable = () => {
   // The WeakMap that stores the records
   const handleToRecord = makePrivateName();
@@ -158,8 +185,35 @@ const makeAssayTable = () => {
     get: handleToRecord.get,
 
     // custom
-    getUnitOpsArray: assays =>
+    getUnitOpsForAssays: assays =>
       assays.map(assay => assayTable.get(assay).unitOps),
+
+    getLabelsForAssays: assays =>
+      assays.map(assay => assayTable.get(assay).label),
+
+    getPursesForAssays: assays =>
+      assays.map(assay => assayTable.get(assay).purse),
+
+    getOrCreateAssay: assay => {
+      const makeExtentOps = (library, extentOpsName, extentOpsArgs) =>
+        library[extentOpsName](...extentOpsArgs);
+
+      if (!assayTable.has(assay)) {
+        const extentOpsDescP = E(assay).getExtentOps();
+        const assayRecord = {
+          assay,
+          purseP: E(assay).makeEmptyPurse(),
+          extentOpsDescP,
+          unitOpsP: E(assay).getUnitOps(),
+          labelP: E(assay).getLabel(),
+          extentOpsP: extentOpsDescP.then(({ name, extentOpArgs = [] }) =>
+            makeExtentOps(extentOpsLib, name, extentOpArgs),
+          ),
+        };
+        return assayTable.create(assay, assayRecord);
+      }
+      return assayTable.get(assay);
+    },
   });
 
   return assayTable;

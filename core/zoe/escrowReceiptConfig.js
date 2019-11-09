@@ -1,9 +1,9 @@
 import harden from '@agoric/harden';
 import { passStyleOf } from '@agoric/marshal';
 
-import { noCustomization } from '../../config/noCustomization';
-import { makeCoreMintKeeper } from '../../config/coreMintKeeper';
-import { insist } from '../../../util/insist';
+import { noCustomization } from '../config/noCustomization';
+import { makeCoreMintKeeper } from '../config/coreMintKeeper';
+import { insist } from '../../util/insist';
 
 const insistEscrowReceipt = extent => {
   const properties = Object.getOwnPropertyNames(extent);

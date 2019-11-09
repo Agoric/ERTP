@@ -1,24 +1,20 @@
 import harden from '@agoric/harden';
 import { E } from '@agoric/eventual-send';
 
-import { insist } from '../../../util/insist';
-import makePromise from '../../../util/makePromise';
+import { insist } from '../../util/insist';
+import makePromise from '../../util/makePromise';
 
 import { isOfferSafeForAll } from './invariantChecks/isOfferSafe';
 import { areRightsConserved } from './invariantChecks/areRightsConserved';
 import { evalContractCode } from './evalContractCode';
 
-import {
-  escrowEmptyOffer,
-  completeOffers,
-  makeEmptyExtents,
-  getAssaysFromPayoutRules,
-} from './zoeUtils';
-
-import { makeState } from './db/views';
-import { makeSeatMint } from '../../seatMint';
+import { makeTables } from './state';
+import { makeSeatMint } from '../seatMint';
 import { makeEscrowReceiptConfig } from './escrowReceiptConfig';
-import { makeMint } from '../../mint';
+import { makeMint } from '../mint';
+
+const getAssaysFromPayoutRules = payoutRules =>
+  payoutRules.map(payoutRule => payoutRule.units.label.assay);
 
 /**
  * Create an instance of Zoe.
@@ -48,7 +44,21 @@ const makeZoe = (additionalEndowments = {}) => {
     instanceTable,
     offerTable,
     assayTable,
-  } = makeState();
+  } = makeTables();
+
+  const completeOffers = (offerHandles, assays) => {
+    const unitMatrix = offerTable.getUnitMatrix(offerHandles, assays);
+    const payoutPromises = offerTable.getPayoutPromises(offerHandles);
+    offerTable.deleteOffers(offerHandles);
+    const purses = assayTable.getPursesForAssays(assays);
+    for (let i = 0; i < offerHandles.length; i += 1) {
+      const unitsForOffer = unitMatrix[i];
+      const payout = unitsForOffer.map((units, j) =>
+        E(purses[j]).withdraw(units, 'payout'),
+      );
+      payoutPromises[i].resolve(payout);
+    }
+  };
 
   // Zoe has two different facets: the public Zoe service and the
   // contract facet. The contract facet is what is accessible to the
@@ -101,7 +111,7 @@ const makeZoe = (additionalEndowments = {}) => {
         )`The proposed reallocation was not offer safe`;
 
         // 3) save the reallocation
-        offerTable.setExtentMatrix(offerHandles, assays, newUnitMatrix);
+        offerTable.updateUnitMatrix(offerHandles, assays, newUnitMatrix);
       },
 
       /**
@@ -113,30 +123,45 @@ const makeZoe = (additionalEndowments = {}) => {
        * that the invariants hold.
        * @param  {object[]} offerHandles - an array of offerHandles
        */
-      complete: offerHandles =>
-        completeOffers(adminState, readOnlyState, offerHandles),
+      complete: completeOffers,
 
       /**
        *  The contract can create an empty offer and get the
        *  associated offerHandle. This allows the contract to use this
        *  offer slot for record-keeping. For instance, to represent a
        *  pool, the contract can create an empty offer and then
-       *  reallocate other extents to this offer.
+       *  reallocate units to the offer to put them in the pool.
        */
-      escrowEmptyOffer: () => {
-        const assays = readOnlyState.getAssays(instanceHandle);
-        const labels = readOnlyState.getLabelsForInstanceHandle(instanceHandle);
-        const extentOpsArray = readOnlyState.getExtentOpsArrayForInstanceHandle(
-          instanceHandle,
+      escrowEmptyOffer: assays => {
+        // Make offer rules as a user would, but with nothing offered
+        const unitOpsArray = assayTable.getUnitOpsForAssays(assays);
+        const payoutRules = unitOpsArray.map(unitOps =>
+          harden({
+            kind: 'want',
+            units: unitOps.empty(),
+          }),
         );
+        const offerRules = harden({
+          payoutRules,
+          exitRule: {
+            kind: 'onDemand',
+          },
+        });
 
-        const { offerHandle } = escrowEmptyOffer(
-          adminState.recordOffer,
+        // Create the offer record and save it
+        const offerHandle = harden({});
+        // units are empty
+        const units = unitOpsArray.map(unitOps => unitOps.empty());
+        const offerImmutableRecord = {
+          offerHandle,
+          instanceHandle,
+          payoutRules: offerRules.payoutRules,
+          exitRule: offerRules.exitRule,
           assays,
-          labels,
-          extentOpsArray,
-        );
-        return offerHandle;
+          payoutPromise: makePromise(),
+          units,
+        };
+        return offerTable.create(offerHandle, offerImmutableRecord);
       },
       /**
        *  The contract can also create a real offer and get the
@@ -145,15 +170,8 @@ const makeZoe = (additionalEndowments = {}) => {
        *  users' behalf, as happens in the `addLiquidity` step of the
        *  `autoswap` contract.
        */
-      escrowOffer: async (offerRules, offerPayments) => {
-        const { offerHandle } = await escrowOffer(
-          adminState.recordOffer,
-          adminState.recordAssay,
-          offerRules,
-          offerPayments,
-        );
-        return offerHandle;
-      },
+      // eslint-disable-next-line no-use-before-define
+      escrowOffer: zoeService.escrow,
 
       /**
        * Burn the escrowReceipt ERTP payment using the escrowReceipt
@@ -173,7 +191,7 @@ const makeZoe = (additionalEndowments = {}) => {
       burnEscrowReceipt: async escrowReceipt => {
         const units = await escrowReceiptAssay.burnAll(escrowReceipt);
         const { offerHandle } = units.extent;
-        const { inactive } = readOnlyState.getStatusFor(harden([offerHandle]));
+        const { inactive } = offerTable.getOfferStatuses(harden([offerHandle]));
         if (inactive.length > 0) {
           return Promise.reject(new Error('offer was cancelled'));
         }
@@ -198,28 +216,19 @@ const makeZoe = (additionalEndowments = {}) => {
        * methods on this object.
        */
       makeInvite: (contractDefinedExtent, useObj) => {
-        const inviteExtent = harden({
-          ...contractDefinedExtent,
-          handle: harden({}),
-          instanceHandle,
-        });
-        const invitePurseP = inviteMint.mint(inviteExtent);
-        inviteAddUseObj(inviteExtent.handle, useObj);
+        const inviteHandle = harden({});
+        const inviteUnits = inviteAssay.makeUnits(
+          harden({
+            ...contractDefinedExtent,
+            handle: inviteHandle,
+            instanceHandle,
+          }),
+        );
+        const invitePurseP = inviteMint.mint(inviteUnits);
+        inviteAddUseObj(inviteHandle, useObj);
         const invitePaymentP = invitePurseP.withdrawAll();
         return invitePaymentP;
       },
-
-      /** read-only, side-effect-free access below this line */
-      getStatusFor: readOnlyState.getStatusFor,
-      makeEmptyExtents: () =>
-        makeEmptyExtents(
-          readOnlyState.getExtentOpsArrayForInstanceHandle(instanceHandle),
-        ),
-      getExtentOpsArray: () =>
-        readOnlyState.getExtentOpsArrayForInstanceHandle(instanceHandle),
-      getLabels: () => readOnlyState.getLabelsForInstanceHandle(instanceHandle),
-      getExtentsFor: readOnlyState.getExtentsFor,
-      getPayoutRulesFor: readOnlyState.getPayoutRulesFor,
       getInviteAssay: () => inviteAssay,
     });
     return contractFacet;
@@ -290,7 +299,7 @@ const makeZoe = (additionalEndowments = {}) => {
      * @param  {offerRule[]} offerRules - the offer rules, an object
      * with properties `payoutRules` and `exitRule`.
      * @param  {payment[]} offerPayments - payments corresponding to
-     * the offer description. A payment may be `undefined` in the case
+     * the offer rules. A payment may be `undefined` in the case
      * of specifying a `want`.
      */
     escrow: (instanceHandle, offerRules, offerPayments) => {
@@ -312,30 +321,9 @@ const makeZoe = (additionalEndowments = {}) => {
       // extents should only be gotten after the payments are deposited
       offerTable.create(offerHandle, offerImmutableRecord);
 
-      const getOrCreateAssay = assay => {
-        const makeExtentOps = (library, extentOpsName, extentOpsArgs) =>
-          library[extentOpsName](...extentOpsArgs);
-
-        if (!assayTable.has(assay)) {
-          const extentOpsDescP = E(assay).getExtentOps();
-          const assayRecord = {
-            assay,
-            purseP: E(assay).makeEmptyPurse(),
-            extentOpsDescP,
-            unitOpsP: E(assay).getUnitOps(),
-            labelP: E(assay).getLabel(),
-            extentOpsP: extentOpsDescP.then(({ name, extentOpArgs = [] }) =>
-              makeExtentOps(extentOpsLib, name, extentOpArgs),
-            ),
-          };
-          return assayTable.create(assay, assayRecord);
-        }
-        return assayTable.get(assay);
-      };
-
       // Promise flow = assay -> purse -> deposit payment -> escrow receipt
       const paymentBalancesP = assays.map((assay, i) => {
-        const { purseP, extentOpsP } = getOrCreateAssay(assay);
+        const { purseP, extentOpsP } = assayTable.getOrCreateAssay(assay);
         const payoutRule = offerRules.payoutRules[i];
         const offerPayment = offerPayments[i];
 
@@ -376,12 +364,7 @@ const makeZoe = (additionalEndowments = {}) => {
           exitRule.timer.setWakeup(
             exitRule.deadline,
             harden({
-              wake: () =>
-                completeOffers(
-                  adminState,
-                  readOnlyState,
-                  harden([offerHandle]),
-                ),
+              wake: () => completeOffers(harden([offerHandle]), assays),
             }),
           );
         }
@@ -390,8 +373,7 @@ const makeZoe = (additionalEndowments = {}) => {
         // order to cancel on demand.
         if (exitRule.kind === 'onDemand') {
           escrowResult.cancelObj = {
-            cancel: () =>
-              completeOffers(adminState, readOnlyState, harden([offerHandle])),
+            cancel: () => completeOffers(harden([offerHandle]), assays),
           };
         }
         return harden(escrowResult);

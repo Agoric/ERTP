@@ -2,10 +2,10 @@ import evaluate from '@agoric/evaluate';
 import Nat from '@agoric/nat';
 import harden from '@agoric/harden';
 
-import { makeMint } from '../../mint';
-import { insist } from '../../../util/insist';
-import makePromise from '../../../util/makePromise';
-import { sameStructure } from '../../../util/sameStructure';
+import { makeMint } from '../mint';
+import { insist } from '../../util/insist';
+import makePromise from '../../util/makePromise';
+import { sameStructure } from '../../util/sameStructure';
 
 const evaluateStringToFn = (functionSrcString, endowments) => {
   insist(typeof functionSrcString === 'string')`\n

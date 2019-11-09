@@ -3,8 +3,8 @@ import { test } from 'tape-promise/tape';
 import {
   areRightsConserved,
   transpose,
-} from '../../../../core/zoe/zoe/areRightsConserved';
-import { setup } from './setupBasicMints';
+} from '../../../../../core/zoe/invariantChecks/areRightsConserved';
+import { setup } from '../setupBasicMints';
 
 test('transpose', t => {
   try {

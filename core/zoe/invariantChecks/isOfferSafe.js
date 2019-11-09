@@ -1,4 +1,4 @@
-import { insist } from '../../../../util/insist';
+import { insist } from '../../../util/insist';
 
 /**
  * `isOfferSafeForOffer` checks offer safety for a single offer.

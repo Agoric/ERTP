@@ -3,8 +3,8 @@ import { test } from 'tape-promise/tape';
 import {
   isOfferSafeForOffer,
   isOfferSafeForAll,
-} from '../../../../core/zoe/zoe/isOfferSafe';
-import { setup } from './setupBasicMints';
+} from '../../../../../core/zoe/invariantChecks/isOfferSafe';
+import { setup } from '../setupBasicMints';
 
 // The player must have payoutRules for each assay
 test('isOfferSafeForOffer - empty payoutRules', t => {
