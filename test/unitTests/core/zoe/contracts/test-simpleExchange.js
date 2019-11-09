@@ -11,7 +11,7 @@ test('zoe - simpleExchange', async t => {
   try {
     const { assays: originalAssays, mints, unitOps } = setup();
     const assays = originalAssays.slice(0, 2);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(simpleExchangeRoot);

@@ -10,7 +10,7 @@ const autoswapRoot = `${__dirname}/../../../../../core/zoe/contracts/autoswap`;
 test('autoSwap with valid offers', async t => {
   try {
     const { assays: defaultAssays, mints } = setup();
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     const assays = defaultAssays.slice(0, 2);
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
 
@@ -258,7 +258,7 @@ test('autoSwap with valid offers', async t => {
 test('autoSwap - test fee', async t => {
   try {
     const { assays: defaultAssays, mints } = setup();
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     const assays = defaultAssays.slice(0, 2);
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
 

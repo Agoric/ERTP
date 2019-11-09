@@ -13,7 +13,7 @@ test('zoe - simplest automaticRefund', async t => {
     const { assays, mints } = setup();
     const [moolaAssay] = assays;
     const [moolaMint] = mints;
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(automaticRefundRoot);
     const installationHandle = zoe.install(source, moduleFormat);
@@ -63,7 +63,7 @@ test('zoe - automaticRefund same assay', async t => {
     // Setup zoe and mints
     const { assays } = setup();
     const [moolaAssay] = assays;
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(automaticRefundRoot);
     const installationHandle = zoe.install(source, moduleFormat);
@@ -108,12 +108,12 @@ test('zoe - automaticRefund same assay', async t => {
   }
 });
 
-test('zoe with automaticRefund', async t => {
+test.only('zoe with automaticRefund', async t => {
   try {
     // Setup zoe and mints
     const { assays: defaultAssays, mints } = setup();
     const assays = defaultAssays.slice(0, 2);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
 
     // Setup Alice
@@ -145,11 +145,11 @@ test('zoe with automaticRefund', async t => {
     const aliceOfferRules = harden({
       payoutRules: [
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: assays[0].makeUnits(3),
         },
         {
-          kind: 'wantExactly',
+          kind: 'want',
           units: assays[1].makeUnits(7),
         },
       ],
@@ -166,7 +166,7 @@ test('zoe with automaticRefund', async t => {
     const {
       escrowReceipt: allegedAliceEscrowReceipt,
       payout: alicePayoutP,
-    } = await zoe.escrow(aliceOfferRules, alicePayments);
+    } = zoe.escrow(aliceOfferRules, alicePayments);
 
     // 3: Alice does a claimAll on the escrowReceipt payment. (This is
     // unnecessary if she trusts zoe, but we will do it in the tests.)
@@ -205,11 +205,11 @@ test('zoe with automaticRefund', async t => {
     const bobOfferRules = harden({
       payoutRules: [
         {
-          kind: 'wantExactly',
+          kind: 'want',
           units: bobAssays[0].makeUnits(15),
         },
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: bobAssays[1].makeUnits(17),
         },
       ],
@@ -224,7 +224,7 @@ test('zoe with automaticRefund', async t => {
     const {
       escrowReceipt: allegedBobEscrowReceipt,
       payout: bobPayoutP,
-    } = await zoe.escrow(bobOfferRules, bobPayments);
+    } = zoe.escrow(bobOfferRules, bobPayments);
 
     // 7: Bob does a claimAll on the escrowReceipt payment
     const bobEscrowReceipt = await escrowReceiptAssay.claimAll(
@@ -237,8 +237,8 @@ test('zoe with automaticRefund', async t => {
     t.equals(aliceOutcome, 'The offer was accepted');
     t.equals(bobOutcome, 'The offer was accepted');
 
-    const alicePayout = await alicePayoutP;
-    const bobPayout = await bobPayoutP;
+    const alicePayout = await Promise.all(alicePayoutP);
+    const bobPayout = await Promise.all(bobPayoutP);
 
     // Alice got back what she put in
     t.deepEquals(
@@ -277,7 +277,7 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     // Setup zoe and mints
     const { assays: originalAssays, mints } = setup();
     const assays = originalAssays.slice(0, 2);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
 
     // Setup Alice
     const aliceMoolaPurse = mints[0].mint(assays[0].makeUnits(30));
@@ -376,7 +376,7 @@ test('zoe - alice cancels before entering a contract', async t => {
     // Setup zoe and mints
     const { assays: defaultAssays, mints } = setup();
     const assays = defaultAssays.slice(0, 2);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
 
     // Setup Alice
     const aliceMoolaPurse = mints[0].mint(assays[0].makeUnits(3));
@@ -457,7 +457,7 @@ test('zoe - alice cancels after completion', async t => {
     // Setup zoe and mints
     const { assays: defaultAssays, mints } = setup();
     const assays = defaultAssays.slice(0, 2);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
 
     // Setup Alice
     const aliceMoolaPurse = mints[0].mint(assays[0].makeUnits(3));

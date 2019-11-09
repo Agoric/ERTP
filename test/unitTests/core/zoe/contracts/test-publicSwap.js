@@ -11,7 +11,7 @@ test('zoe - publicSwap', async t => {
   try {
     const { assays: defaultAssays, mints } = setup();
     const assays = defaultAssays.slice(0, 2);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
     // pack the contract
     const { source, moduleFormat } = await bundleSource(publicSwapRoot);

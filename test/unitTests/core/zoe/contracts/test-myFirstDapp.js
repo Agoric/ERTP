@@ -10,7 +10,7 @@ const myFirstDappRoot = `${__dirname}/../../../../../core/zoe/contracts/myFirstD
 test('myFirstDapp with valid offers', async t => {
   try {
     const { assays: defaultAssays, mints } = setup();
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     const assays = defaultAssays.slice(0, 2);
 
     // Setup Alice

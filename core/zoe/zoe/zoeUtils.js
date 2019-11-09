@@ -8,103 +8,6 @@ import { insist } from '../../../util/insist';
 // no ambient authority for these utilities. Any authority must be
 // passed in, making it easy to see which functions can affect what.
 
-const mintEscrowReceiptPayment = (
-  escrowReceiptMint,
-  offerHandle,
-  offerRules,
-) => {
-  const escrowReceiptExtent = harden({
-    offerHandle,
-    offerRules,
-  });
-  const escrowReceiptPurse = escrowReceiptMint.mint(escrowReceiptExtent);
-  const escrowReceiptPaymentP = escrowReceiptPurse.withdrawAll();
-  return escrowReceiptPaymentP;
-};
-
-const escrowPayment = async (payoutRule, offerPayment, purse, extentOps) => {
-  // if the user's contractual understanding includes
-  // "offerExactly" or "offerAtMost", make sure that they have supplied a
-  // payment with that exact balance
-  if (['offerExactly', 'offerAtMost'].includes(payoutRule.kind)) {
-    const { extent } = await E(purse).depositExactly(
-      payoutRule.units,
-      offerPayment,
-    );
-    return extent;
-  }
-  insist(
-    offerPayment === undefined,
-  )`payment was included, but the rule kind was ${payoutRule.kind}`;
-  return extentOps.empty();
-};
-
-const insistValidPayoutRuleKinds = payoutRules => {
-  const acceptedKinds = [
-    'offerExactly',
-    'offerAtMost',
-    'wantExactly',
-    'wantAtLeast',
-  ];
-  for (const payoutRule of payoutRules) {
-    insist(
-      acceptedKinds.includes(payoutRule.kind),
-    )`kind ${payoutRule.kind} is not one of the accepted kind`;
-  }
-};
-
-const insistValidExitRule = exitRule => {
-  const acceptedExitRuleKinds = [
-    'noExit',
-    'onDemand',
-    'afterDeadline',
-    // 'onDemandAfterDeadline', // not yet supported
-  ];
-
-  insist(
-    acceptedExitRuleKinds.includes(exitRule.kind),
-  )`exitRule.kind ${exitRule.kind} is not one of the accepted options`;
-};
-
-const escrowOffer = async (
-  recordOffer,
-  recordAssay,
-  offerRules,
-  offerPayments,
-) => {
-  const result = makePromise();
-  const { payoutRules, exit = { kind: 'onDemand' } } = offerRules;
-
-  insistValidPayoutRuleKinds(payoutRules);
-  insistValidExitRule(exit);
-
-  // Escrow the payments and store the assays from the payoutRules. We
-  // assume that the payoutRules has elements for each expected assay,
-  // and none are undefined.
-  // TODO: handle bad offers more robustly
-  const extents = await Promise.all(
-    payoutRules.map(async (payoutRule, i) => {
-      const { assay } = payoutRule.units.label;
-      const { purse, extentOps } = await recordAssay(assay);
-      return escrowPayment(payoutRule, offerPayments[i], purse, extentOps);
-    }),
-  );
-
-  const assays = payoutRules.map(payoutRule => {
-    const { assay } = payoutRule.units.label;
-    return assay;
-  });
-
-  const offerHandle = harden({});
-
-  recordOffer(offerHandle, offerRules, extents, assays, result);
-
-  return harden({
-    offerHandle,
-    result,
-  });
-};
-
 const escrowEmptyOffer = (recordOffer, assays, labels, extentOpsArray) => {
   const offerHandle = harden({});
   const payoutRules = labels.map((label, i) =>
@@ -123,25 +26,25 @@ const escrowEmptyOffer = (recordOffer, assays, labels, extentOpsArray) => {
     },
   });
   const extents = extentOpsArray.map(extentOps => extentOps.empty());
-  const result = makePromise();
+  const payoutPromise = makePromise();
 
   // has side effects
-  recordOffer(offerHandle, offerRules, extents, assays, result);
+  recordOffer(offerHandle, offerRules, extents, assays, payoutPromise);
 
   return harden({
     offerHandle,
-    result,
+    payout: payoutPromise.p,
   });
 };
 
 const makePayments = (purses, unitsMatrix) => {
-  const paymentsMatrix = unitsMatrix.map(row => {
-    const payments = Promise.all(
-      row.map((units, i) => E(purses[i]).withdraw(units, 'payout')),
+  const paymentPromisesMatrix = unitsMatrix.map(row => {
+    const paymentPromises = row.map((units, i) =>
+      E(purses[i]).withdraw(units, 'payout'),
     );
-    return payments;
+    return paymentPromises;
   });
-  return Promise.all(paymentsMatrix);
+  return paymentPromisesMatrix;
 };
 
 // an array of empty extents per extentOps
@@ -164,7 +67,7 @@ const toUnitsMatrix = (extentOps, labels, extentsMatrix) =>
   );
 
 // Note: offerHandles must be for the same assays.
-const completeOffers = async (adminState, readOnlyState, offerHandles) => {
+const completeOffers = (adminState, readOnlyState, offerHandles) => {
   const { inactive } = readOnlyState.getStatusFor(offerHandles);
   if (inactive.length > 0) {
     throw new Error('offer has already completed');
@@ -176,17 +79,23 @@ const completeOffers = async (adminState, readOnlyState, offerHandles) => {
   const labels = readOnlyState.getLabelsForAssays(assays);
   const units = toUnitsMatrix(extentOps, labels, extents);
   const purses = adminState.getPurses(assays);
-  const payments = await makePayments(purses, units);
-  const results = adminState.getResultsFor(offerHandles);
-  results.map((result, i) => result.res(payments[i]));
+  const paymentPromisesMatrix = makePayments(purses, units);
+  const payoutPromisesMatrix = adminState.getPayoutPromisesFor(offerHandles);
+  payoutPromisesMatrix.map((payoutPromisesArray, i) =>
+    payoutPromisesArray.map((payoutPromise, j) =>
+      payoutPromise.resolve(paymentPromisesMatrix[i][j]),
+    ),
+  );
   adminState.removeOffers(offerHandles);
 };
 
+const getAssaysFromPayoutRules = payoutRules =>
+  payoutRules.map(payoutRule => payoutRule.units.label.assay);
+
 export {
   escrowEmptyOffer,
-  escrowOffer,
-  mintEscrowReceiptPayment,
   completeOffers,
   makeEmptyExtents,
   toUnitsMatrix,
+  getAssaysFromPayoutRules,
 };

@@ -15,7 +15,7 @@ test('zoe - coveredCall', async t => {
     const { mints: defaultMints, assays: defaultAssays } = setup();
     const mints = defaultMints.slice(0, 2);
     const assays = defaultAssays.slice(0, 2);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(coveredCallRoot);
@@ -205,7 +205,7 @@ test(`zoe - coveredCall - alice's deadline expires, cancelling alice and bob`, a
     const { mints: defaultMints, assays: defaultAssays } = setup();
     const mints = defaultMints.slice(0, 2);
     const assays = defaultAssays.slice(0, 2);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(coveredCallRoot);
@@ -401,7 +401,7 @@ test('zoe - coveredCall with swap for invite', async t => {
     const [moolaMint, simoleanMint, bucksMint] = mints;
     const [moolaAssay, simoleanAssay, bucksAssay] = assays;
     const timer = buildManualTimer(console.log);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(coveredCallRoot);
 
@@ -784,7 +784,7 @@ test('zoe - coveredCall with coveredCall for invite', async t => {
     const [moolaMint, simoleanMint, bucksMint] = mints;
     const [moolaAssay, simoleanAssay, bucksAssay] = assays;
     const timer = buildManualTimer(console.log);
-    const zoe = await makeZoe({ require });
+    const zoe = makeZoe({ require });
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(coveredCallRoot);
 
