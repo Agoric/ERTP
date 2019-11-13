@@ -38,11 +38,11 @@ test('zoe - publicSwap', async t => {
     const aliceOfferRules = harden({
       payoutRules: [
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: assays[0].makeUnits(3),
         },
         {
-          kind: 'wantExactly',
+          kind: 'want',
           units: assays[1].makeUnits(7),
         },
       ],
@@ -84,11 +84,11 @@ test('zoe - publicSwap', async t => {
     const bobOfferRules = harden({
       payoutRules: [
         {
-          kind: 'wantExactly',
+          kind: 'want',
           units: bobTerms.assays[0].makeUnits(3),
         },
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: bobTerms.assays[1].makeUnits(7),
         },
       ],

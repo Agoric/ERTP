@@ -53,15 +53,15 @@ test('autoSwap with valid offers', async t => {
     const aliceOfferRules = harden({
       payoutRules: [
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: allAssays[0].makeUnits(10),
         },
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: allAssays[1].makeUnits(5),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[2].makeUnits(10),
         },
       ],
@@ -115,15 +115,15 @@ test('autoSwap with valid offers', async t => {
     const bobMoolaForSimOfferRules = harden({
       payoutRules: [
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: allAssays[0].makeUnits(2),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[1].makeUnits(1),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[2].makeUnits(0),
         },
       ],
@@ -163,15 +163,15 @@ test('autoSwap with valid offers', async t => {
     const bobSimsForMoolaOfferRules = harden({
       payoutRules: [
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[0].makeUnits(6),
         },
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: allAssays[1].makeUnits(3),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[2].makeUnits(0),
         },
       ],
@@ -202,15 +202,15 @@ test('autoSwap with valid offers', async t => {
     const aliceRemoveLiquidityOfferRules = harden({
       payoutRules: [
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[0].makeUnits(0),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[1].makeUnits(0),
         },
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: allAssays[2].makeUnits(10),
         },
       ],
@@ -294,15 +294,15 @@ test('autoSwap - test fee', async t => {
     const aliceOfferRules = harden({
       payoutRules: [
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: allAssays[0].makeUnits(10000),
         },
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: allAssays[1].makeUnits(10000),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[2].makeUnits(0),
         },
       ],
@@ -352,15 +352,15 @@ test('autoSwap - test fee', async t => {
     const bobMoolaForSimOfferRules = harden({
       payoutRules: [
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: allAssays[0].makeUnits(1000),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[1].makeUnits(0),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: allAssays[2].makeUnits(0),
         },
       ],

@@ -44,7 +44,7 @@ function isOfferSafeForOffer(unitOpsArray, payoutRules, units) {
   // units must be greater than or equal to what was originally
   // offered.
   const refundOk = payoutRules.every((payoutRule, i) => {
-    if (payoutRules.kind === 'offer') {
+    if (payoutRule.kind === 'offer') {
       return unitOpsArray[i].includes(units[i], payoutRule.units);
     }
     // If the kind is 'want', anything we give back is fine for a refund.

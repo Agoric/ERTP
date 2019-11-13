@@ -24,9 +24,14 @@ const makeInstallationTable = () => {
         installationHandle,
       });
       handleToRecord.init(installationHandle, newInstallationRecord);
-      return handleToRecord.get(installationHandle);
+
+      // TODO: decide whether this is the correct way to go
+      // We do not return the whole record here, but only return the
+      // installationHandle
+      return installationHandle;
     },
     get: handleToRecord.get,
+    has: handleToRecord.has,
   });
 
   return installationTable;
@@ -50,7 +55,8 @@ const makeInstanceTable = () => {
       handleToRecord.init(instanceHandle, newInstanceRecord);
       return handleToRecord.get(instanceHandle);
     },
-    getInstanceRecord: handleToRecord.get,
+    get: handleToRecord.get,
+    has: handleToRecord.has,
   });
 
   return instanceTable;
@@ -91,14 +97,18 @@ const makeOfferTable = () => {
     },
     create: (offerHandle, allegedOfferRecord) => {
       const offerRecord = offerTable.validate(allegedOfferRecord);
-      const newOfferRecord = harden({
+      // Currently we do not harden this so we can change the units
+      // associated with an offer.
+      // TODO: handle units separately
+      const newOfferRecord = {
         ...offerRecord,
         offerHandle,
-      });
+      };
       handleToRecord.init(offerHandle, newOfferRecord);
       return handleToRecord.get(offerHandle);
     },
     get: handleToRecord.get,
+    has: handleToRecord.has,
     delete: handleToRecord.delete,
 
     // Custom methods below. //
@@ -157,6 +167,10 @@ const makeOfferTable = () => {
         inactive,
       });
     },
+    getPayoutPromises: offerHandles =>
+      offerHandles.map(
+        offerHandle => offerTable.get(offerHandle).payoutPromise,
+      ),
     deleteOffers: offerHandles =>
       offerHandles.map(offerHandle => offerTable.delete(offerHandle)),
   });
@@ -183,6 +197,7 @@ const makeAssayTable = () => {
       return handleToRecord.get(assay);
     },
     get: handleToRecord.get,
+    has: handleToRecord.has,
 
     // custom
     getUnitOpsForAssays: assays =>
@@ -192,7 +207,7 @@ const makeAssayTable = () => {
       assays.map(assay => assayTable.get(assay).label),
 
     getPursesForAssays: assays =>
-      assays.map(assay => assayTable.get(assay).purse),
+      assays.map(assay => assayTable.get(assay).purseP),
 
     getOrCreateAssay: assay => {
       const makeExtentOps = (library, extentOpsName, extentOpsArgs) =>

@@ -41,11 +41,11 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const bobOfferRules = harden({
         payoutRules: [
           {
-            kind: 'wantExactly',
+            kind: 'want',
             units: await E(assays[0]).makeUnits(15),
           },
           {
-            kind: 'offerExactly',
+            kind: 'offer',
             units: await E(assays[1]).makeUnits(17),
           },
         ],
@@ -93,11 +93,11 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const bobIntendedOfferRules = harden({
         payoutRules: [
           {
-            kind: 'wantExactly',
+            kind: 'want',
             units: await E(assays[0]).makeUnits(3),
           },
           {
-            kind: 'offerExactly',
+            kind: 'offer',
             units: await E(assays[1]).makeUnits(7),
           },
         ],
@@ -169,7 +169,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const offerRules = harden({
         payoutRules: [
           {
-            kind: 'wantExactly',
+            kind: 'want',
             units: await E(assays[0]).makeUnits(1),
           },
           {
@@ -216,11 +216,11 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const firstPayoutRules = await E(swap).getFirstPayoutRules();
       const expectedFirstPayoutRules = harden([
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: await E(assays[0]).makeUnits(3),
         },
         {
-          kind: 'wantExactly',
+          kind: 'want',
           units: await E(assays[1]).makeUnits(7),
         },
       ]);
@@ -231,11 +231,11 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const offerRules = harden({
         payoutRules: [
           {
-            kind: 'wantExactly',
+            kind: 'want',
             units: await E(assays[0]).makeUnits(3),
           },
           {
-            kind: 'offerExactly',
+            kind: 'offer',
             units: await E(assays[1]).makeUnits(7),
           },
         ],
@@ -278,7 +278,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const bobBuyOrderOfferRules = harden({
         payoutRules: [
           {
-            kind: 'wantExactly',
+            kind: 'want',
             units: await E(assays[0]).makeUnits(3),
           },
           {
@@ -338,15 +338,15 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const moolaForSimOfferRules = harden({
         payoutRules: [
           {
-            kind: 'offerExactly',
+            kind: 'offer',
             units: await E(allAssays[0]).makeUnits(2),
           },
           {
-            kind: 'wantAtLeast',
+            kind: 'want',
             units: await E(allAssays[1]).makeUnits(1),
           },
           {
-            kind: 'wantAtLeast',
+            kind: 'want',
             units: await E(allAssays[2]).makeUnits(0),
           },
         ],
@@ -380,15 +380,15 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
       const bobSimsForMoolaOfferRules = harden({
         payoutRules: [
           {
-            kind: 'wantAtLeast',
+            kind: 'want',
             units: await E(allAssays[0]).makeUnits(6),
           },
           {
-            kind: 'offerExactly',
+            kind: 'offer',
             units: await E(allAssays[1]).makeUnits(3),
           },
           {
-            kind: 'wantAtLeast',
+            kind: 'want',
             units: await E(allAssays[2]).makeUnits(0),
           },
         ],

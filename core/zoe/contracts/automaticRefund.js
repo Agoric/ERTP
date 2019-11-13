@@ -14,9 +14,11 @@ export const makeContract = harden((zoe, terms) => {
   let count = 0;
   const automaticRefund = harden({
     makeOffer: async escrowReceipt => {
-      const { offerHandle } = await zoe.burnEscrowReceipt(escrowReceipt);
+      const {
+        extent: { offerHandle },
+      } = await zoe.burnEscrowReceipt(escrowReceipt);
       count += 1;
-      zoe.complete(harden([offerHandle]));
+      zoe.complete(harden([offerHandle]), terms.assays);
       return `The offer was accepted`;
     },
     getOffersCount: () => count,

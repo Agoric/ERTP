@@ -40,7 +40,7 @@ export const makeContract = harden((zoe, terms) => {
       poolOfferHandle = zoe.escrowEmptyOffer();
     }
 
-    const kinds = ['offerExactly', 'offerExactly', 'wantAtLeast'];
+    const kinds = ['offer', 'offer', 'want'];
     if (!hasValidPayoutRules(kinds, assays, payoutRules)) {
       return rejectOffer(
         zoe,
@@ -83,7 +83,7 @@ export const makeContract = harden((zoe, terms) => {
     const newPayment = newPurse.withdrawAll();
     liqTokenSupply += liquidityEOut;
 
-    const liquidityOfferKinds = ['wantAtLeast', 'wantAtLeast', 'offerExactly'];
+    const liquidityOfferKinds = ['want', 'want', 'offer'];
     const extents = [
       extentOpsArray[0].empty(),
       extentOpsArray[1].empty(),
@@ -121,7 +121,7 @@ export const makeContract = harden((zoe, terms) => {
     } = await zoe.burnEscrowReceipt(escrowReceipt);
     const extentOpsArray = zoe.getExtentOpsArray();
 
-    const kinds = ['wantAtLeast', 'wantAtLeast', 'offerExactly'];
+    const kinds = ['want', 'want', 'offer'];
     if (!hasValidPayoutRules(kinds, assays, payoutRules)) {
       return rejectOffer(
         zoe,
@@ -249,7 +249,7 @@ export const makeContract = harden((zoe, terms) => {
     const [tokenAPoolE, tokenBPoolE] = poolExtents;
 
     // offer token A, want token B
-    const kindsOfferFirst = ['offerExactly', 'wantAtLeast', 'wantAtLeast'];
+    const kindsOfferFirst = ['offer', 'want', 'want'];
     if (hasValidPayoutRules(kindsOfferFirst, assays, payoutRules)) {
       const [tokenInE, wantAtLeastE] = playerExtents;
       const { tokenOutE, newTokenInPoolE, newTokenOutPoolE } = calculateSwap(
@@ -277,7 +277,7 @@ export const makeContract = harden((zoe, terms) => {
     }
 
     // want token A, offer token B
-    const kindsWantFirst = ['wantAtLeast', 'offerExactly', 'wantAtLeast'];
+    const kindsWantFirst = ['want', 'offer', 'want'];
     if (hasValidPayoutRules(kindsWantFirst, assays, payoutRules)) {
       const [wantAtLeastE, tokenInE] = playerExtents;
       const { tokenOutE, newTokenInPoolE, newTokenOutPoolE } = calculateSwap(

@@ -11,6 +11,7 @@ const setup = () => {
   const mints = [moolaMint, simoleanMint, bucksMint];
   const assays = mints.map(mint => mint.getAssay());
   const unitOps = assays.map(assay => assay.getUnitOps());
+
   const extentOps = assays.map(assay => {
     const { name, args } = assay.getExtentOps();
     return extentOpsLib[name](...args);
@@ -23,6 +24,9 @@ const setup = () => {
     unitOps,
     extentOps,
     labels,
+    moola: unitOps[0].make,
+    simoleans: unitOps[1].make,
+    bucks: unitOps[2].make,
   });
 };
 harden(setup);

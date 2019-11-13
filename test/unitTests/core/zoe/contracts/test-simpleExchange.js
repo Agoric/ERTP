@@ -40,11 +40,11 @@ test('zoe - simpleExchange', async t => {
     const aliceSellOrderOfferRules = harden({
       payoutRules: [
         {
-          kind: 'offerExactly',
+          kind: 'offer',
           units: assays[0].makeUnits(3),
         },
         {
-          kind: 'wantAtLeast',
+          kind: 'want',
           units: assays[1].makeUnits(4),
         },
       ],
@@ -85,7 +85,7 @@ test('zoe - simpleExchange', async t => {
     const bobBuyOrderOfferRules = harden({
       payoutRules: [
         {
-          kind: 'wantExactly',
+          kind: 'want',
           units: bobTerms.assays[0].makeUnits(3),
         },
         {

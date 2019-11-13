@@ -50,14 +50,16 @@ const makeZoe = (additionalEndowments = {}) => {
     const unitMatrix = offerTable.getUnitMatrix(offerHandles, assays);
     const payoutPromises = offerTable.getPayoutPromises(offerHandles);
     offerTable.deleteOffers(offerHandles);
-    const purses = assayTable.getPursesForAssays(assays);
-    for (let i = 0; i < offerHandles.length; i += 1) {
-      const unitsForOffer = unitMatrix[i];
-      const payout = unitsForOffer.map((units, j) =>
-        E(purses[j]).withdraw(units, 'payout'),
-      );
-      payoutPromises[i].resolve(payout);
-    }
+    const pursesP = assayTable.getPursesForAssays(assays);
+    Promise.all(pursesP).then(purses => {
+      for (let i = 0; i < offerHandles.length; i += 1) {
+        const unitsForOffer = unitMatrix[i];
+        const payout = unitsForOffer.map((units, j) =>
+          E(purses[j]).withdraw(units, 'payout'),
+        );
+        payoutPromises[i].res(payout);
+      }
+    });
   };
 
   // Zoe has two different facets: the public Zoe service and the
@@ -340,9 +342,9 @@ const makeZoe = (additionalEndowments = {}) => {
         });
       });
 
-      const giveEscrowReceipt = extents => {
-        // Record extents for offer.
-        offerTable.createExtents(offerHandle, extents);
+      const giveEscrowReceipt = units => {
+        // Record units for offer.
+        offerTable.createUnits(offerHandle, units);
 
         // Create escrow receipt.
         const escrowReceiptExtent = harden({
