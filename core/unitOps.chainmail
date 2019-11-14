@@ -2,12 +2,12 @@
  * Units are asset descriptions and take the form of labeled extents. 
  * UnitOps execute the logic of how units are changed when digital 
  * assets are merged, separated, or otherwise manipulated. For
- * instance, a deposit of 2 bucks into a purse that already has 3 bucks
+ * example, a deposit of 2 bucks into a purse that already has 3 bucks
  * gives a new balance of 5 bucks. An empty purse has 0 bucks. UnitOps 
  * relies heavily on ExtentOps, which manipulates the non-labeled
  * portion.
  */
-struct Units (Extent, Label) {
+struct Units (Label, Extent) {
   label :Label;
   extent :Extent;
 }
