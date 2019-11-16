@@ -1,6 +1,6 @@
 import harden from '@agoric/harden';
 
-import { makeSeatConfigMaker } from './config/seatConfig';
+import { makeSeatConfig } from './config/seatConfig';
 import { makeMint } from './mint';
 
 /**
@@ -11,49 +11,21 @@ import { makeMint } from './mint';
 const makeSeatMint = (description = 'seats') => {
   const handleToSeat = new WeakMap();
 
-  const addUseObj = (handle, useObj) => {
-    handleToSeat.set(handle, useObj);
-  };
-
-  const makeUseObj = seatExtent => {
-    return harden(handleToSeat.get(seatExtent.handle));
-  };
-
-  const paymentMakeUseAndBurn = async (assay, payment) => {
-    const { extent } = payment.getBalance();
-    if (extent === null) {
-      throw new Error('the payment is empty or already used');
-    }
-    const useObj = makeUseObj(extent);
-    await assay.burnAll(payment);
-    return useObj;
-  };
-
-  // Note that we can't burn the underlying purse, we can only empty
-  // it and burn the payment we withdraw.
-  const purseMakeUseAndBurn = async (assay, purse) => {
-    const { extent } = purse.getBalance();
-    if (extent === null) {
-      throw new Error('the purse is empty or already used');
-    }
-    const useObj = makeUseObj(extent);
-    const payment = purse.withdrawAll();
-    await assay.burnAll(payment);
-    return useObj;
-  };
-
-  const makeSeatConfig = makeSeatConfigMaker(
-    paymentMakeUseAndBurn,
-    purseMakeUseAndBurn,
-  );
-
   const seatMint = makeMint(description, makeSeatConfig);
   const seatAssay = seatMint.getAssay();
 
   return harden({
     seatMint,
     seatAssay,
-    addUseObj,
+    setSeat: (handle, seat) => handleToSeat.set(handle, seat),
+    redeem: payment =>
+      seatAssay.burnAll(payment).then(units => {
+        return harden({
+          seat: handleToSeat.get(units.extent.handle),
+          handle: units.extent.handle,
+          instanceHandle: units.extent.instanceHandle,
+        });
+      }),
   });
 };
 

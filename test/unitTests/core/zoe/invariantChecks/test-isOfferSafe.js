@@ -7,7 +7,7 @@ import {
 import { setup } from '../setupBasicMints';
 
 // The player must have payoutRules for each assay
-test.only('isOfferSafeForOffer - empty payoutRules', t => {
+test('isOfferSafeForOffer - empty payoutRules', t => {
   try {
     const { unitOps, moola, simoleans, bucks } = setup();
     const payoutRules = [];
@@ -346,7 +346,7 @@ test('isOfferSafeForOffer - null for some assays', t => {
 });
 
 // All users get exactly what they wanted
-test.only('isOfferSafeForAll - All users get what they wanted', t => {
+test('isOfferSafeForAll - All users get what they wanted', t => {
   try {
     const { unitOps } = setup();
     const payoutRules = [

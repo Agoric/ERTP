@@ -10,8 +10,6 @@ import { evalContractCode } from './evalContractCode';
 
 import { makeTables } from './state';
 import { makeSeatMint } from '../seatMint';
-import { makeEscrowReceiptConfig } from './escrowReceiptConfig';
-import { makeMint } from '../mint';
 
 const getAssaysFromPayoutRules = payoutRules =>
   payoutRules.map(payoutRule => payoutRule.units.label.assay);
@@ -30,14 +28,9 @@ const makeZoe = (additionalEndowments = {}) => {
   const {
     seatMint: inviteMint,
     seatAssay: inviteAssay,
-    addUseObj: inviteAddUseObj,
+    setSeat: setInviteSeat,
+    redeem: redeemInvite,
   } = makeSeatMint('zoeInvite');
-
-  const escrowReceiptMint = makeMint(
-    'zoeEscrowReceipts',
-    makeEscrowReceiptConfig,
-  );
-  const escrowReceiptAssay = escrowReceiptMint.getAssay();
 
   const {
     installationTable,
@@ -60,6 +53,25 @@ const makeZoe = (additionalEndowments = {}) => {
         payoutPromises[i].res(payout);
       }
     });
+  };
+
+  const makeInvite = (
+    instanceHandle,
+    seat,
+    inviteHandle = harden({}),
+    contractDefinedExtent = harden({}),
+  ) => {
+    const inviteUnits = inviteAssay.makeUnits(
+      harden({
+        ...contractDefinedExtent,
+        handle: inviteHandle,
+        instanceHandle,
+      }),
+    );
+    const invitePurseP = inviteMint.mint(inviteUnits);
+    setInviteSeat(inviteHandle, seat);
+    const invitePaymentP = invitePurseP.withdrawAll();
+    return invitePaymentP;
   };
 
   // Zoe has two different facets: the public Zoe service and the
@@ -176,30 +188,6 @@ const makeZoe = (additionalEndowments = {}) => {
       escrowOffer: zoeService.escrow,
 
       /**
-       * Burn the escrowReceipt ERTP payment using the escrowReceipt
-       * assay. Burning in ERTP also validates that the alleged payment was
-       * produced by the assay, and returns the
-       * units of the payment.
-       *
-       * This method also checks if the offer has been completed and
-       * errors if it has, so that a smart contract doesn't continue
-       * thinking that the offer is live. Additionally, we record that
-       * the escrowReceipt is used in this particular contract.
-       *
-       * @param  {object} escrowReceipt - an ERTP payment
-       * representing proof of escrowing specific assets with Zoe.
-       */
-
-      burnEscrowReceipt: async escrowReceipt => {
-        const units = await escrowReceiptAssay.burnAll(escrowReceipt);
-        const { offerHandle } = units.extent;
-        const { inactive } = offerTable.getOfferStatuses(harden([offerHandle]));
-        if (inactive.length > 0) {
-          return Promise.reject(new Error('offer was cancelled'));
-        }
-        return units;
-      },
-      /**
        * Make a credible Zoe invite for a particular smart contract
        * indicated by the unique `instanceHandle`. The other
        * information in the extent of this invite is decided by the
@@ -217,20 +205,8 @@ const makeZoe = (additionalEndowments = {}) => {
        * other words, buying the invite is buying the right to call
        * methods on this object.
        */
-      makeInvite: (contractDefinedExtent, useObj) => {
-        const inviteHandle = harden({});
-        const inviteUnits = inviteAssay.makeUnits(
-          harden({
-            ...contractDefinedExtent,
-            handle: inviteHandle,
-            instanceHandle,
-          }),
-        );
-        const invitePurseP = inviteMint.mint(inviteUnits);
-        inviteAddUseObj(inviteHandle, useObj);
-        const invitePaymentP = invitePurseP.withdrawAll();
-        return invitePaymentP;
-      },
+      makeInvite: (seat, inviteHandle, contractDefinedExtent) =>
+        makeInvite(instanceHandle, seat, inviteHandle, contractDefinedExtent),
       getInviteAssay: () => inviteAssay,
     });
     return contractFacet;
@@ -244,7 +220,6 @@ const makeZoe = (additionalEndowments = {}) => {
   // securely escrow and get an escrow receipt and payouts in return.
 
   const zoeService = harden({
-    getEscrowReceiptAssay: () => escrowReceiptAssay,
     getInviteAssay: () => inviteAssay,
     /**
      * Create an installation by safely evaluating the code and
@@ -259,6 +234,7 @@ const makeZoe = (additionalEndowments = {}) => {
       );
       return installationRecord;
     },
+
     /**
      * Makes a contract instance from an installation and returns a
      * unique handle for the instance that can be shared, as well as
@@ -273,20 +249,29 @@ const makeZoe = (additionalEndowments = {}) => {
       const { installation } = installationTable.get(installationHandle);
       const instanceHandle = harden({});
       const contractFacet = makeContractFacet(instanceHandle);
-      const { instance, assays } = installation.makeContract(
-        contractFacet,
-        userDefinedTerms,
-      );
+      const {
+        initialSeat,
+        initialInviteHandle,
+        assays,
+      } = installation.makeContract(contractFacet, userDefinedTerms);
       const terms = harden({ ...userDefinedTerms, assays });
       const instanceRecord = harden({
         instanceHandle,
         installationHandle,
-        instance,
         terms,
         assays,
       });
 
-      return instanceTable.create(instanceHandle, instanceRecord);
+      instanceTable.create(instanceHandle, instanceRecord);
+      const invite = makeInvite(
+        instanceHandle,
+        initialSeat,
+        initialInviteHandle,
+      );
+      return {
+        invite,
+        instanceHandle,
+      };
     },
     /**
      * Credibly retrieves an instance record given an instanceHandle.
@@ -304,12 +289,16 @@ const makeZoe = (additionalEndowments = {}) => {
      * the offer rules. A payment may be `undefined` in the case
      * of specifying a `want`.
      */
-    escrow: (instanceHandle, offerRules, offerPayments) => {
+    redeem: async (invite, offerRules, offerPayments) => {
       // Columns: offerHandle | instanceHandle | assays | payoutRules
       // | exitRule | extents | payoutPromise
 
+      // the invite handle is also the offer handle
+      const { seat, handle: offerHandle, instanceHandle } = await redeemInvite(
+        invite,
+      );
+
       const assays = getAssaysFromPayoutRules(offerRules.payoutRules);
-      const offerHandle = harden({}); // the unique unforgeable identifer
 
       const offerImmutableRecord = {
         offerHandle,
@@ -342,21 +331,13 @@ const makeZoe = (additionalEndowments = {}) => {
         });
       });
 
-      const giveEscrowReceipt = units => {
+      const giveSeat = units => {
         // Record units for offer.
         offerTable.createUnits(offerHandle, units);
 
-        // Create escrow receipt.
-        const escrowReceiptExtent = harden({
-          offerHandle,
-          offerRules,
-        });
-        const escrowReceiptPurse = escrowReceiptMint.mint(escrowReceiptExtent);
-        const escrowReceiptPaymentP = escrowReceiptPurse.withdrawAll();
-
         // Create escrow result to be returned. Depends on exitRules.
         const escrowResult = {
-          escrowReceipt: escrowReceiptPaymentP,
+          seat,
           payout: offerImmutableRecord.payoutPromise.p,
         };
         const { exitRule } = offerRules;
@@ -382,7 +363,7 @@ const makeZoe = (additionalEndowments = {}) => {
       };
 
       const allDepositedP = Promise.all(paymentBalancesP);
-      return allDepositedP.then(giveEscrowReceipt);
+      return allDepositedP.then(giveSeat);
     },
   });
   return zoeService;
