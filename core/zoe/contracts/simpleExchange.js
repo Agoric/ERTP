@@ -3,7 +3,7 @@ import harden from '@agoric/harden';
 import { rejectOffer, defaultAcceptanceMsg } from './helpers/userFlow';
 import {
   hasValidPayoutRules,
-  getActivePayoutRules,
+  getActivePayoutRuleMatrix,
 } from './helpers/offerRules';
 import {
   isMatchingLimitOrder,
@@ -22,63 +22,88 @@ import {
 // support partial fills of orders.
 
 export const makeContract = harden((zoe, terms) => {
-  const sellOfferHandles = [];
-  const buyOfferHandles = [];
+  const sellInviteHandles = [];
+  const buyInviteHandles = [];
+  const initialInviteHandle = harden({});
 
-  const simpleExchange = harden({
-    addOrder: async escrowReceipt => {
-      const {
-        offerHandle,
-        offerRules: { payoutRules },
-      } = await zoe.burnEscrowReceipt(escrowReceipt);
+  const makeSeat = inviteHandle =>
+    harden({
+      addOrder: () => {
+        const [payoutRules] = zoe.getPayoutRuleMatrix(
+          harden([inviteHandle]),
+          terms.assays,
+        );
 
-      // Is it a valid sell offer?
-      const sellOfferKinds = ['offer', 'want'];
-      if (hasValidPayoutRules(sellOfferKinds, terms.assays, payoutRules)) {
-        // Save the valid offer
-        sellOfferHandles.push(offerHandle);
+        // Is it a valid sell offer?
+        const sellOfferKinds = ['offer', 'want'];
+        if (hasValidPayoutRules(sellOfferKinds, terms.assays, payoutRules)) {
+          // Save the valid offer
+          sellInviteHandles.push(inviteHandle);
 
-        // Try to match
-        const {
-          offerHandles: activeBuyHandles,
-          payoutRulesArray: activeBuyPayoutRules,
-        } = getActivePayoutRules(zoe, buyOfferHandles);
-        for (let i = 0; i < activeBuyHandles.length; i += 1) {
-          if (isMatchingLimitOrder(zoe, payoutRules, activeBuyPayoutRules[i])) {
-            return reallocate(zoe, offerHandle, activeBuyHandles[i]);
+          // Try to match
+          const {
+            inviteHandles: activeBuyHandles,
+            payoutRuleMatrix: activeBuyPayoutRules,
+          } = getActivePayoutRuleMatrix(zoe, buyInviteHandles);
+          for (let i = 0; i < activeBuyHandles.length; i += 1) {
+            if (
+              isMatchingLimitOrder(
+                zoe,
+                terms.assays,
+                payoutRules,
+                activeBuyPayoutRules[i],
+              )
+            ) {
+              return reallocate(
+                zoe,
+                terms.assays,
+                inviteHandle,
+                activeBuyHandles[i],
+              );
+            }
           }
+          return defaultAcceptanceMsg;
         }
-        return defaultAcceptanceMsg;
-      }
 
-      // Is it a valid buy offer?
-      const buyOfferFormat = ['want', 'offer'];
-      if (hasValidPayoutRules(buyOfferFormat, terms.assays, payoutRules)) {
-        // Save the valid offer
-        buyOfferHandles.push(offerHandle);
+        // Is it a valid buy offer?
+        const buyOfferFormat = ['want', 'offer'];
+        if (hasValidPayoutRules(buyOfferFormat, terms.assays, payoutRules)) {
+          // Save the valid offer
+          buyInviteHandles.push(inviteHandle);
 
-        // Try to match
-        const {
-          offerHandles: activeSellHandles,
-          payoutRulesArray: activeSellPayoutRules,
-        } = getActivePayoutRules(zoe, sellOfferHandles);
-        for (let i = 0; i < activeSellHandles.length; i += 1) {
-          if (
-            isMatchingLimitOrder(zoe, activeSellPayoutRules[i], payoutRules)
-          ) {
-            reallocate(zoe, activeSellHandles[i], offerHandle);
+          // Try to match
+          const {
+            inviteHandles: activeSellHandles,
+            payoutRuleMatrix: activeSellPayoutRules,
+          } = getActivePayoutRuleMatrix(zoe, sellInviteHandles);
+          for (let i = 0; i < activeSellHandles.length; i += 1) {
+            if (
+              isMatchingLimitOrder(
+                zoe,
+                terms.assays,
+                activeSellPayoutRules[i],
+                payoutRules,
+              )
+            ) {
+              reallocate(zoe, terms.assays, activeSellHandles[i], inviteHandle);
+            }
           }
+          return defaultAcceptanceMsg;
         }
-        return defaultAcceptanceMsg;
-      }
 
-      // Eject because the offer must be invalid
-      return rejectOffer(zoe, offerHandle);
-    },
-  });
+        // Eject because the offer must be invalid
+        return rejectOffer(zoe, terms.assays, inviteHandle);
+      },
+      makeInvite: () => {
+        const newInviteHandle = harden({});
+        const seat = makeSeat(newInviteHandle);
+        return zoe.makeInvite(seat, newInviteHandle);
+      },
+    });
 
   return harden({
-    instance: simpleExchange,
+    initialSeat: makeSeat(initialInviteHandle),
+    initialInviteHandle,
     assays: terms.assays,
   });
 });

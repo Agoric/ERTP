@@ -5,6 +5,7 @@ import { makePrivateName } from '../../util/PrivateName';
 import { insist } from '../../util/insist';
 
 import { extentOpsLib } from '../config/extentOpsLib';
+import { makeUnitOps } from '../unitOps';
 
 // Installation Table
 // Columns: installationHandle | installation
@@ -189,15 +190,17 @@ const makeAssayTable = () => {
     validate: allegedAssayRecord => allegedAssayRecord,
     create: (assay, allegedAssayRecord) => {
       const assayRecord = assayTable.validate(allegedAssayRecord);
-      const newAssayRecord = harden({
+      // TODO: How can we harden this?
+      const newAssayRecord = {
         ...assayRecord,
         assay,
-      });
+      };
       handleToRecord.init(assay, newAssayRecord);
       return handleToRecord.get(assay);
     },
     get: handleToRecord.get,
     has: handleToRecord.has,
+    update: handleToRecord.set,
 
     // custom
     getUnitOpsForAssays: assays =>
@@ -210,19 +213,25 @@ const makeAssayTable = () => {
       assays.map(assay => assayTable.get(assay).purseP),
 
     getOrCreateAssay: assay => {
-      const makeExtentOps = (library, extentOpsName, extentOpsArgs) =>
-        library[extentOpsName](...extentOpsArgs);
+      const setUnitOpsForAssay = unitOps => {
+        const updatedAssayRecord = assayTable.get(assay);
+        updatedAssayRecord.unitOps = unitOps;
+        assayTable.update(assay, updatedAssayRecord);
+      };
 
       if (!assayTable.has(assay)) {
         const extentOpsDescP = E(assay).getExtentOps();
+        const labelP = E(assay).getLabel();
         const assayRecord = {
           assay,
           purseP: E(assay).makeEmptyPurse(),
-          extentOpsDescP,
-          unitOpsP: E(assay).getUnitOps(),
-          labelP: E(assay).getLabel(),
-          extentOpsP: extentOpsDescP.then(({ name, extentOpArgs = [] }) =>
-            makeExtentOps(extentOpsLib, name, extentOpArgs),
+          labelP,
+          unitOpsP: Promise.all([labelP, extentOpsDescP]).then(
+            ([label, { name, extentOpsArgs = [] }]) => {
+              const unitOps = makeUnitOps(label, name, extentOpsArgs);
+              setUnitOpsForAssay(unitOps);
+              return unitOps;
+            },
           ),
         };
         return assayTable.create(assay, assayRecord);

@@ -117,7 +117,7 @@ test('zoe - automaticRefund same assay', async t => {
   }
 });
 
-test.only('zoe with automaticRefund', async t => {
+test('zoe with automaticRefund', async t => {
   try {
     // Setup zoe and mints
     const { assays: defaultAssays, mints } = setup();
@@ -223,7 +223,7 @@ test.only('zoe with automaticRefund', async t => {
     // Bob also gets two things back: a seat and a
     // payout
     const { seat: bobSeat, payout: bobPayoutP } = await zoe.redeem(
-      bobInvite,
+      exclusBobInvite,
       bobOfferRules,
       bobPayments,
     );
@@ -302,17 +302,17 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     const terms = harden({
       assays,
     });
-    const { instance: automaticRefund1 } = await zoe.makeInstance(
+    const { invite: aliceInvite1 } = await zoe.makeInstance(
       installationHandle,
       terms,
     );
 
-    const { instance: automaticRefund2 } = await zoe.makeInstance(
+    const { invite: aliceInvite2 } = await zoe.makeInstance(
       installationHandle,
       terms,
     );
 
-    const { instance: automaticRefund3 } = await zoe.makeInstance(
+    const { invite: aliceInvite3 } = await zoe.makeInstance(
       installationHandle,
       terms,
     );
@@ -333,122 +333,58 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
         kind: 'onDemand',
       },
     });
-    const {
-      escrowReceipt: aliceEscrowReceipt1,
-      payout: payoutP1,
-    } = await zoe.escrow(aliceOfferRules, [aliceMoolaPayments[0], undefined]);
+
+    const { seat: aliceSeat1, payout: payoutP1 } = await zoe.redeem(
+      aliceInvite1,
+      aliceOfferRules,
+      [aliceMoolaPayments[0], undefined],
+    );
 
     // 3: Alice escrows with zoe
-    const {
-      escrowReceipt: aliceEscrowReceipt2,
-      payout: payoutP2,
-    } = await zoe.escrow(aliceOfferRules, [aliceMoolaPayments[1], undefined]);
+    const { seat: aliceSeat2, payout: payoutP2 } = await zoe.redeem(
+      aliceInvite2,
+      aliceOfferRules,
+      [aliceMoolaPayments[1], undefined],
+    );
 
     // 4: Alice escrows with zoe
-    const {
-      escrowReceipt: aliceEscrowReceipt3,
-      payout: payoutP3,
-    } = await zoe.escrow(aliceOfferRules, [aliceMoolaPayments[2], undefined]);
+    const { seat: aliceSeat3, payout: payoutP3 } = await zoe.redeem(
+      aliceInvite3,
+      aliceOfferRules,
+      [aliceMoolaPayments[2], undefined],
+    );
 
     // 5: Alice makes an offer with each of her escrow receipts
-    await automaticRefund1.makeOffer(aliceEscrowReceipt1);
-    await automaticRefund2.makeOffer(aliceEscrowReceipt2);
-    await automaticRefund3.makeOffer(aliceEscrowReceipt3);
+    aliceSeat1.makeOffer();
+    aliceSeat2.makeOffer();
+    aliceSeat3.makeOffer();
 
-    const payout1 = await payoutP1;
-    const payout2 = await payoutP2;
-    const payout3 = await payoutP3;
+    const [moolaPayout1P] = await payoutP1;
+    const [moolaPayout2P] = await payoutP2;
+    const [moolaPayout3P] = await payoutP3;
+
+    const moolaPayout1 = await moolaPayout1P;
+    const moolaPayout2 = await moolaPayout2P;
+    const moolaPayout3 = await moolaPayout3P;
 
     // Ensure that she got what she put in for each
-    t.deepEquals(payout1[0].getBalance(), aliceOfferRules.payoutRules[0].units);
-    t.deepEquals(payout2[0].getBalance(), aliceOfferRules.payoutRules[0].units);
-    t.deepEquals(payout3[0].getBalance(), aliceOfferRules.payoutRules[0].units);
-
-    // Ensure that the number of offers received by each instance is one
-    t.equals(automaticRefund1.getOffersCount(), 1);
-    t.equals(automaticRefund2.getOffersCount(), 1);
-    t.equals(automaticRefund3.getOffersCount(), 1);
-  } catch (e) {
-    t.assert(false, e);
-    console.log(e);
-  } finally {
-    t.end();
-  }
-});
-
-test('zoe - alice cancels before entering a contract', async t => {
-  try {
-    // Setup zoe and mints
-    const { assays: defaultAssays, mints } = setup();
-    const assays = defaultAssays.slice(0, 2);
-    const zoe = makeZoe({ require });
-
-    // Setup Alice
-    const aliceMoolaPurse = mints[0].mint(assays[0].makeUnits(3));
-    const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
-    const aliceSimoleanPurse = mints[1].mint(assays[1].makeUnits(0));
-
-    // 2: Alice escrows with zoe
-    const aliceOfferRules = harden({
-      payoutRules: [
-        {
-          kind: 'offer',
-          units: assays[0].makeUnits(3),
-        },
-        {
-          kind: 'want',
-          units: assays[1].makeUnits(7),
-        },
-      ],
-      exitRule: {
-        kind: 'onDemand',
-      },
-    });
-    const alicePayments = [aliceMoolaPayment, undefined];
-
-    const {
-      escrowReceipt: aliceEscrowReceipt,
-      cancelObj,
-      payout: payoutP,
-    } = await zoe.escrow(aliceOfferRules, alicePayments);
-
-    cancelObj.cancel();
-
-    const alicePayout = await payoutP;
-
-    // Pack the contract.
-    const { source, moduleFormat } = await bundleSource(automaticRefundRoot);
-    const installationHandle = zoe.install(source, moduleFormat);
-    const terms = harden({
-      assays,
-    });
-    const { instance: aliceAutomaticRefund } = await zoe.makeInstance(
-      installationHandle,
-      terms,
-    );
-
-    t.rejects(
-      aliceAutomaticRefund.makeOffer(aliceEscrowReceipt),
-      /Error: offer was cancelled/,
-    );
-
-    // Alice got back what she put in
     t.deepEquals(
-      alicePayout[0].getBalance(),
+      moolaPayout1.getBalance(),
+      aliceOfferRules.payoutRules[0].units,
+    );
+    t.deepEquals(
+      moolaPayout2.getBalance(),
+      aliceOfferRules.payoutRules[0].units,
+    );
+    t.deepEquals(
+      moolaPayout3.getBalance(),
       aliceOfferRules.payoutRules[0].units,
     );
 
-    // Alice didn't get any of what she wanted
-    t.equals(alicePayout[1].getBalance().extent, 0);
-
-    // 9: Alice deposits her refund to ensure she can
-    await aliceMoolaPurse.depositAll(alicePayout[0]);
-    await aliceSimoleanPurse.depositAll(alicePayout[1]);
-
-    // Assert that the correct refund was achieved.
-    // Alice had 3 moola and 0 simoleans.
-    t.equals(aliceMoolaPurse.getBalance().extent, 3);
-    t.equals(aliceSimoleanPurse.getBalance().extent, 0);
+    // Ensure that the number of offers received by each instance is one
+    t.equals(aliceSeat1.getOffersCount(), 1);
+    t.equals(aliceSeat2.getOffersCount(), 1);
+    t.equals(aliceSeat3.getOffersCount(), 1);
   } catch (e) {
     t.assert(false, e);
     console.log(e);
@@ -487,41 +423,39 @@ test('zoe - alice cancels after completion', async t => {
     });
     const alicePayments = [aliceMoolaPayment, undefined];
 
-    const {
-      escrowReceipt: aliceEscrowReceipt,
-      cancelObj,
-      payout: payoutP,
-    } = await zoe.escrow(aliceOfferRules, alicePayments);
-
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(automaticRefundRoot);
     const installationHandle = zoe.install(source, moduleFormat);
     const terms = harden({
       assays,
     });
-    const { instance: aliceAutomaticRefund } = await zoe.makeInstance(
-      installationHandle,
-      terms,
+    const { invite } = await zoe.makeInstance(installationHandle, terms);
+
+    const { seat, cancelObj, payout: payoutP } = await zoe.redeem(
+      invite,
+      aliceOfferRules,
+      alicePayments,
     );
 
-    await aliceAutomaticRefund.makeOffer(aliceEscrowReceipt);
+    await seat.makeOffer();
 
-    t.rejects(() => cancelObj.cancel(), /Error: offer has already completed/);
+    t.throws(() => cancelObj.cancel(), /Error: offer has already completed/);
 
-    const alicePayout = await payoutP;
+    const payout = await payoutP;
+    const [moolaPayout, simoleanPayout] = await Promise.all(payout);
 
     // Alice got back what she put in
     t.deepEquals(
-      alicePayout[0].getBalance(),
+      moolaPayout.getBalance(),
       aliceOfferRules.payoutRules[0].units,
     );
 
     // Alice didn't get any of what she wanted
-    t.equals(alicePayout[1].getBalance().extent, 0);
+    t.equals(simoleanPayout.getBalance().extent, 0);
 
     // 9: Alice deposits her refund to ensure she can
-    await aliceMoolaPurse.depositAll(alicePayout[0]);
-    await aliceSimoleanPurse.depositAll(alicePayout[1]);
+    await aliceMoolaPurse.depositAll(moolaPayout);
+    await aliceSimoleanPurse.depositAll(simoleanPayout);
 
     // Assert that the correct refund was achieved.
     // Alice had 3 moola and 0 simoleans.

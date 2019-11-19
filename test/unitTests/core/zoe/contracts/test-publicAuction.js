@@ -109,7 +109,7 @@ test('zoe - secondPriceAuction w/ 3 bids', async t => {
           units: assays[0].makeUnits(1),
         },
         {
-          kind: 'offerAtMost',
+          kind: 'offer',
           units: assays[1].makeUnits(11),
         },
       ],
@@ -157,7 +157,7 @@ test('zoe - secondPriceAuction w/ 3 bids', async t => {
           units: assays[0].makeUnits(1),
         },
         {
-          kind: 'offerAtMost',
+          kind: 'offer',
           units: assays[1].makeUnits(7),
         },
       ],
@@ -197,7 +197,7 @@ test('zoe - secondPriceAuction w/ 3 bids', async t => {
           units: assays[0].makeUnits(1),
         },
         {
-          kind: 'offerAtMost',
+          kind: 'offer',
           units: assays[1].makeUnits(5),
         },
       ],
@@ -398,7 +398,7 @@ test('zoe - secondPriceAuction w/ 3 bids - alice exits onDemand', async t => {
           units: assays[0].makeUnits(1),
         },
         {
-          kind: 'offerAtMost',
+          kind: 'offer',
           units: assays[1].makeUnits(11),
         },
       ],
@@ -444,7 +444,7 @@ test('zoe - secondPriceAuction w/ 3 bids - alice exits onDemand', async t => {
           units: assays[0].makeUnits(1),
         },
         {
-          kind: 'offerAtMost',
+          kind: 'offer',
           units: assays[1].makeUnits(7),
         },
       ],
@@ -482,7 +482,7 @@ test('zoe - secondPriceAuction w/ 3 bids - alice exits onDemand', async t => {
           units: assays[0].makeUnits(1),
         },
         {
-          kind: 'offerAtMost',
+          kind: 'offer',
           units: assays[1].makeUnits(5),
         },
       ],

@@ -62,11 +62,11 @@ const hasAssays = (assays, newPayoutRules) =>
 export const hasValidPayoutRules = (kinds, assays, newPayoutRules) =>
   hasKinds(kinds, newPayoutRules) && hasAssays(assays, newPayoutRules);
 
-export const getActivePayoutRules = (zoe, offerHandles) => {
-  const { active } = zoe.getStatusFor(offerHandles);
+export const getActivePayoutRuleMatrix = (zoe, inviteHandles, assays) => {
+  const { active } = zoe.getOfferStatuses(inviteHandles);
   return harden({
-    offerHandles: active,
-    payoutRulesArray: zoe.getPayoutRulesFor(active),
+    inviteHandles: active,
+    payoutRuleMatrix: zoe.getPayoutRuleMatrix(active, assays),
   });
 };
 

@@ -12,7 +12,6 @@ test('zoe - simpleExchange', async t => {
     const { assays: originalAssays, mints, unitOps } = setup();
     const assays = originalAssays.slice(0, 2);
     const zoe = makeZoe({ require });
-    const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(simpleExchangeRoot);
 
@@ -29,10 +28,9 @@ test('zoe - simpleExchange', async t => {
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a simpleExchange instance
-    const { instance: aliceExchange, instanceHandle } = await zoe.makeInstance(
-      installationHandle,
-      { assays },
-    );
+    const { invite: aliceInvite } = await zoe.makeInstance(installationHandle, {
+      assays,
+    });
 
     // 2: Alice escrows with zoe to create a sell order. She wants to
     // sell 3 moola and wants to receive at least 4 simoleans in
@@ -53,28 +51,26 @@ test('zoe - simpleExchange', async t => {
       },
     });
     const alicePayments = [aliceMoolaPayment, undefined];
-    const {
-      escrowReceipt: allegedAliceEscrowReceipt,
-      payout: alicePayoutP,
-    } = await zoe.escrow(aliceSellOrderOfferRules, alicePayments);
-
-    // 3: Alice does a claimAll on the escrowReceipt payment. It's
-    // unnecessary if she trusts Zoe but we will do it for the tests.
-    const aliceEscrowReceipt = await escrowReceiptAssay.claimAll(
-      allegedAliceEscrowReceipt,
+    const { seat: aliceSeat, payout: alicePayoutP } = await zoe.redeem(
+      aliceInvite,
+      aliceSellOrderOfferRules,
+      alicePayments,
     );
 
     // 4: Alice adds her sell order to the exchange
-    const aliceOfferResult = await aliceExchange.addOrder(aliceEscrowReceipt);
+    const aliceOfferResult = await aliceSeat.addOrder();
+    const bobInviteP = aliceSeat.makeInvite();
 
-    // 5: Alice spreads the instanceHandle far and wide with instructions
+    // 5: Alice spreads the invite far and wide with instructions
     // on how to use it and Bob decides he wants to join.
 
+    const inviteAssay = zoe.getInviteAssay();
+    const bobExclusiveInvite = await inviteAssay.claimAll(bobInviteP);
+
     const {
-      instance: bobExchange,
       installationHandle: bobInstallationId,
       terms: bobTerms,
-    } = zoe.getInstance(instanceHandle);
+    } = zoe.getInstance(bobExclusiveInvite.getBalance().extent.instanceHandle);
 
     t.equals(bobInstallationId, installationHandle);
     t.deepEquals(bobTerms.assays, assays);
@@ -89,7 +85,7 @@ test('zoe - simpleExchange', async t => {
           units: bobTerms.assays[0].makeUnits(3),
         },
         {
-          kind: 'offerAtMost',
+          kind: 'offer',
           units: bobTerms.assays[1].makeUnits(7),
         },
       ],
@@ -100,19 +96,14 @@ test('zoe - simpleExchange', async t => {
     const bobPayments = [undefined, bobSimoleanPayment];
 
     // 6: Bob escrows with zoe
-    const {
-      escrowReceipt: allegedBobEscrowReceipt,
-      payout: bobPayoutP,
-    } = await zoe.escrow(bobBuyOrderOfferRules, bobPayments);
-
-    // 7: Bob does a claimAll on the escrowReceipt payment. This is
-    // unnecessary but we will do it anyways for the test
-    const bobEscrowReceipt = await escrowReceiptAssay.claimAll(
-      allegedBobEscrowReceipt,
+    const { seat: bobSeat, payout: bobPayoutP } = await zoe.redeem(
+      bobExclusiveInvite,
+      bobBuyOrderOfferRules,
+      bobPayments,
     );
 
     // 8: Bob submits the buy order to the exchange
-    const bobOfferResult = await bobExchange.addOrder(bobEscrowReceipt);
+    const bobOfferResult = await bobSeat.addOrder();
 
     t.equals(
       bobOfferResult,
@@ -123,7 +114,10 @@ test('zoe - simpleExchange', async t => {
       'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
     const bobPayout = await bobPayoutP;
-    const [aliceMoolaPayout, aliceSimoleanPayout] = await alicePayoutP;
+    const alicePayout = await alicePayoutP;
+
+    const [bobMoolaPayout, bobSimoleanPayout] = await Promise.all(bobPayout);
+    const [aliceMoolaPayout, aliceSimoleanPayout] = await Promise.all(alicePayout);
 
     // Alice gets paid at least what she wanted
     t.ok(
@@ -141,8 +135,8 @@ test('zoe - simpleExchange', async t => {
     await aliceSimoleanPurse.depositAll(aliceSimoleanPayout);
 
     // 14: Bob deposits his original payments to ensure he can
-    await bobMoolaPurse.depositAll(bobPayout[0]);
-    await bobSimoleanPurse.depositAll(bobPayout[1]);
+    await bobMoolaPurse.depositAll(bobMoolaPayout);
+    await bobSimoleanPurse.depositAll(bobSimoleanPayout);
 
     // Assert that the correct payout were received.
     // Alice had 3 moola and 0 simoleans.

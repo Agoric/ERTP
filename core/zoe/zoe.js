@@ -40,6 +40,10 @@ const makeZoe = (additionalEndowments = {}) => {
   } = makeTables();
 
   const completeOffers = (offerHandles, assays) => {
+    const { inactive } = offerTable.getOfferStatuses(offerHandles);
+    if (inactive.length > 0) {
+      throw new Error(`offer has already completed`);
+    }
     const unitMatrix = offerTable.getUnitMatrix(offerHandles, assays);
     const payoutPromises = offerTable.getPayoutPromises(offerHandles);
     offerTable.deleteOffers(offerHandles);
@@ -68,10 +72,10 @@ const makeZoe = (additionalEndowments = {}) => {
         instanceHandle,
       }),
     );
-    const invitePurseP = inviteMint.mint(inviteUnits);
+    const invitePurse = inviteMint.mint(inviteUnits);
     setInviteSeat(inviteHandle, seat);
-    const invitePaymentP = invitePurseP.withdrawAll();
-    return invitePaymentP;
+    const invitePayment = invitePurse.withdrawAll();
+    return invitePayment;
   };
 
   // Zoe has two different facets: the public Zoe service and the
@@ -79,7 +83,7 @@ const makeZoe = (additionalEndowments = {}) => {
   // smart contract instance and is remade for each instance. The
   // contract at no time has access to the users' payments or the Zoe
   // purses. The contract can only do a few things through the Zoe
-  // contract facet. It can propose a reallocation of extents,
+  // contract facet. It can propose a reallocation of units,
   // complete an offer, and can create a new offer itself for
   // record-keeping and other various purposes.
 
@@ -108,11 +112,11 @@ const makeZoe = (additionalEndowments = {}) => {
           offerHandles,
           assays,
         );
-        const currentUnitMatrix = offerTable.getUnitsMatrix(
+        const currentUnitMatrix = offerTable.getUnitMatrix(
           offerHandles,
           assays,
         );
-        const unitOpsArray = assayTable.getUnitOpsArray(assays);
+        const unitOpsArray = assayTable.getUnitOpsForAssays(assays);
 
         // 1) ensure that rights are conserved
         insist(
@@ -196,7 +200,7 @@ const makeZoe = (additionalEndowments = {}) => {
        * they are getting. Note: if information can be derived in
        * queries based on other information, we choose to omit it. For
        * instance, `installationHandle` can be derived from
-       * `instanceId` and is omitted even though it is useful.
+       * `instanceHandle` and is omitted even though it is useful.
        * @param  {object} contractDefinedExtent - an object of
        * information to include in the extent, as defined by the smart
        * contract
@@ -208,6 +212,10 @@ const makeZoe = (additionalEndowments = {}) => {
       makeInvite: (seat, inviteHandle, contractDefinedExtent) =>
         makeInvite(instanceHandle, seat, inviteHandle, contractDefinedExtent),
       getInviteAssay: () => inviteAssay,
+      getPayoutRuleMatrix: offerTable.getPayoutRuleMatrix,
+      getUnitOpsForAssays: assayTable.getUnitOpsForAssays,
+      getOfferStatuses: offerTable.getOfferStatuses,
+      getUnitMatrix: offerTable.getUnitMatrix,
     });
     return contractFacet;
   };
@@ -291,7 +299,7 @@ const makeZoe = (additionalEndowments = {}) => {
      */
     redeem: async (invite, offerRules, offerPayments) => {
       // Columns: offerHandle | instanceHandle | assays | payoutRules
-      // | exitRule | extents | payoutPromise
+      // | exitRule | units | payoutPromise
 
       // the invite handle is also the offer handle
       const { seat, handle: offerHandle, instanceHandle } = await redeemInvite(
@@ -309,25 +317,25 @@ const makeZoe = (additionalEndowments = {}) => {
         payoutPromise: makePromise(),
       };
 
-      // extents should only be gotten after the payments are deposited
+      // units should only be gotten after the payments are deposited
       offerTable.create(offerHandle, offerImmutableRecord);
 
       // Promise flow = assay -> purse -> deposit payment -> escrow receipt
       const paymentBalancesP = assays.map((assay, i) => {
-        const { purseP, extentOpsP } = assayTable.getOrCreateAssay(assay);
+        const { purseP, unitOpsP } = assayTable.getOrCreateAssay(assay);
         const payoutRule = offerRules.payoutRules[i];
         const offerPayment = offerPayments[i];
 
-        return Promise.all([purseP, extentOpsP]).then(([purse, extentOps]) => {
+        return Promise.all([purseP, unitOpsP]).then(([purse, unitOps]) => {
           if (payoutRule.kind === 'offer') {
             return E(purse)
               .depositExactly(payoutRule.units, offerPayment)
-              .then(balance => balance.extent);
+              .then(units => unitOps.coerce(units));
           }
           insist(
             offerPayments[i] === undefined,
           )`payment was included, but the rule kind was ${payoutRule.kind}`;
-          return Promise.resolve(extentOps.empty());
+          return Promise.resolve(unitOps.empty());
         });
       });
 

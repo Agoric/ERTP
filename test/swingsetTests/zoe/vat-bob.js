@@ -173,7 +173,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
             units: await E(assays[0]).makeUnits(1),
           },
           {
-            kind: 'offerAtMost',
+            kind: 'offer',
             units: await E(assays[1]).makeUnits(11),
           },
         ],
@@ -282,7 +282,7 @@ const build = async (E, log, zoe, moolaPurseP, simoleanPurseP, installId) => {
             units: await E(assays[0]).makeUnits(3),
           },
           {
-            kind: 'offerAtMost',
+            kind: 'offer',
             units: await E(assays[1]).makeUnits(7),
           },
         ],

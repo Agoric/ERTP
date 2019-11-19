@@ -12,10 +12,12 @@ import harden from '@agoric/harden';
  */
 export const makeContract = harden((zoe, terms) => {
   const initialInviteHandle = harden({});
+  let offersCount = 0;
 
-  const makeSeat = inviteHandle => {
-    return harden({
+  const makeSeat = inviteHandle =>
+    harden({
       makeOffer: () => {
+        offersCount += 1;
         zoe.complete(harden([inviteHandle]), terms.assays);
         return `The offer was accepted`;
       },
@@ -24,8 +26,8 @@ export const makeContract = harden((zoe, terms) => {
         const seat = makeSeat(newInviteHandle);
         return zoe.makeInvite(seat, newInviteHandle);
       },
+      getOffersCount: () => offersCount,
     });
-  };
   return harden({
     initialSeat: makeSeat(initialInviteHandle),
     initialInviteHandle,

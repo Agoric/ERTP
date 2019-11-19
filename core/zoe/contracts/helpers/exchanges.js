@@ -1,27 +1,32 @@
 import harden from '@agoric/harden';
 
-export const isMatchingLimitOrder = (zoe, sellOffer, buyOffer) => {
-  const extentOpsArray = zoe.getExtentOpsArray();
-  const assetEqual = extentOpsArray[0].equals(
-    sellOffer[0].units.extent,
-    buyOffer[0].units.extent,
+export const isMatchingLimitOrder = (zoe, assays, sellOffer, buyOffer) => {
+  debugger;
+  const unitOpsArray = zoe.getUnitOpsForAssays(assays);
+  const assetEqual = unitOpsArray[0].equals(
+    sellOffer[0].units,
+    buyOffer[0].units,
   );
   // Buy extent must be higher than sell extent
-  const buyPriceHigher = extentOpsArray[1].includes(
-    buyOffer[1].units.extent,
-    sellOffer[1].units.extent,
+  const buyPriceHigher = unitOpsArray[1].includes(
+    buyOffer[1].units,
+    sellOffer[1].units,
   );
   return assetEqual && buyPriceHigher;
 };
 
 export const reallocateSurplusToSeller = (
   zoe,
-  sellOfferHandle,
-  buyOfferHandle,
+  assays,
+  sellInviteHandle,
+  buyInviteHandle,
 ) => {
-  const extentOpsArray = zoe.getExtentOpsArray();
-  const offerHandles = harden([sellOfferHandle, buyOfferHandle]);
-  const [sellOfferExtents, buyOfferExtents] = zoe.getExtentsFor(offerHandles);
+  const unitOpsArray = zoe.getUnitOpsForAssays(assays);
+  const inviteHandles = harden([sellInviteHandle, buyInviteHandle]);
+  const [sellOfferUnits, buyOfferUnits] = zoe.getUnitMatrix(
+    inviteHandles,
+    assays,
+  );
 
   // If there is a difference in what the seller will accept at
   // least and what the buyer will pay at most, we will award
@@ -29,12 +34,13 @@ export const reallocateSurplusToSeller = (
   // simplicity. Note that to split the difference requires the
   // concept of dividing by two, which doesn't make sense for all
   // types of mints.
-  const newSellOrderExtents = [extentOpsArray[0].empty(), buyOfferExtents[1]];
-  const newBuyOrderExtents = [sellOfferExtents[0], extentOpsArray[0].empty()];
+  const newSellOrderUnits = [unitOpsArray[0].empty(), buyOfferUnits[1]];
+  const newBuyOrderUnits = [sellOfferUnits[0], unitOpsArray[1].empty()];
 
   zoe.reallocate(
-    offerHandles,
-    harden([newSellOrderExtents, newBuyOrderExtents]),
+    inviteHandles,
+    assays,
+    harden([newSellOrderUnits, newBuyOrderUnits]),
   );
-  zoe.complete(offerHandles);
+  zoe.complete(inviteHandles, assays);
 };
