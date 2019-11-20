@@ -14,10 +14,8 @@ const makeInstallationTable = () => {
   const installationTable = harden({
     // TODO validate installation record (use insist to throw)
     validate: _allegedInstallationRecord => true,
-    create: (installationHandle, allegedInstallationRecord) => {
-      const installationRecord = installationTable.validate(
-        allegedInstallationRecord,
-      );
+    create: (installationHandle, installationRecord) => {
+      installationTable.validate(installationRecord);
       const newInstallationRecord = harden({
         ...installationRecord,
         installationHandle,
@@ -45,8 +43,8 @@ const makeInstanceTable = () => {
   const instanceTable = harden({
     // TODO validate instance record (use insist to throw)
     validate: _allegedInstanceRecord => true,
-    create: (instanceHandle, allegedInstanceRecord) => {
-      const instanceRecord = instanceTable.validate(allegedInstanceRecord);
+    create: (instanceHandle, instanceRecord) => {
+      instanceTable.validate(instanceRecord);
       const newInstanceRecord = harden({
         ...instanceRecord,
         instanceHandle,
@@ -94,8 +92,8 @@ const makeOfferTable = () => {
       insistValidExitRule(allegedOfferRecord.exitRule);
       return true;
     },
-    create: (offerHandle, allegedOfferRecord) => {
-      const offerRecord = offerTable.validate(allegedOfferRecord);
+    create: (offerHandle, offerRecord) => {
+      offerTable.validate(offerRecord);
       // Currently we do not harden this so we can change the units
       // associated with an offer.
       // TODO: handle units separately
@@ -186,8 +184,8 @@ const makeAssayTable = () => {
   const assayTable = harden({
     // TODO validate assay record (use insist to throw)
     validate: _allegedAssayRecord => true,
-    create: (assay, allegedAssayRecord) => {
-      const assayRecord = assayTable.validate(allegedAssayRecord);
+    create: (assay, assayRecord) => {
+      assayTable.validate(assayRecord);
       // TODO: How can we harden this?
       const newAssayRecord = {
         ...assayRecord,
