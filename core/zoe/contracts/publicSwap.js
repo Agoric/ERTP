@@ -12,9 +12,10 @@ export const makeContract = harden((zoe, terms) => {
   let firstOfferPayoutRules;
 
   const matchingOfferSeat = harden({
-    getFirstPayoutRules: () => firstOfferPayoutRules,
     matchOffer: () => {
-      const { inactive } = zoe.getStatusFor(harden([firstOfferInviteHandle]));
+      const { inactive } = zoe.getOfferStatuses(
+        harden([firstOfferInviteHandle]),
+      );
       if (inactive.length > 0) {
         return rejectOffer(
           zoe,
@@ -30,7 +31,12 @@ export const makeContract = harden((zoe, terms) => {
       );
 
       if (
-        !isExactlyMatchingPayoutRules(zoe, firstOfferPayoutRules, payoutRules)
+        !isExactlyMatchingPayoutRules(
+          zoe,
+          terms.assays,
+          firstOfferPayoutRules,
+          payoutRules,
+        )
       ) {
         return rejectOffer(zoe, terms.assays, matchingOfferInviteHandle);
       }
@@ -41,6 +47,7 @@ export const makeContract = harden((zoe, terms) => {
       // reallocate by switching the extents of the firstOffer and matchingOffer
       zoe.reallocate(
         harden([firstOfferInviteHandle, matchingOfferInviteHandle]),
+        terms.assays,
         harden([matchingOfferUnits, firstOfferUnits]),
       );
       zoe.complete(
@@ -64,7 +71,9 @@ export const makeContract = harden((zoe, terms) => {
 
       // The offer is valid, so save information about the first offer
       firstOfferPayoutRules = payoutRules;
-      return zoe.makeInvite(matchingOfferSeat, matchingOfferInviteHandle);
+      return zoe.makeInvite(matchingOfferSeat, matchingOfferInviteHandle, {
+        firstOfferPayoutRules,
+      });
     },
   });
 

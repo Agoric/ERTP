@@ -2,11 +2,7 @@ import harden from '@agoric/harden';
 import { natSafeMath } from './helpers/safeMath';
 import { rejectOffer } from './helpers/userFlow';
 import { vectorWith, vectorWithout } from './helpers/extents';
-import {
-  hasValidPayoutRules,
-  makeUnits,
-  makeOfferRules,
-} from './helpers/offerRules';
+import { hasValidPayoutRules, makeOfferRules } from './helpers/offerRules';
 
 import { makeMint } from '../../mint';
 

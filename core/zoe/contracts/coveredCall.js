@@ -16,7 +16,7 @@ export const makeContract = harden((zoe, terms) => {
       offerHandle,
       offerRules: { payoutRules },
     } = await zoe.burnEscrowReceipt(escrowReceipt);
-    const { inactive } = zoe.getStatusFor(harden([firstOfferHandle]));
+    const { inactive } = zoe.getOfferStatuses(harden([firstOfferHandle]));
     if (inactive.length > 0) {
       return rejectOffer(zoe, offerHandle, 'The first offer was withdrawn');
     }

@@ -1,7 +1,6 @@
 import harden from '@agoric/harden';
 
 export const isMatchingLimitOrder = (zoe, assays, sellOffer, buyOffer) => {
-  debugger;
   const unitOpsArray = zoe.getUnitOpsForAssays(assays);
   const assetEqual = unitOpsArray[0].equals(
     sellOffer[0].units,

@@ -1,5 +1,5 @@
 import harden from '@agoric/harden';
-import { hasValidPayoutRules, makeUnits } from './helpers/offerRules';
+import { hasValidPayoutRules } from './helpers/offerRules';
 import { rejectOffer, defaultAcceptanceMsg } from './helpers/userFlow';
 import { vectorWith, vectorWithout } from './helpers/extents';
 

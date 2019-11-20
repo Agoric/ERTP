@@ -7,12 +7,11 @@ import { setup } from '../setupBasicMints';
 
 const publicAuctionRoot = `${__dirname}/../../../../../core/zoe/contracts/publicAuction`;
 
-test('zoe - secondPriceAuction w/ 3 bids', async t => {
+test.only('zoe - secondPriceAuction w/ 3 bids', async t => {
   try {
     const { assays: originalAssays, mints, unitOps } = setup();
     const assays = originalAssays.slice(0, 2);
     const zoe = makeZoe({ require });
-    const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
 
     // Setup Alice
     const aliceMoolaPurse = mints[0].mint(assays[0].makeUnits(1));
@@ -41,10 +40,10 @@ test('zoe - secondPriceAuction w/ 3 bids', async t => {
 
     const installationHandle = zoe.install(source, moduleFormat);
     const numBidsAllowed = 3;
-    const { instance: aliceAuction, instanceHandle } = await zoe.makeInstance(
-      installationHandle,
-      { assays, numBidsAllowed },
-    );
+    const { invite: aliceInvite } = await zoe.makeInstance(installationHandle, {
+      assays,
+      numBidsAllowed,
+    });
 
     // 2: Alice escrows with zoe
     const aliceOfferRules = harden({
@@ -63,21 +62,15 @@ test('zoe - secondPriceAuction w/ 3 bids', async t => {
       },
     });
     const alicePayments = [aliceMoolaPayment, undefined];
-    const {
-      escrowReceipt: allegedAliceEscrowReceipt,
-      payout: alicePayoutP,
-    } = await zoe.escrow(aliceOfferRules, alicePayments);
-
-    // 3: Alice does a claimAll on the escrowReceipt payment. It's
-    // unnecessary if she trusts Zoe but we will do it for the tests.
-    const aliceEscrowReceipt = await escrowReceiptAssay.claimAll(
-      allegedAliceEscrowReceipt,
+    const { seat: aliceSeat, payout: alicePayoutP } = await zoe.redeem(
+      aliceInvite,
+      aliceOfferRules,
+      alicePayments,
     );
 
-    // 4: Alice initializes the auction with her escrow receipt
-    const aliceOfferResult = await aliceAuction.startAuction(
-      aliceEscrowReceipt,
-    );
+    // 4: Alice initializes the auction
+    const aliceOfferResult = await aliceSeat.startAuction();
+    const [bobInvite, carolInvite, daveInvite] = await aliceSeat.makeInvites(3);
 
     t.equals(
       aliceOfferResult,

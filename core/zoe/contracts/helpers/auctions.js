@@ -68,7 +68,7 @@ export const closeAuction = (
   const itemExtentOps = extentOpsArray[itemIndex];
 
   // Filter out any inactive bids
-  const { active: activeBidHandles } = zoe.getStatusFor(harden(allBidHandles));
+  const { active: activeBidHandles } = zoe.getOfferStatuses(harden(allBidHandles));
 
   const bids = zoe
     .getExtentsFor(activeBidHandles)

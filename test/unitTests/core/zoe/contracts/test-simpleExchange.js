@@ -117,7 +117,9 @@ test('zoe - simpleExchange', async t => {
     const alicePayout = await alicePayoutP;
 
     const [bobMoolaPayout, bobSimoleanPayout] = await Promise.all(bobPayout);
-    const [aliceMoolaPayout, aliceSimoleanPayout] = await Promise.all(alicePayout);
+    const [aliceMoolaPayout, aliceSimoleanPayout] = await Promise.all(
+      alicePayout,
+    );
 
     // Alice gets paid at least what she wanted
     t.ok(
