@@ -30,6 +30,7 @@ export const makeContract = harden((zoe, terms) => {
         if (inactive.length > 0) {
           return rejectOffer(
             zoe,
+            terms.assays,
             inviteHandle,
             'The item up for auction has been withdrawn or the auction has completed',
           );
@@ -55,7 +56,13 @@ export const makeContract = harden((zoe, terms) => {
         }
 
         if (
-          !isOverMinimumBid(zoe, BID_INDEX, creatorInviteHandle, inviteHandle)
+          !isOverMinimumBid(
+            zoe,
+            terms.assays,
+            BID_INDEX,
+            creatorInviteHandle,
+            inviteHandle,
+          )
         ) {
           return rejectOffer(
             zoe,
@@ -68,7 +75,7 @@ export const makeContract = harden((zoe, terms) => {
         // Save valid bid and try to close.
         allBidHandles.push(inviteHandle);
         if (allBidHandles.length >= numBidsAllowed) {
-          closeAuction(zoe, {
+          closeAuction(zoe, terms.assays, {
             auctionLogicFn: secondPriceLogic,
             itemIndex: ITEM_INDEX,
             bidIndex: BID_INDEX,
@@ -88,7 +95,7 @@ export const makeContract = harden((zoe, terms) => {
         terms.assays,
       );
       if (
-        creatorInviteHandle ||
+        auctionedAssets ||
         !hasValidPayoutRules(ruleKinds, terms.assays, payoutRules)
       ) {
         return rejectOffer(creatorInviteHandle);
