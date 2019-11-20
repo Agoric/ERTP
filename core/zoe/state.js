@@ -3,8 +3,6 @@ import { E } from '@agoric/eventual-send';
 
 import { makePrivateName } from '../../util/PrivateName';
 import { insist } from '../../util/insist';
-
-import { extentOpsLib } from '../config/extentOpsLib';
 import { makeUnitOps } from '../unitOps';
 
 // Installation Table
@@ -14,8 +12,8 @@ const makeInstallationTable = () => {
   const handleToRecord = makePrivateName();
 
   const installationTable = harden({
-    // TODO validate installation record
-    validate: allegedInstallationRecord => allegedInstallationRecord,
+    // TODO validate installation record (use insist to throw)
+    validate: _allegedInstallationRecord => true,
     create: (installationHandle, allegedInstallationRecord) => {
       const installationRecord = installationTable.validate(
         allegedInstallationRecord,
@@ -45,8 +43,8 @@ const makeInstanceTable = () => {
   const handleToRecord = makePrivateName();
 
   const instanceTable = harden({
-    // TODO validate instance record
-    validate: allegedInstanceRecord => allegedInstanceRecord,
+    // TODO validate instance record (use insist to throw)
+    validate: _allegedInstanceRecord => true,
     create: (instanceHandle, allegedInstanceRecord) => {
       const instanceRecord = instanceTable.validate(allegedInstanceRecord);
       const newInstanceRecord = harden({
@@ -94,7 +92,7 @@ const makeOfferTable = () => {
     validate: allegedOfferRecord => {
       insistValidPayoutRuleKinds(allegedOfferRecord.payoutRules);
       insistValidExitRule(allegedOfferRecord.exitRule);
-      return allegedOfferRecord;
+      return true;
     },
     create: (offerHandle, allegedOfferRecord) => {
       const offerRecord = offerTable.validate(allegedOfferRecord);
@@ -186,8 +184,8 @@ const makeAssayTable = () => {
   const handleToRecord = makePrivateName();
 
   const assayTable = harden({
-    // TODO validate assay record
-    validate: allegedAssayRecord => allegedAssayRecord,
+    // TODO validate assay record (use insist to throw)
+    validate: _allegedAssayRecord => true,
     create: (assay, allegedAssayRecord) => {
       const assayRecord = assayTable.validate(allegedAssayRecord);
       // TODO: How can we harden this?
