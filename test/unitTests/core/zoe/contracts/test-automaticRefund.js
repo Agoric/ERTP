@@ -143,7 +143,7 @@ test('zoe with automaticRefund', async t => {
     const terms = harden({
       assays,
     });
-    const { invite: aliceInvite } = await zoe.makeInstance(
+    const { invite: aliceInvite, instance } = await zoe.makeInstance(
       installationHandle,
       terms,
     );
@@ -180,7 +180,9 @@ test('zoe with automaticRefund', async t => {
     // payoutRules back when you make an offer. The effect of calling
     // makeOffer will vary widely depending on the smart  contract.
     const aliceOutcome = aliceSeat.makeOffer();
-    const bobInvite = aliceSeat.makeInvite();
+    const bobInvite = instance.publicAPI.makeInvite();
+    const count = instance.publicAPI.getOffersCount();
+    t.equals(count, 1);
 
     // Imagine that Alice has shared the bobInvite with Bob. He
     // will do a claimAll on the invite with the Zoe invite assay and
@@ -302,20 +304,20 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     const terms = harden({
       assays,
     });
-    const { invite: aliceInvite1 } = await zoe.makeInstance(
-      installationHandle,
-      terms,
-    );
+    const {
+      invite: aliceInvite1,
+      instance: instance1,
+    } = await zoe.makeInstance(installationHandle, terms);
 
-    const { invite: aliceInvite2 } = await zoe.makeInstance(
-      installationHandle,
-      terms,
-    );
+    const {
+      invite: aliceInvite2,
+      instance: instance2,
+    } = await zoe.makeInstance(installationHandle, terms);
 
-    const { invite: aliceInvite3 } = await zoe.makeInstance(
-      installationHandle,
-      terms,
-    );
+    const {
+      invite: aliceInvite3,
+      instance: instance3,
+    } = await zoe.makeInstance(installationHandle, terms);
 
     // 2: Alice escrows with zoe
     const aliceOfferRules = harden({
@@ -388,9 +390,9 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
     );
 
     // Ensure that the number of offers received by each instance is one
-    t.equals(aliceSeat1.getOffersCount(), 1);
-    t.equals(aliceSeat2.getOffersCount(), 1);
-    t.equals(aliceSeat3.getOffersCount(), 1);
+    t.equals(instance1.publicAPI.getOffersCount(), 1);
+    t.equals(instance2.publicAPI.getOffersCount(), 1);
+    t.equals(instance3.publicAPI.getOffersCount(), 1);
   } catch (e) {
     t.assert(false, e);
     console.log(e);

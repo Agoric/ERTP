@@ -262,7 +262,7 @@ const makeZoe = (additionalEndowments = {}) => {
       const { installation } = installationTable.get(installationHandle);
       const instanceHandle = harden({});
       const contractFacet = makeContractFacet(instanceHandle);
-      const { invite, terms } = installation.makeContract(
+      const { invite, publicAPI, terms } = installation.makeContract(
         contractFacet,
         userDefinedTerms,
       );
@@ -270,13 +270,14 @@ const makeZoe = (additionalEndowments = {}) => {
         instanceHandle,
         installationHandle,
         terms,
+        publicAPI,
         assays: terms.assays,
       });
 
       instanceTable.create(instanceHandle, instanceRecord);
       return {
         invite,
-        instanceHandle,
+        instance: instanceRecord,
       };
     },
     /**

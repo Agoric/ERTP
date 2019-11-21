@@ -20,14 +20,16 @@ export const makeContract = harden((zoe, terms) => {
         zoe.complete(harden([inviteHandle]), terms.assays);
         return `The offer was accepted`;
       },
-      makeInvite: makeSeatInvite,
-      getOffersCount: () => offersCount,
     });
     const { invite, inviteHandle } = zoe.makeInvite(seat);
     return invite;
   };
   return harden({
     invite: makeSeatInvite(),
+    publicAPI: {
+      getOffersCount: () => offersCount,
+      makeInvite: makeSeatInvite,
+    },
     terms,
   });
 });
