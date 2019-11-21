@@ -27,6 +27,6 @@ export const makeContract = harden((zoe, terms) => {
   };
   return harden({
     invite: zoe.makeInvite(makeSeat()),
-    assays: terms.assays,
+    terms,
   });
 });
