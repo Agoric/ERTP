@@ -334,25 +334,31 @@ test('multiple instances of automaticRefund for the same Zoe', async t => {
       },
     });
 
-    const { seat: aliceSeat1, payout: payoutP1 } = await zoe.redeem(
-      aliceInvite1,
-      aliceOfferRules,
-      [aliceMoolaPayments[0], undefined],
-    );
+    const {
+      seat: aliceSeat1,
+      payout: payoutP1,
+    } = await zoe.redeem(aliceInvite1, aliceOfferRules, [
+      aliceMoolaPayments[0],
+      undefined,
+    ]);
 
     // 3: Alice escrows with zoe
-    const { seat: aliceSeat2, payout: payoutP2 } = await zoe.redeem(
-      aliceInvite2,
-      aliceOfferRules,
-      [aliceMoolaPayments[1], undefined],
-    );
+    const {
+      seat: aliceSeat2,
+      payout: payoutP2,
+    } = await zoe.redeem(aliceInvite2, aliceOfferRules, [
+      aliceMoolaPayments[1],
+      undefined,
+    ]);
 
     // 4: Alice escrows with zoe
-    const { seat: aliceSeat3, payout: payoutP3 } = await zoe.redeem(
-      aliceInvite3,
-      aliceOfferRules,
-      [aliceMoolaPayments[2], undefined],
-    );
+    const {
+      seat: aliceSeat3,
+      payout: payoutP3,
+    } = await zoe.redeem(aliceInvite3, aliceOfferRules, [
+      aliceMoolaPayments[2],
+      undefined,
+    ]);
 
     // 5: Alice makes an offer with each of her escrow receipts
     aliceSeat1.makeOffer();

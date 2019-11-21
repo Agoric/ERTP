@@ -71,8 +71,20 @@ export const makeContract = harden((zoe, terms) => {
 
       // The offer is valid, so save information about the first offer
       firstOfferPayoutRules = payoutRules;
-      return zoe.makeInvite(matchingOfferSeat, matchingOfferInviteHandle, {
-        firstOfferPayoutRules,
+
+      const customInviteExtent = {
+        offerMadeRules: payoutRules,
+      };
+
+      const inviteP = zoe.makeInvite(
+        matchingOfferSeat,
+        matchingOfferInviteHandle,
+        customInviteExtent,
+      );
+
+      return harden({
+        outcome: defaultAcceptanceMsg,
+        invite: inviteP,
       });
     },
   });

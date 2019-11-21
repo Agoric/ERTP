@@ -56,7 +56,10 @@ test('zoe - publicSwap', async t => {
     );
 
     // 4: Alice makes the first offer in the swap.
-    const bobInviteP = await aliceSeat.makeFirstOffer();
+    const {
+      outcome: aliceOutcomeP,
+      invite: bobInviteP,
+    } = aliceSeat.makeFirstOffer();
 
     // 5: Alice spreads the invite far and wide with instructions
     // on how to use it and Bob decides he wants to be the
@@ -73,10 +76,7 @@ test('zoe - publicSwap', async t => {
 
     t.equals(bobInstallationId, installationHandle);
     t.deepEquals(bobTerms.assays, assays);
-    t.deepEquals(
-      bobInviteExtent.firstOfferPayoutRules,
-      aliceOfferRules.payoutRules,
-    );
+    t.deepEquals(bobInviteExtent.offerMadeRules, aliceOfferRules.payoutRules);
 
     const bobOfferRules = harden({
       payoutRules: [
@@ -107,6 +107,11 @@ test('zoe - publicSwap', async t => {
 
     t.equals(
       bobOfferResult,
+      'The offer has been accepted. Once the contract has been completed, please check your payout',
+    );
+
+    t.equals(
+      await aliceOutcomeP,
       'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
     const bobPayout = await bobPayoutP;

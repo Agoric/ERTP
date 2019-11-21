@@ -216,6 +216,10 @@ const makeZoe = (additionalEndowments = {}) => {
       getUnitOpsForAssays: assayTable.getUnitOpsForAssays,
       getOfferStatuses: offerTable.getOfferStatuses,
       getUnitMatrix: offerTable.getUnitMatrix,
+
+      // for a particular offer
+      getPayoutRules: offerTable.getPayoutRules,
+      getExitRule: offerTable.getExitRule,
     });
     return contractFacet;
   };

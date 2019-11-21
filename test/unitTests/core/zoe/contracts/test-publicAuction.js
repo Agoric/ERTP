@@ -356,7 +356,7 @@ test('zoe - secondPriceAuction w/ 3 bids - alice exits onDemand', async t => {
 
     // 4: Alice initializes the auction with her escrow receipt
     const aliceOfferResult = await aliceSeat.startAuction();
-    const [bobInvite, carolInvite, daveInvite] = await aliceSeat.makeInvites(3);
+    const [bobInvite] = await aliceSeat.makeInvites(1);
 
     t.equals(
       aliceOfferResult,

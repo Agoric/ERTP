@@ -131,6 +131,8 @@ const makeOfferTable = () => {
         offerHandle => offerTable.get(offerHandle).payoutRules,
       );
     },
+    getPayoutRules: offerHandle => offerTable.get(offerHandle).payoutRules,
+    getExitRule: offerHandle => offerTable.get(offerHandle).exitRule,
     getUnitMatrix: (offerHandles, _assays) =>
       // Currently, we assume that all of the units for these
       // offerHandles are in the same order as the `assays` array. In
