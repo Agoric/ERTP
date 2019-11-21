@@ -61,10 +61,10 @@ const makeZoe = (additionalEndowments = {}) => {
 
   const makeInvite = (
     instanceHandle,
-    inviteHandle = harden({}),
     seat,
     contractDefinedExtent = harden({}),
   ) => {
+    const inviteHandle = harden({});
     const inviteUnits = inviteAssay.makeUnits(
       harden({
         ...contractDefinedExtent,
@@ -75,7 +75,7 @@ const makeZoe = (additionalEndowments = {}) => {
     const invitePurse = inviteMint.mint(inviteUnits);
     setInviteSeat(inviteHandle, seat);
     const invitePayment = invitePurse.withdrawAll();
-    return invitePayment;
+    return harden({ invite: invitePayment, inviteHandle });
   };
 
   // Zoe has two different facets: the public Zoe service and the
@@ -209,8 +209,8 @@ const makeZoe = (additionalEndowments = {}) => {
        * other words, buying the invite is buying the right to call
        * methods on this object.
        */
-      makeInvite: ({ inviteHandle, seat, inviteExtent }) =>
-        makeInvite(instanceHandle, inviteHandle, seat, inviteExtent),
+      makeInvite: (seat, inviteExtent = {}) =>
+        makeInvite(instanceHandle, seat, inviteExtent),
       getInviteAssay: () => inviteAssay,
       getPayoutRuleMatrix: offerTable.getPayoutRuleMatrix,
       getUnitOpsForAssays: assayTable.getUnitOpsForAssays,
