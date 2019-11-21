@@ -220,6 +220,7 @@ const makeZoe = (additionalEndowments = {}) => {
       // for a particular offer
       getPayoutRules: offerTable.getPayoutRules,
       getExitRule: offerTable.getExitRule,
+      isOfferActive: offerTable.isOfferActive,
     });
     return contractFacet;
   };

@@ -166,6 +166,7 @@ const makeOfferTable = () => {
         inactive,
       });
     },
+    isOfferActive: offerHandle => handleToRecord.has(offerHandle),
     getPayoutPromises: offerHandles =>
       offerHandles.map(
         offerHandle => offerTable.get(offerHandle).payoutPromise,

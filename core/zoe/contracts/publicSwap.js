@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 import harden from '@agoric/harden';
 
 import { rejectOffer, defaultAcceptanceMsg } from './helpers/userFlow';
@@ -7,91 +8,78 @@ import {
 } from './helpers/offerRules';
 
 export const makeContract = harden((zoe, terms) => {
-  const firstOfferInviteHandle = harden({});
-  const matchingOfferInviteHandle = harden({});
-  let firstOfferPayoutRules;
+  const { assays } = terms;
 
-  const matchingOfferSeat = harden({
-    matchOffer: () => {
-      const { inactive } = zoe.getOfferStatuses(
-        harden([firstOfferInviteHandle]),
-      );
-      if (inactive.length > 0) {
-        return rejectOffer(
-          zoe,
-          terms.assays,
-          matchingOfferInviteHandle,
-          `The first offer was withdrawn or completed.`,
-        );
-      }
+  const makeFirstOfferInvite = () => {
+    const seat = harden({
+      makeFirstOffer: () => {
+        const ruleKinds = ['offer', 'want'];
+        const firstOfferPayoutRules = zoe.getPayoutRules(firstInviteHandle);
+        if (!hasValidPayoutRules(ruleKinds, assays, firstOfferPayoutRules)) {
+          return rejectOffer(zoe, assays, firstInviteHandle);
+        }
 
-      const [payoutRules] = zoe.getPayoutRuleMatrix(
-        harden([matchingOfferInviteHandle]),
-        terms.assays,
-      );
+        const matchingOfferSeat = harden({
+          matchOffer: () => {
+            if (!zoe.isOfferActive(firstInviteHandle)) {
+              throw rejectOffer(
+                zoe,
+                assays,
+                matchingInviteHandle,
+                `The first offer was withdrawn or completed.`,
+              );
+            }
+            const matchingPayoutRules = zoe.getPayoutRules(
+              matchingInviteHandle,
+            );
+            if (
+              !isExactlyMatchingPayoutRules(
+                zoe,
+                assays,
+                firstOfferPayoutRules,
+                matchingPayoutRules,
+              )
+            ) {
+              throw rejectOffer(zoe, terms.assays, matchingInviteHandle);
+            }
+            const [firstOfferUnits, matchingOfferUnits] = zoe.getUnitMatrix(
+              harden([firstInviteHandle, matchingInviteHandle]),
+              assays,
+            );
+            // reallocate by switching the extents of the firstOffer and matchingOffer
+            zoe.reallocate(
+              harden([firstInviteHandle, matchingInviteHandle]),
+              assays,
+              harden([matchingOfferUnits, firstOfferUnits]),
+            );
+            zoe.complete(
+              harden([firstInviteHandle, matchingInviteHandle]),
+              assays,
+            );
+            return defaultAcceptanceMsg;
+          },
+        });
 
-      if (
-        !isExactlyMatchingPayoutRules(
-          zoe,
-          terms.assays,
-          firstOfferPayoutRules,
-          payoutRules,
-        )
-      ) {
-        return rejectOffer(zoe, terms.assays, matchingOfferInviteHandle);
-      }
-      const [firstOfferUnits, matchingOfferUnits] = zoe.getUnitMatrix(
-        harden([firstOfferInviteHandle, matchingOfferInviteHandle]),
-        terms.assays,
-      );
-      // reallocate by switching the extents of the firstOffer and matchingOffer
-      zoe.reallocate(
-        harden([firstOfferInviteHandle, matchingOfferInviteHandle]),
-        terms.assays,
-        harden([matchingOfferUnits, firstOfferUnits]),
-      );
-      zoe.complete(
-        harden([firstOfferInviteHandle, matchingOfferInviteHandle]),
-        terms.assays,
-      );
-      return defaultAcceptanceMsg;
-    },
-  });
+        const {
+          invite: inviteToMatch,
+          inviteHandle: matchingInviteHandle,
+        } = zoe.makeInvite(matchingOfferSeat, {
+          offerMadeRules: firstOfferPayoutRules,
+          seat: 'matchOffer',
+        });
 
-  const firstOfferSeat = harden({
-    makeFirstOffer: () => {
-      const ruleKinds = ['offer', 'want'];
-      const [payoutRules] = zoe.getPayoutRuleMatrix(
-        harden([firstOfferInviteHandle]),
-        terms.assays,
-      );
-      if (!hasValidPayoutRules(ruleKinds, terms.assays, payoutRules)) {
-        return rejectOffer(zoe, firstOfferInviteHandle);
-      }
-
-      // The offer is valid, so save information about the first offer
-      firstOfferPayoutRules = payoutRules;
-
-      const customInviteExtent = {
-        offerMadeRules: payoutRules,
-      };
-
-      const inviteP = zoe.makeInvite(
-        matchingOfferSeat,
-        matchingOfferInviteHandle,
-        customInviteExtent,
-      );
-
-      return harden({
-        outcome: defaultAcceptanceMsg,
-        invite: inviteP,
-      });
-    },
-  });
+        return harden({
+          outcome: defaultAcceptanceMsg,
+          invite: inviteToMatch,
+        });
+      },
+    });
+    const { invite, inviteHandle: firstInviteHandle } = zoe.makeInvite(seat);
+    return invite;
+  };
 
   return harden({
-    initialSeat: firstOfferSeat,
-    initialInviteHandle: firstOfferInviteHandle,
-    assays: terms.assays,
+    invite: makeFirstOfferInvite(),
+    terms,
   });
 });
