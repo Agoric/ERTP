@@ -11,26 +11,22 @@ import harden from '@agoric/harden';
  * @param {contractFacet} zoe - the contract facet of zoe
  */
 export const makeContract = harden((zoe, terms) => {
-  const initialInviteHandle = harden({});
   let offersCount = 0;
-
-  const makeSeat = inviteHandle =>
-    harden({
+  const makeSeat = () => {
+    const inviteHandle = harden({});
+    const seat = harden({
       makeOffer: () => {
         offersCount += 1;
         zoe.complete(harden([inviteHandle]), terms.assays);
         return `The offer was accepted`;
       },
-      makeInvite: () => {
-        const newInviteHandle = harden({});
-        const seat = makeSeat(newInviteHandle);
-        return zoe.makeInvite(seat, newInviteHandle);
-      },
+      makeInvite: () => zoe.makeInvite(makeSeat()),
       getOffersCount: () => offersCount,
     });
+    return harden({ inviteHandle, seat, inviteExtent: {} });
+  };
   return harden({
-    initialSeat: makeSeat(initialInviteHandle),
-    initialInviteHandle,
+    invite: zoe.makeInvite(makeSeat()),
     assays: terms.assays,
   });
 });

@@ -61,8 +61,8 @@ const makeZoe = (additionalEndowments = {}) => {
 
   const makeInvite = (
     instanceHandle,
-    seat,
     inviteHandle = harden({}),
+    seat,
     contractDefinedExtent = harden({}),
   ) => {
     const inviteUnits = inviteAssay.makeUnits(
@@ -209,8 +209,8 @@ const makeZoe = (additionalEndowments = {}) => {
        * other words, buying the invite is buying the right to call
        * methods on this object.
        */
-      makeInvite: (seat, inviteHandle, contractDefinedExtent) =>
-        makeInvite(instanceHandle, seat, inviteHandle, contractDefinedExtent),
+      makeInvite: ({ inviteHandle, seat, inviteExtent }) =>
+        makeInvite(instanceHandle, inviteHandle, seat, inviteExtent),
       getInviteAssay: () => inviteAssay,
       getPayoutRuleMatrix: offerTable.getPayoutRuleMatrix,
       getUnitOpsForAssays: assayTable.getUnitOpsForAssays,
@@ -261,11 +261,10 @@ const makeZoe = (additionalEndowments = {}) => {
       const { installation } = installationTable.get(installationHandle);
       const instanceHandle = harden({});
       const contractFacet = makeContractFacet(instanceHandle);
-      const {
-        initialSeat,
-        initialInviteHandle,
-        assays,
-      } = installation.makeContract(contractFacet, userDefinedTerms);
+      const { invite, assays } = installation.makeContract(
+        contractFacet,
+        userDefinedTerms,
+      );
       const terms = harden({ ...userDefinedTerms, assays });
       const instanceRecord = harden({
         instanceHandle,
@@ -275,11 +274,6 @@ const makeZoe = (additionalEndowments = {}) => {
       });
 
       instanceTable.create(instanceHandle, instanceRecord);
-      const invite = makeInvite(
-        instanceHandle,
-        initialSeat,
-        initialInviteHandle,
-      );
       return {
         invite,
         instanceHandle,
