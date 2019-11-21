@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 import harden from '@agoric/harden';
 
 import { rejectOffer, defaultAcceptanceMsg } from './helpers/userFlow';
@@ -24,19 +25,16 @@ import {
 export const makeContract = harden((zoe, terms) => {
   const sellInviteHandles = [];
   const buyInviteHandles = [];
-  const initialInviteHandle = harden({});
+  const { assays } = terms;
 
-  const makeSeat = inviteHandle =>
-    harden({
+  const makeSeatInvite = () => {
+    const seat = harden({
       addOrder: () => {
-        const [payoutRules] = zoe.getPayoutRuleMatrix(
-          harden([inviteHandle]),
-          terms.assays,
-        );
+        const payoutRules = zoe.getPayoutRules(inviteHandle);
 
         // Is it a valid sell offer?
         const sellOfferKinds = ['offer', 'want'];
-        if (hasValidPayoutRules(sellOfferKinds, terms.assays, payoutRules)) {
+        if (hasValidPayoutRules(sellOfferKinds, assays, payoutRules)) {
           // Save the valid offer
           sellInviteHandles.push(inviteHandle);
 
@@ -49,17 +47,12 @@ export const makeContract = harden((zoe, terms) => {
             if (
               isMatchingLimitOrder(
                 zoe,
-                terms.assays,
+                assays,
                 payoutRules,
                 activeBuyPayoutRules[i],
               )
             ) {
-              return reallocate(
-                zoe,
-                terms.assays,
-                inviteHandle,
-                activeBuyHandles[i],
-              );
+              return reallocate(zoe, assays, inviteHandle, activeBuyHandles[i]);
             }
           }
           return defaultAcceptanceMsg;
@@ -67,7 +60,7 @@ export const makeContract = harden((zoe, terms) => {
 
         // Is it a valid buy offer?
         const buyOfferFormat = ['want', 'offer'];
-        if (hasValidPayoutRules(buyOfferFormat, terms.assays, payoutRules)) {
+        if (hasValidPayoutRules(buyOfferFormat, assays, payoutRules)) {
           // Save the valid offer
           buyInviteHandles.push(inviteHandle);
 
@@ -80,30 +73,28 @@ export const makeContract = harden((zoe, terms) => {
             if (
               isMatchingLimitOrder(
                 zoe,
-                terms.assays,
+                assays,
                 activeSellPayoutRules[i],
                 payoutRules,
               )
             ) {
-              reallocate(zoe, terms.assays, activeSellHandles[i], inviteHandle);
+              reallocate(zoe, assays, activeSellHandles[i], inviteHandle);
             }
           }
           return defaultAcceptanceMsg;
         }
 
         // Eject because the offer must be invalid
-        return rejectOffer(zoe, terms.assays, inviteHandle);
+        throw rejectOffer(zoe, assays, inviteHandle);
       },
-      makeInvite: () => {
-        const newInviteHandle = harden({});
-        const seat = makeSeat(newInviteHandle);
-        return zoe.makeInvite(seat, newInviteHandle);
-      },
+      makeInvite: makeSeatInvite,
     });
+    const { invite, inviteHandle } = zoe.makeInvite(seat);
+    return invite;
+  };
 
   return harden({
-    initialSeat: makeSeat(initialInviteHandle),
-    initialInviteHandle,
-    assays: terms.assays,
+    invite: makeSeatInvite(),
+    terms,
   });
 });
