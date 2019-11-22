@@ -9,8 +9,8 @@ const hasKinds = (kinds, newPayoutRules) =>
 const hasAssays = (assays, newPayoutRules) =>
   assays.every((assay, i) => assay === newPayoutRules[i].units.label.assay);
 
-export const makeHelpers = (zoe, assays) =>
-  harden({
+export const makeHelpers = (zoe, assays) => {
+  const helpers = harden({
     completeOffers: handles => zoe.complete(harden([...handles]), assays),
     rejectOffer: (inviteHandle, msg = defaultRejectMsg) => {
       zoe.complete(harden([inviteHandle]), assays);
@@ -22,12 +22,12 @@ export const makeHelpers = (zoe, assays) =>
         inviteHandles,
         assays,
       );
-      const satisfied = (leftArray, rightArray) =>
-        leftArray.every((leftRule, i) => {
-          if (leftRule.kind === 'want') {
+      const satisfied = (wants, offers) =>
+        wants.every((want, i) => {
+          if (want.kind === 'want') {
             return (
-              rightArray[i].kind === 'offer' &&
-              unitOpsArray[i].includes(rightArray[i].units, leftRule.units)
+              offers[i].kind === 'offer' &&
+              unitOpsArray[i].includes(offers[i].units, want.units)
             );
           }
           return true;
@@ -48,4 +48,24 @@ export const makeHelpers = (zoe, assays) =>
         payoutRuleMatrix: zoe.getPayoutRuleMatrix(active, assays),
       });
     },
+    swap: (
+      keepHandle,
+      tryHandle,
+      keepHandleInactiveMsg = 'prior offer is unavailable',
+    ) => {
+      if (!zoe.isOfferActive(keepHandle)) {
+        throw helpers.rejectOffer(keepHandle, keepHandleInactiveMsg);
+      }
+      const handles = [keepHandle, tryHandle];
+      if (!helpers.canTradeWith(handles)) {
+        throw helpers.rejectOffer(tryHandle);
+      }
+      const [keepUnits, tryUnits] = zoe.getUnitMatrix(handles, assays);
+      // reallocate by switching the units
+      zoe.reallocate(handles, assays, harden([tryUnits, keepUnits]));
+      zoe.complete(handles, assays);
+      return defaultAcceptanceMsg;
+    },
   });
+  return helpers;
+};
