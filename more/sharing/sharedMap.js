@@ -16,7 +16,7 @@ function makeSharedMap(name) {
     },
     addEntry(key, value) {
       if (namedEntries.has(key)) {
-        throw new Error(`Corkboard ${name} already has an entry for ${key}.`);
+        throw new Error(`SharedMap ${name} already has an entry for ${key}.`);
       }
       orderedEntries.push([key, value]);
       namedEntries.set(key, [value, orderedEntries.length]);
