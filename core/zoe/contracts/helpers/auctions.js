@@ -64,7 +64,7 @@ export const isOverMinimumBid = (
 export const closeAuction = (
   zoe,
   assays,
-  { auctionLogicFn, itemIndex, bidIndex, creatorInviteHandle, allBidHandles },
+  { auctionLogicFn, itemIndex, bidIndex, sellerInviteHandle, allBidHandles },
 ) => {
   const unitOpsArray = zoe.getUnitOpsForAssays(assays);
   const bidUnitOps = unitOpsArray[bidIndex];
@@ -79,7 +79,7 @@ export const closeAuction = (
     .getUnitMatrix(activeBidHandles, assays)
     .map(units => units[bidIndex]);
   const itemUnitsUpForAuction = zoe.getUnitMatrix(
-    harden([creatorInviteHandle]),
+    harden([sellerInviteHandle]),
     assays,
   )[0][itemIndex];
 
@@ -99,10 +99,10 @@ export const closeAuction = (
   // Everyone else gets a refund so their extents remain the
   // same.
   zoe.reallocate(
-    harden([creatorInviteHandle, winnerInviteHandle]),
+    harden([sellerInviteHandle, winnerInviteHandle]),
     assays,
     harden([newCreatorUnits, newWinnerUnits]),
   );
-  const allOfferHandles = harden([creatorInviteHandle, ...activeBidHandles]);
+  const allOfferHandles = harden([sellerInviteHandle, ...activeBidHandles]);
   zoe.complete(allOfferHandles, assays);
 };

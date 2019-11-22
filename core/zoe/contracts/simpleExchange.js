@@ -1,15 +1,8 @@
 /* eslint-disable no-use-before-define */
 import harden from '@agoric/harden';
 
-import { rejectOffer, defaultAcceptanceMsg } from './helpers/userFlow';
-import {
-  hasValidPayoutRules,
-  getActivePayoutRuleMatrix,
-} from './helpers/offerRules';
-import {
-  isMatchingLimitOrder,
-  reallocateSurplusToSeller as reallocate,
-} from './helpers/exchanges';
+import { defaultAcceptanceMsg, makeHelpers } from './helpers/userFlow';
+import { makeExchangeHelpers } from './helpers/exchanges';
 
 // This exchange only accepts limit orders. A limit order is defined
 // as either a sell order with payoutRules: [ { kind: 'offer',
@@ -26,75 +19,49 @@ export const makeContract = harden((zoe, terms) => {
   const sellInviteHandles = [];
   const buyInviteHandles = [];
   const { assays } = terms;
+  const { rejectOffer, hasValidPayoutRules } = makeHelpers(zoe, assays);
+  const {
+    isMatchingLimitOrder,
+    reallocateSurplusToSeller: reallocate,
+  } = makeExchangeHelpers(zoe, assays);
 
-  const makeSeatInvite = () => {
+  const makeInvite = () => {
     const seat = harden({
       addOrder: () => {
-        const payoutRules = zoe.getPayoutRules(inviteHandle);
-
         // Is it a valid sell offer?
-        const sellOfferKinds = ['offer', 'want'];
-        if (hasValidPayoutRules(sellOfferKinds, assays, payoutRules)) {
-          // Save the valid offer
+        if (hasValidPayoutRules(['offer', 'want'], inviteHandle)) {
+          // Save the valid offer and try to match
           sellInviteHandles.push(inviteHandle);
-
-          // Try to match
-          const {
-            inviteHandles: activeBuyHandles,
-            payoutRuleMatrix: activeBuyPayoutRules,
-          } = getActivePayoutRuleMatrix(zoe, buyInviteHandles);
-          for (let i = 0; i < activeBuyHandles.length; i += 1) {
-            if (
-              isMatchingLimitOrder(
-                zoe,
-                assays,
-                payoutRules,
-                activeBuyPayoutRules[i],
-              )
-            ) {
-              return reallocate(zoe, assays, inviteHandle, activeBuyHandles[i]);
+          const { active } = zoe.getOfferStatuses(buyInviteHandles);
+          for (let i = 0; i < active.length; i += 1) {
+            if (isMatchingLimitOrder(inviteHandle, active[i])) {
+              return reallocate(inviteHandle, active[i]);
             }
           }
           return defaultAcceptanceMsg;
         }
-
         // Is it a valid buy offer?
-        const buyOfferFormat = ['want', 'offer'];
-        if (hasValidPayoutRules(buyOfferFormat, assays, payoutRules)) {
-          // Save the valid offer
+        if (hasValidPayoutRules(['want', 'offer'], inviteHandle)) {
+          // Save the valid offer and try to match
           buyInviteHandles.push(inviteHandle);
-
-          // Try to match
-          const {
-            inviteHandles: activeSellHandles,
-            payoutRuleMatrix: activeSellPayoutRules,
-          } = getActivePayoutRuleMatrix(zoe, sellInviteHandles);
-          for (let i = 0; i < activeSellHandles.length; i += 1) {
-            if (
-              isMatchingLimitOrder(
-                zoe,
-                assays,
-                activeSellPayoutRules[i],
-                payoutRules,
-              )
-            ) {
-              reallocate(zoe, assays, activeSellHandles[i], inviteHandle);
+          const { active } = zoe.getOfferStatuses(sellInviteHandles);
+          for (let i = 0; i < active.length; i += 1) {
+            if (isMatchingLimitOrder(active[i], inviteHandle)) {
+              reallocate(active[i], inviteHandle);
             }
           }
           return defaultAcceptanceMsg;
         }
-
         // Eject because the offer must be invalid
-        throw rejectOffer(zoe, assays, inviteHandle);
+        throw rejectOffer(inviteHandle);
       },
-      makeInvite: makeSeatInvite,
     });
     const { invite, inviteHandle } = zoe.makeInvite(seat);
     return invite;
   };
-
   return harden({
-    invite: makeSeatInvite(),
+    invite: makeInvite(),
+    publicAPI: { makeInvite },
     terms,
   });
 });

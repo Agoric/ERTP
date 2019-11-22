@@ -40,10 +40,13 @@ test('zoe - secondPriceAuction w/ 3 bids', async t => {
 
     const installationHandle = zoe.install(source, moduleFormat);
     const numBidsAllowed = 3;
-    const { invite: aliceInvite } = await zoe.makeInstance(installationHandle, {
-      assays,
-      numBidsAllowed,
-    });
+    const { invite: aliceInvite, instance } = await zoe.makeInstance(
+      installationHandle,
+      {
+        assays,
+        numBidsAllowed,
+      },
+    );
 
     // 2: Alice escrows with zoe
     const aliceOfferRules = harden({
@@ -69,8 +72,12 @@ test('zoe - secondPriceAuction w/ 3 bids', async t => {
     );
 
     // 4: Alice initializes the auction
-    const aliceOfferResult = await aliceSeat.startAuction();
-    const [bobInvite, carolInvite, daveInvite] = await aliceSeat.makeInvites(3);
+    const aliceOfferResult = await aliceSeat.sellAssets();
+    const [
+      bobInvite,
+      carolInvite,
+      daveInvite,
+    ] = await instance.publicAPI.makeInvites(3);
 
     t.equals(
       aliceOfferResult,
@@ -326,10 +333,13 @@ test('zoe - secondPriceAuction w/ 3 bids - alice exits onDemand', async t => {
 
     const installationHandle = zoe.install(source, moduleFormat);
     const numBidsAllowed = 3;
-    const { invite: aliceInvite } = await zoe.makeInstance(installationHandle, {
-      assays,
-      numBidsAllowed,
-    });
+    const { invite: aliceInvite, instance } = await zoe.makeInstance(
+      installationHandle,
+      {
+        assays,
+        numBidsAllowed,
+      },
+    );
 
     // 2: Alice escrows with zoe
     const aliceOfferRules = harden({
@@ -355,8 +365,8 @@ test('zoe - secondPriceAuction w/ 3 bids - alice exits onDemand', async t => {
     } = await zoe.redeem(aliceInvite, aliceOfferRules, alicePayments);
 
     // 4: Alice initializes the auction with her escrow receipt
-    const aliceOfferResult = await aliceSeat.startAuction();
-    const [bobInvite] = await aliceSeat.makeInvites(1);
+    const aliceOfferResult = await aliceSeat.sellAssets();
+    const [bobInvite] = instance.publicAPI.makeInvites(1);
 
     t.equals(
       aliceOfferResult,

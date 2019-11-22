@@ -28,9 +28,12 @@ test('zoe - simpleExchange', async t => {
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a simpleExchange instance
-    const { invite: aliceInvite } = await zoe.makeInstance(installationHandle, {
-      assays,
-    });
+    const { invite: aliceInvite, instance } = await zoe.makeInstance(
+      installationHandle,
+      {
+        assays,
+      },
+    );
 
     // 2: Alice escrows with zoe to create a sell order. She wants to
     // sell 3 moola and wants to receive at least 4 simoleans in
@@ -59,13 +62,13 @@ test('zoe - simpleExchange', async t => {
 
     // 4: Alice adds her sell order to the exchange
     const aliceOfferResult = await aliceSeat.addOrder();
-    const bobInviteP = aliceSeat.makeInvite();
+    const bobInvite = instance.publicAPI.makeInvite();
 
     // 5: Alice spreads the invite far and wide with instructions
     // on how to use it and Bob decides he wants to join.
 
     const inviteAssay = zoe.getInviteAssay();
-    const bobExclusiveInvite = await inviteAssay.claimAll(bobInviteP);
+    const bobExclusiveInvite = await inviteAssay.claimAll(bobInvite);
 
     const {
       installationHandle: bobInstallationId,

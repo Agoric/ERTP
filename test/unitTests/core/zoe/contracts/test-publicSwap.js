@@ -28,9 +28,12 @@ test('zoe - publicSwap', async t => {
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a publicSwap instance
-    const { invite: aliceInvite } = await zoe.makeInstance(installationHandle, {
-      assays,
-    });
+    const { invite: aliceInvite, instance } = await zoe.makeInstance(
+      installationHandle,
+      {
+        assays,
+      },
+    );
 
     // 2: Alice escrows with zoe
     const aliceOfferRules = harden({
@@ -56,10 +59,8 @@ test('zoe - publicSwap', async t => {
     );
 
     // 4: Alice makes the first offer in the swap.
-    const {
-      outcome: aliceOutcomeP,
-      invite: bobInviteP,
-    } = aliceSeat.makeFirstOffer();
+    const aliceOutcome = aliceSeat.makeFirstOffer();
+    const bobInviteP = instance.publicAPI.makeMatchingInvite();
 
     // 5: Alice spreads the invite far and wide with instructions
     // on how to use it and Bob decides he wants to be the
@@ -111,7 +112,7 @@ test('zoe - publicSwap', async t => {
     );
 
     t.equals(
-      await aliceOutcomeP,
+      await aliceOutcome,
       'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
     const bobPayout = await bobPayoutP;
