@@ -16,10 +16,10 @@ import harden from '@agoric/harden';
 // extent of the invite:
 // { expirationDate, timerAuthority, underlyingAsset, strikePrice }
 
-import { defaultAcceptanceMsg, makeHelpers } from './helpers/userFlow';
+import { makeHelpers } from './helpers/userFlow';
 
 export const makeContract = harden((zoe, terms) => {
-  const { rejectOffer, hasValidPayoutRules, trySwap } = makeHelpers(
+  const { rejectOffer, hasValidPayoutRules, swap } = makeHelpers(
     zoe,
     terms.assays,
   );
@@ -27,16 +27,8 @@ export const makeContract = harden((zoe, terms) => {
 
   const makeCallOptionInvite = () => {
     const seat = harden({
-      useOption: () => {
-        if (!zoe.isOfferActive(sellerHandle)) {
-          throw rejectOffer(
-            inviteHandle,
-            `The covered call option is expired.`,
-          );
-        }
-        trySwap(sellerHandle, inviteHandle);
-        return defaultAcceptanceMsg;
-      },
+      useOption: () =>
+        swap(sellerHandle, inviteHandle, `The covered call option is expired.`),
     });
     const payoutRules = zoe.getPayoutRules(sellerHandle);
     const exitRule = zoe.getExitRule(sellerHandle);
@@ -56,7 +48,7 @@ export const makeContract = harden((zoe, terms) => {
         const exitRule = zoe.getExitRule(inviteHandle);
         if (
           !hasValidPayoutRules(['offer', 'want'], inviteHandle) ||
-          exitRule.kind !== 'atDeadline'
+          exitRule.kind !== 'afterDeadline'
         ) {
           throw rejectOffer(inviteHandle);
         }

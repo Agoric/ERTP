@@ -54,7 +54,7 @@ export const makeHelpers = (zoe, assays) => {
       keepHandleInactiveMsg = 'prior offer is unavailable',
     ) => {
       if (!zoe.isOfferActive(keepHandle)) {
-        throw helpers.rejectOffer(keepHandle, keepHandleInactiveMsg);
+        throw helpers.rejectOffer(tryHandle, keepHandleInactiveMsg);
       }
       const handles = [keepHandle, tryHandle];
       if (!helpers.canTradeWith(handles)) {

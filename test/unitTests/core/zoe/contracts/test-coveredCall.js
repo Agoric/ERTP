@@ -12,109 +12,98 @@ const publicSwapRoot = `${__dirname}/../../../../../core/zoe/contracts/publicSwa
 
 test('zoe - coveredCall', async t => {
   try {
-    const { mints: defaultMints, assays: defaultAssays } = setup();
+    const {
+      mints: defaultMints,
+      assays: defaultAssays,
+      moola,
+      simoleans,
+      unitOps,
+    } = setup();
     const mints = defaultMints.slice(0, 2);
     const assays = defaultAssays.slice(0, 2);
     const zoe = makeZoe({ require });
-    const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(coveredCallRoot);
-
     const coveredCallInstallationHandle = zoe.install(source, moduleFormat);
+    const timer = buildManualTimer(console.log);
 
     // Setup Alice
-    const aliceMoolaPurse = mints[0].mint(assays[0].makeUnits(3));
+    const aliceMoolaPurse = mints[0].mint(moola(3));
     const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
-    const aliceSimoleanPurse = mints[1].mint(assays[1].makeUnits(0));
+    const aliceSimoleanPurse = mints[1].mint(simoleans(0));
 
     // Setup Bob
-    const bobMoolaPurse = mints[0].mint(assays[0].makeUnits(0));
-    const bobSimoleanPurse = mints[1].mint(assays[1].makeUnits(7));
+    const bobMoolaPurse = mints[0].mint(moola(0));
+    const bobSimoleanPurse = mints[1].mint(simoleans(7));
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a coveredCall instance
     const terms = {
       assays,
     };
-    const {
-      instance: aliceCoveredCall,
-      instanceHandle,
-      terms: aliceTerms,
-    } = await zoe.makeInstance(coveredCallInstallationHandle, terms);
-
-    // The assays are defined at this step
-    t.deepEquals(aliceTerms.assays, assays);
+    const { invite: aliceInvite } = await zoe.makeInstance(
+      coveredCallInstallationHandle,
+      terms,
+    );
 
     // 2: Alice escrows with Zoe
     const aliceOfferRules = harden({
       payoutRules: [
         {
           kind: 'offer',
-          units: assays[0].makeUnits(3),
+          units: moola(3),
         },
         {
           kind: 'want',
-          units: assays[1].makeUnits(7),
+          units: simoleans(7),
         },
       ],
       exitRule: {
-        kind: 'onDemand',
+        kind: 'afterDeadline',
+        deadline: 1,
+        timer,
       },
     });
     const alicePayments = [aliceMoolaPayment, undefined];
-    const {
-      escrowReceipt: allegedAliceEscrowReceipt,
-      payout: alicePayoutP,
-    } = await zoe.escrow(aliceOfferRules, alicePayments);
-
-    // 3: Alice does a claimAll on the escrowReceipt payment
-    const aliceEscrowReceipt = await escrowReceiptAssay.claimAll(
-      allegedAliceEscrowReceipt,
+    const { seat: aliceSeat, payout: alicePayoutP } = await zoe.redeem(
+      aliceInvite,
+      aliceOfferRules,
+      alicePayments,
     );
 
-    // 3: Alice initializes the coveredCall with her escrow receipt
+    // 3: Alice creates a call option
 
-    // Alice gets two kinds of things back - invites (the ability to
-    // make an offer) and a seat for herself (the right to claim after
-    // an offer has been made). She gets a seat since she made an
-    // offer. Bob gets an invite.
-    const {
-      outcome: aliceOutcome,
-      invite: bobInvitePayment,
-    } = await aliceCoveredCall.makeFirstOffer(aliceEscrowReceipt);
+    const option = aliceSeat.makeCallOption();
 
-    // Check that the assays and bobInvitePayment are as expected
-    t.deepEquals(
-      bobInvitePayment.getBalance().extent.instanceHandle,
-      instanceHandle,
-    );
-    t.deepEquals(bobInvitePayment.getBalance().extent.offerToBeMade, [
-      {
-        kind: 'want',
-        units: assays[0].makeUnits(3),
-      },
-      {
-        kind: 'offer',
-        units: assays[1].makeUnits(7),
-      },
-    ]);
-
-    // 3: Imagine that Alice sends the invite to Bob (not done here
+    // Imagine that Alice sends the option to Bob for free (not done here
     // since this test doesn't actually have separate vats/parties)
 
-    // 4: Bob inspects the invite payment and checks that it is the
+    // 4: Bob inspects the option (an invite payment) and checks that it is the
     // contract instance that he expects as well as that Alice has
     // already escrowed.
 
-    const bobIntendedOfferRules = harden({
+    const inviteAssay = zoe.getInviteAssay();
+    const bobExclOption = await inviteAssay.claimAll(option);
+    const optionExtent = bobExclOption.getBalance().extent;
+    const { installationHandle } = zoe.getInstance(optionExtent.instanceHandle);
+    t.equal(installationHandle, coveredCallInstallationHandle);
+    t.equal(optionExtent.seatDesc, 'useOption');
+    t.ok(unitOps[0].equals(optionExtent.underlyingAsset, moola(3)));
+    t.ok(unitOps[1].equals(optionExtent.strikePrice, simoleans(7)));
+    t.equal(optionExtent.expirationDate, 1);
+    t.deepEqual(optionExtent.timerAuthority, timer);
+
+    const bobPayments = [undefined, bobSimoleanPayment];
+
+    const bobOfferRules = harden({
       payoutRules: [
         {
           kind: 'want',
-          units: assays[0].makeUnits(3),
+          units: optionExtent.underlyingAsset,
         },
         {
           kind: 'offer',
-          units: assays[1].makeUnits(7),
+          units: optionExtent.strikePrice,
         },
       ],
       exitRule: {
@@ -122,73 +111,49 @@ test('zoe - coveredCall', async t => {
       },
     });
 
-    const inviteExtent = bobInvitePayment.getBalance().extent;
-    t.equal(inviteExtent.instanceHandle, instanceHandle);
-    t.ok(sameStructure(inviteExtent.offerMadeRules, aliceOfferRules));
-    t.ok(
-      sameStructure(
-        inviteExtent.offerToBeMade,
-        bobIntendedOfferRules.payoutRules,
-      ),
-    );
-
-    // Bob claims all with the Zoe inviteAssay
-    const inviteAssay = zoe.getInviteAssay();
-    const bobExclInvitePayment = await inviteAssay.claimAll(bobInvitePayment);
-
-    // 5: Only after assaying the invite does he unwrap it (destroying
-    // the ERTP invite) and accept it
-    const bobInvite = await bobExclInvitePayment.unwrap();
-    const bobPayments = [undefined, bobSimoleanPayment];
-
     // 6: Bob escrows
-    const {
-      escrowReceipt: allegedBobEscrowReceipt,
-      payout: bobPayoutP,
-    } = await zoe.escrow(bobIntendedOfferRules, bobPayments);
-
-    // 7: Bob does a claimAll on the escrowReceipt payment
-    const bobEscrowReceipt = await escrowReceiptAssay.claimAll(
-      allegedBobEscrowReceipt,
+    const { seat: bobSeat, payout: bobPayoutP } = await zoe.redeem(
+      bobExclOption,
+      bobOfferRules,
+      bobPayments,
     );
 
     // 8: Bob makes an offer with his escrow receipt
-    const bobOutcome = await bobInvite.matchOffer(bobEscrowReceipt);
+    const bobOutcome = await bobSeat.useOption();
 
     t.equals(
       bobOutcome,
       'The offer has been accepted. Once the contract has been completed, please check your payout',
     );
-    t.equals(
-      aliceOutcome,
-      'The offer has been accepted. Once the contract has been completed, please check your payout',
+
+    const bobPayout = await bobPayoutP;
+    const alicePayout = await alicePayoutP;
+
+    const [bobMoolaPayout, bobSimoleanPayout] = await Promise.all(bobPayout);
+    const [aliceMoolaPayout, aliceSimoleanPayout] = await Promise.all(
+      alicePayout,
     );
 
-    const aliceResult = await alicePayoutP;
-    const bobResult = await bobPayoutP;
-
-    // Alice gets back 0 of the kind she put in
-    t.equals(aliceResult[0].getBalance().extent, 0);
-
-    // Alice got what she wanted
+    // Alice gets what Alice wanted
     t.deepEquals(
-      aliceResult[1].getBalance(),
+      aliceSimoleanPayout.getBalance(),
       aliceOfferRules.payoutRules[1].units,
     );
 
-    // 11: Alice deposits her winnings to ensure she can
-    await aliceMoolaPurse.depositAll(aliceResult[0]);
-    await aliceSimoleanPurse.depositAll(aliceResult[1]);
+    // Alice didn't get any of what Alice put in
+    t.equals(aliceMoolaPayout.getBalance().extent, 0);
 
-    // 12: Bob deposits his winnings to ensure he can
-    await bobMoolaPurse.depositAll(bobResult[0]);
-    await bobSimoleanPurse.depositAll(bobResult[1]);
+    // 13: Alice deposits her payout to ensure she can
+    await aliceMoolaPurse.depositAll(aliceMoolaPayout);
+    await aliceSimoleanPurse.depositAll(aliceSimoleanPayout);
 
-    // Assert that the correct outcome was achieved.
+    // 14: Bob deposits his original payments to ensure he can
+    await bobMoolaPurse.depositAll(bobMoolaPayout);
+    await bobSimoleanPurse.depositAll(bobSimoleanPayout);
+
+    // Assert that the correct payouts were received.
     // Alice had 3 moola and 0 simoleans.
     // Bob had 0 moola and 7 simoleans.
-    // Now, Alice should have 0 moola and 7 simoleans.
-    // Bob should have 3 moola and 0 simoleans.
     t.equals(aliceMoolaPurse.getBalance().extent, 0);
     t.equals(aliceSimoleanPurse.getBalance().extent, 7);
     t.equals(bobMoolaPurse.getBalance().extent, 3);
@@ -202,51 +167,50 @@ test('zoe - coveredCall', async t => {
 
 test(`zoe - coveredCall - alice's deadline expires, cancelling alice and bob`, async t => {
   try {
-    const { mints: defaultMints, assays: defaultAssays } = setup();
+    const {
+      mints: defaultMints,
+      assays: defaultAssays,
+      moola,
+      simoleans,
+      unitOps,
+    } = setup();
     const mints = defaultMints.slice(0, 2);
     const assays = defaultAssays.slice(0, 2);
     const zoe = makeZoe({ require });
-    const escrowReceiptAssay = zoe.getEscrowReceiptAssay();
     // Pack the contract.
     const { source, moduleFormat } = await bundleSource(coveredCallRoot);
-
     const coveredCallInstallationHandle = zoe.install(source, moduleFormat);
+    const timer = buildManualTimer(console.log);
 
     // Setup Alice
-    const aliceMoolaPurse = mints[0].mint(assays[0].makeUnits(3));
+    const aliceMoolaPurse = mints[0].mint(moola(3));
     const aliceMoolaPayment = aliceMoolaPurse.withdrawAll();
-    const aliceSimoleanPurse = mints[1].mint(assays[1].makeUnits(0));
+    const aliceSimoleanPurse = mints[1].mint(simoleans(0));
 
     // Setup Bob
-    const bobMoolaPurse = mints[0].mint(assays[0].makeUnits(0));
-    const bobSimoleanPurse = mints[1].mint(assays[1].makeUnits(7));
+    const bobMoolaPurse = mints[0].mint(moola(0));
+    const bobSimoleanPurse = mints[1].mint(simoleans(7));
     const bobSimoleanPayment = bobSimoleanPurse.withdrawAll();
 
     // 1: Alice creates a coveredCall instance
-
     const terms = {
       assays,
     };
-    const {
-      instance: aliceCoveredCall,
-      instanceHandle,
-      terms: aliceTerms,
-    } = await zoe.makeInstance(coveredCallInstallationHandle, terms);
-
-    // The assays are defined at this step
-    t.deepEquals(aliceTerms.assays, assays);
+    const { invite: aliceInvite } = await zoe.makeInstance(
+      coveredCallInstallationHandle,
+      terms,
+    );
 
     // 2: Alice escrows with Zoe
-    const timer = buildManualTimer(console.log);
     const aliceOfferRules = harden({
       payoutRules: [
         {
           kind: 'offer',
-          units: assays[0].makeUnits(3),
+          units: moola(3),
         },
         {
           kind: 'want',
-          units: assays[1].makeUnits(7),
+          units: simoleans(7),
         },
       ],
       exitRule: {
@@ -256,61 +220,45 @@ test(`zoe - coveredCall - alice's deadline expires, cancelling alice and bob`, a
       },
     });
     const alicePayments = [aliceMoolaPayment, undefined];
-    const {
-      escrowReceipt: allegedAliceEscrowReceipt,
-      payout: alicePayoutP,
-    } = await zoe.escrow(aliceOfferRules, alicePayments);
-
-    // 3: Alice does a claimAll on the escrowReceipt payment
-    const aliceEscrowReceipt = await escrowReceiptAssay.claimAll(
-      allegedAliceEscrowReceipt,
+    const { seat: aliceSeat, payout: alicePayoutP } = await zoe.redeem(
+      aliceInvite,
+      aliceOfferRules,
+      alicePayments,
     );
 
-    // 3: Alice initializes the coveredCall with her escrow receipt
-
-    // Alice gets two kinds of things back - invites (the ability to
-    // make an offer) and a seat for herself (the right to claim after
-    // an offer has been made). She gets a seat since she made an
-    // offer. Bob gets an invite.
-    const {
-      outcome: aliceOutcome,
-      invite: bobInvitePayment,
-    } = await aliceCoveredCall.makeFirstOffer(aliceEscrowReceipt);
-
-    // Check that the assays and bobInvitePayment are as expected
-    t.deepEquals(
-      bobInvitePayment.getBalance().extent.instanceHandle,
-      instanceHandle,
-    );
-    t.deepEquals(bobInvitePayment.getBalance().extent.offerToBeMade, [
-      {
-        kind: 'want',
-        units: assays[0].makeUnits(3),
-      },
-      {
-        kind: 'offer',
-        units: assays[1].makeUnits(7),
-      },
-    ]);
-
+    // 3: Alice gets an option
+    const option = aliceSeat.makeCallOption();
     timer.tick();
 
-    // 3: Imagine that Alice sends the invite to Bob (not done here
+   // Imagine that Alice sends the option to Bob for free (not done here
     // since this test doesn't actually have separate vats/parties)
 
-    // 4: Bob inspects the invite payment and checks that it is the
+    // 4: Bob inspects the option (an invite payment) and checks that it is the
     // contract instance that he expects as well as that Alice has
     // already escrowed.
 
-    const bobIntendedOfferRules = harden({
+    const inviteAssay = zoe.getInviteAssay();
+    const bobExclOption = await inviteAssay.claimAll(option);
+    const optionExtent = bobExclOption.getBalance().extent;
+    const { installationHandle } = zoe.getInstance(optionExtent.instanceHandle);
+    t.equal(installationHandle, coveredCallInstallationHandle);
+    t.equal(optionExtent.seatDesc, 'useOption');
+    t.ok(unitOps[0].equals(optionExtent.underlyingAsset, moola(3)));
+    t.ok(unitOps[1].equals(optionExtent.strikePrice, simoleans(7)));
+    t.equal(optionExtent.expirationDate, 1);
+    t.deepEqual(optionExtent.timerAuthority, timer);
+
+    const bobPayments = [undefined, bobSimoleanPayment];
+
+    const bobOfferRules = harden({
       payoutRules: [
         {
           kind: 'want',
-          units: assays[0].makeUnits(3),
+          units: optionExtent.underlyingAsset,
         },
         {
           kind: 'offer',
-          units: assays[1].makeUnits(7),
+          units: optionExtent.strikePrice,
         },
       ],
       exitRule: {
@@ -318,71 +266,44 @@ test(`zoe - coveredCall - alice's deadline expires, cancelling alice and bob`, a
       },
     });
 
-    const inviteExtent = bobInvitePayment.getBalance().extent;
-    t.equal(inviteExtent.instanceHandle, instanceHandle);
-    t.ok(sameStructure(inviteExtent.offerMadeRules, aliceOfferRules));
-    t.ok(
-      sameStructure(
-        inviteExtent.offerToBeMade,
-        bobIntendedOfferRules.payoutRules,
-      ),
-    );
-
-    // Bob claims all with the Zoe inviteAssay
-    const inviteAssay = zoe.getInviteAssay();
-    const bobExclInvitePayment = await inviteAssay.claimAll(bobInvitePayment);
-
-    // 5: Only after assaying the invite does he unwrap it (destroying
-    // the ERTP invite) and accept it
-    const bobInvite = await bobExclInvitePayment.unwrap();
-    const bobPayments = [undefined, bobSimoleanPayment];
-
     // 6: Bob escrows
-    const {
-      escrowReceipt: allegedBobEscrowReceipt,
-      payout: bobPayoutP,
-    } = await zoe.escrow(bobIntendedOfferRules, bobPayments);
-
-    // 7: Bob does a claimAll on the escrowReceipt payment
-    const bobEscrowReceipt = await escrowReceiptAssay.claimAll(
-      allegedBobEscrowReceipt,
+    const { seat: bobSeat, payout: bobPayoutP } = await zoe.redeem(
+      bobExclOption,
+      bobOfferRules,
+      bobPayments,
     );
 
-    // 8: Bob makes an offer with his escrow receipt
-    t.rejects(
-      bobInvite.matchOffer(bobEscrowReceipt),
-      /The first offer was withdrawn/,
-    );
+    t.throws(() => bobSeat.useOption(), /The covered call option is expired/);
 
-    t.equals(
-      aliceOutcome,
-      'The offer has been accepted. Once the contract has been completed, please check your payout',
-    );
+    const bobPayout = await bobPayoutP;
+    const alicePayout = await alicePayoutP;
 
-    const aliceResult = await alicePayoutP;
-    const bobResult = await bobPayoutP;
+    const [bobMoolaPayout, bobSimoleanPayout] = await Promise.all(bobPayout);
+    const [aliceMoolaPayout, aliceSimoleanPayout] = await Promise.all(
+      alicePayout,
+    );
 
     // Alice gets back what she put in
-    t.deepEquals(aliceResult[0].getBalance(), assays[0].makeUnits(3));
+    t.deepEquals(aliceMoolaPayout.getBalance(), moola(3));
 
     // Alice doesn't get what she wanted
-    t.deepEquals(aliceResult[1].getBalance(), assays[1].makeUnits(0));
+    t.deepEquals(aliceSimoleanPayout.getBalance(), simoleans(0));
 
     // 11: Alice deposits her winnings to ensure she can
-    await aliceMoolaPurse.depositAll(aliceResult[0]);
-    await aliceSimoleanPurse.depositAll(aliceResult[1]);
+    await aliceMoolaPurse.depositAll(aliceMoolaPayout);
+    await aliceSimoleanPurse.depositAll(aliceSimoleanPayout);
 
     // 12: Bob deposits his winnings to ensure he can
-    await bobMoolaPurse.depositAll(bobResult[0]);
-    await bobSimoleanPurse.depositAll(bobResult[1]);
+    await bobMoolaPurse.depositAll(bobMoolaPayout);
+    await bobSimoleanPurse.depositAll(bobSimoleanPayout);
 
     // Assert that the correct outcome was achieved.
     // Alice had 3 moola and 0 simoleans.
     // Bob had 0 moola and 7 simoleans.
-    t.deepEquals(aliceMoolaPurse.getBalance(), assays[0].makeUnits(3));
-    t.deepEquals(aliceSimoleanPurse.getBalance(), assays[1].makeUnits(0));
-    t.deepEquals(bobMoolaPurse.getBalance(), assays[0].makeUnits(0));
-    t.deepEquals(bobSimoleanPurse.getBalance(), assays[1].makeUnits(7));
+    t.deepEquals(aliceMoolaPurse.getBalance(), moola(3));
+    t.deepEquals(aliceSimoleanPurse.getBalance(), simoleans(0));
+    t.deepEquals(bobMoolaPurse.getBalance(), moola(0));
+    t.deepEquals(bobSimoleanPurse.getBalance(), simoleans(7));
   } catch (e) {
     t.isNot(e, e, 'unexpected exception');
   } finally {
