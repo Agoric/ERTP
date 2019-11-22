@@ -87,7 +87,7 @@ test('zoe - coveredCall', async t => {
     const optionExtent = bobExclOption.getBalance().extent;
     const { installationHandle } = zoe.getInstance(optionExtent.instanceHandle);
     t.equal(installationHandle, coveredCallInstallationHandle);
-    t.equal(optionExtent.seatDesc, 'useOption');
+    t.equal(optionExtent.seatDesc, 'exerciseOption');
     t.ok(unitOps[0].equals(optionExtent.underlyingAsset, moola(3)));
     t.ok(unitOps[1].equals(optionExtent.strikePrice, simoleans(7)));
     t.equal(optionExtent.expirationDate, 1);
@@ -119,7 +119,7 @@ test('zoe - coveredCall', async t => {
     );
 
     // 8: Bob makes an offer with his escrow receipt
-    const bobOutcome = await bobSeat.useOption();
+    const bobOutcome = await bobSeat.exercise();
 
     t.equals(
       bobOutcome,
@@ -242,7 +242,7 @@ test(`zoe - coveredCall - alice's deadline expires, cancelling alice and bob`, a
     const optionExtent = bobExclOption.getBalance().extent;
     const { installationHandle } = zoe.getInstance(optionExtent.instanceHandle);
     t.equal(installationHandle, coveredCallInstallationHandle);
-    t.equal(optionExtent.seatDesc, 'useOption');
+    t.equal(optionExtent.seatDesc, 'exerciseOption');
     t.ok(unitOps[0].equals(optionExtent.underlyingAsset, moola(3)));
     t.ok(unitOps[1].equals(optionExtent.strikePrice, simoleans(7)));
     t.equal(optionExtent.expirationDate, 1);
@@ -273,7 +273,7 @@ test(`zoe - coveredCall - alice's deadline expires, cancelling alice and bob`, a
       bobPayments,
     );
 
-    t.throws(() => bobSeat.useOption(), /The covered call option is expired/);
+    t.throws(() => bobSeat.exercise(), /The covered call option is expired/);
 
     const bobPayout = await bobPayoutP;
     const alicePayout = await alicePayoutP;

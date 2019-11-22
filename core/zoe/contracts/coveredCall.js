@@ -27,13 +27,13 @@ export const makeContract = harden((zoe, terms) => {
 
   const makeCallOptionInvite = () => {
     const seat = harden({
-      useOption: () =>
+      exercise: () =>
         swap(sellerHandle, inviteHandle, `The covered call option is expired.`),
     });
     const payoutRules = zoe.getPayoutRules(sellerHandle);
     const exitRule = zoe.getExitRule(sellerHandle);
     const { invite: callOption, inviteHandle } = zoe.makeInvite(seat, {
-      seatDesc: 'useOption',
+      seatDesc: 'exerciseOption',
       expirationDate: exitRule.deadline,
       timerAuthority: exitRule.timer,
       underlyingAsset: payoutRules[0].units,
