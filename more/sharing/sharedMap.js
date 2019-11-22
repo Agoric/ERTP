@@ -3,7 +3,7 @@
 import harden from '@agoric/harden';
 
 // Allows multiple parties to store values for retrieval by others.
-function makeCorkboard(name) {
+function makeSharedMap(name) {
   const namedEntries = new Map();
   const orderedEntries = [];
 
@@ -28,6 +28,6 @@ function makeCorkboard(name) {
     // TODO(hibbert) retrieve by numbered position
   });
 }
-harden(makeCorkboard);
+harden(makeSharedMap);
 
-export { makeCorkboard };
+export { makeSharedMap };
