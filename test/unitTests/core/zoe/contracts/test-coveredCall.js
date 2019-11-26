@@ -230,7 +230,7 @@ test(`zoe - coveredCall - alice's deadline expires, cancelling alice and bob`, a
     const option = aliceSeat.makeCallOption();
     timer.tick();
 
-   // Imagine that Alice sends the option to Bob for free (not done here
+    // Imagine that Alice sends the option to Bob for free (not done here
     // since this test doesn't actually have separate vats/parties)
 
     // 4: Bob inspects the option (an invite payment) and checks that it is the
