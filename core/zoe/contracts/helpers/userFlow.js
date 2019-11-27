@@ -10,7 +10,6 @@ const hasAssays = (assays, newPayoutRules) =>
   assays.every((assay, i) => assay === newPayoutRules[i].units.label.assay);
 
 export const makeHelpers = (zoe, assays) => {
-  const unitOpsArray = zoe.getUnitOpsForAssays(assays);
   const helpers = harden({
     completeOffers: handles => zoe.complete(harden([...handles]), assays),
     rejectOffer: (inviteHandle, msg = defaultRejectMsg) => {
@@ -68,17 +67,25 @@ export const makeHelpers = (zoe, assays) => {
       return defaultAcceptanceMsg;
     },
     // Vector addition of two units arrays
-    vectorWith: (leftUnitsArray, rightUnitsArray) =>
-      leftUnitsArray.map((leftUnits, i) =>
+    vectorWith: (leftUnitsArray, rightUnitsArray) => {
+      const unitOpsArray = zoe.getUnitOpsForAssays(assays);
+      const withUnits = leftUnitsArray.map((leftUnits, i) =>
         unitOpsArray[i].with(leftUnits, rightUnitsArray[i]),
-      ),
-
+      );
+      return withUnits;
+    },
     // Vector subtraction of two extent arrays
-    vectorWithout: (leftUnitsArray, rightUnitsArray) =>
-      leftUnitsArray.map((leftUnits, i) =>
+    vectorWithout: (leftUnitsArray, rightUnitsArray) => {
+      const unitOpsArray = zoe.getUnitOpsForAssays(assays);
+      const withoutUnits = leftUnitsArray.map((leftUnits, i) =>
         unitOpsArray[i].without(leftUnits, rightUnitsArray[i]),
-      ),
-    makeEmptyUnits: unitOpsArray.map(unitOps => unitOps.empty()),
+      );
+      return withoutUnits;
+    },
+    makeEmptyUnits: () => {
+      const unitOpsArray = zoe.getUnitOpsForAssays(assays);
+      return unitOpsArray.map(unitOps => unitOps.empty());
+    },
   });
   return helpers;
 };
