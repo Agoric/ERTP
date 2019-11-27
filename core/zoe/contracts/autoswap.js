@@ -3,7 +3,6 @@ import harden from '@agoric/harden';
 import { natSafeMath } from './helpers/safeMath';
 
 import { makeHelpers } from './helpers/userFlow';
-
 import { makeMint } from '../../mint';
 
 export const makeContract = harden((zoe, terms) => {
@@ -137,61 +136,39 @@ export const makeContract = harden((zoe, terms) => {
         return 'Liquidity successfully removed.';
       },
       swap: () => {
-        const newUserUnits = makeEmptyUnits();
-        let newPoolUnits;
+        let TOKEN_OFFERED_INDEX;
+        let TOKEN_WANTED_INDEX;
+
+        if (hasValidPayoutRules(['offer', 'want', 'want'], inviteHandle)) {
+          TOKEN_OFFERED_INDEX = 0;
+          TOKEN_WANTED_INDEX = 1;
+        } else if (
+          hasValidPayoutRules(['want', 'offer', 'want'], inviteHandle)
+        ) {
+          TOKEN_OFFERED_INDEX = 1;
+          TOKEN_WANTED_INDEX = 0;
+        } else {
+          throw rejectOffer(inviteHandle);
+        }
 
         const [poolUnits, userUnits] = zoe.getUnitMatrix(
           harden(poolInviteHandle, inviteHandle),
           assays,
         );
-        const [poolUnitsA, poolUnitsB] = poolUnits;
+        const { newUserUnits, newPoolUnits } = calculateSwap(
+          poolUnits,
+          userUnits,
+          TOKEN_OFFERED_INDEX,
+        );
 
-        // offer token A, want token B
-        if (hasValidPayoutRules(['offer', 'want', 'want'], inviteHandle)) {
-          const [offerUnits, wantUnits] = userUnits;
-          const {
-            tokenOutE,
-            newTokenInPoolE,
-            newTokenOutPoolE,
-          } = calculateSwap(
-            poolUnitsA.extent,
-            poolUnitsB.extent,
-            offerUnits.extent,
-          );
-          if (tokenOutE < wantUnits.extent) {
-            throw rejectOffer(inviteHandle);
-          }
-          newPoolUnits = [
-            unitOpsArray[0].make(newTokenInPoolE),
-            unitOpsArray[1].make(newTokenOutPoolE),
-            poolUnits[2],
-          ];
-          newUserUnits[1] = unitOpsArray[1].make(tokenOutE);
-
-          // want token A, offer token B
-        } else if (
-          hasValidPayoutRules(['want', 'offer', 'want'], inviteHandle)
+        const unitsWanted = zoe.getPayoutRules(inviteHandle)[TOKEN_WANTED_INDEX]
+          .units;
+        if (
+          !unitOpsArray[TOKEN_WANTED_INDEX].includes(
+            newUserUnits[TOKEN_WANTED_INDEX],
+            unitsWanted,
+          )
         ) {
-          const [wantUnits, offerUnits] = userUnits;
-          const {
-            tokenOutE,
-            newTokenInPoolE,
-            newTokenOutPoolE,
-          } = calculateSwap(
-            poolUnitsB.extent,
-            poolUnitsA.extent,
-            offerUnits.extent,
-          );
-          if (tokenOutE < wantUnits.extent) {
-            throw rejectOffer(inviteHandle);
-          }
-          newPoolUnits = [
-            unitOpsArray[0].make(newTokenOutPoolE),
-            unitOpsArray[1].make(newTokenInPoolE),
-            poolUnits[2],
-          ];
-          newUserUnits[0] = unitOpsArray[0].make(tokenOutE);
-        } else {
           throw rejectOffer(inviteHandle);
         }
         zoe.reallocate(
@@ -211,12 +188,11 @@ export const makeContract = harden((zoe, terms) => {
   /**
    * `calculateSwap` contains the logic for calculating how many
    * tokens should be given back to the user in exchange for what they
-   * sent in. It also calculates the fee as well as the new extents of
-   * the assets in the pool. `calculateSwap` is reused in several
-   * different places, including to check whether an offer is valid,
-   * getting the current price for an asset on user request, and to do
-   * the actual reallocation after an offer has been made. The `E` in
-   * variable names stands for extent.
+   * sent in. It also calculates the fee as well as the new balances
+   * of the liquidity pool. `calculateSwap` is reused in several
+   * different places, including getting the current price for an
+   * asset on user request, and to do the actual reallocation after an
+   * offer has been made. The `E` in variable names stands for extent.
    * @param  {number} tokenInPoolE - the extent in the liquidity pool
    * of the kind of token that was sent in.
    * @param  {number} tokenOutPoolE - the extent in the liquidity pool
@@ -228,11 +204,16 @@ export const makeContract = harden((zoe, terms) => {
    * tokenIn, which is the kind that was sent in.
    */
   const calculateSwap = (
-    tokenInPoolE,
-    tokenOutPoolE,
-    tokenInE,
+    poolUnits,
+    userUnits,
+    TOKEN_OFFERED_INDEX,
+    TOKEN_WANTED_INDEX,
     feeInTenthOfPercent = 3,
   ) => {
+    const tokenInPoolE = poolUnits[TOKEN_OFFERED_INDEX];
+    const tokenOutPoolE = poolUnits[TOKEN_WANTED_INDEX];
+    const tokenInE = userUnits[TOKEN_OFFERED_INDEX];
+
     // Constant product invariant means:
     // tokenInPoolE * tokenOutPoolE =
     //   (tokenInPoolE + tokenInE) *
@@ -252,43 +233,48 @@ export const makeContract = harden((zoe, terms) => {
     );
     // save divide for last
     const newTokenOutPoolE = divide(numerator, denominator);
-    return {
-      tokenOutE: tokenOutPoolE - newTokenOutPoolE,
-      newTokenInPoolE,
-      newTokenOutPoolE,
-    };
+
+    const newUserUnits = [];
+    const newPoolUnits = [];
+    newPoolUnits[TOKEN_OFFERED_INDEX] = newTokenInPoolE;
+    newPoolUnits[TOKEN_WANTED_INDEX] = newTokenOutPoolE;
+    newUserUnits[TOKEN_OFFERED_INDEX] = unitOpsArray[
+      TOKEN_OFFERED_INDEX
+    ].empty();
+    newUserUnits[TOKEN_WANTED_INDEX] = tokenOutPoolE - newTokenOutPoolE;
+    return { newUserUnits, newPoolUnits };
   };
 
   /**
    * `getPrice` calculates the result of a trade, given a certain units
    * of tokens in.
    */
-  const getPrice = unitsIn => {
+  const getPrice = userUnits => {
     const [poolUnits] = zoe.getUnitMatrix(harden(poolInviteHandle), assays);
-    const [poolUnitsA, poolUnitsB] = poolUnits;
-    const [userUnitsA, userUnitsB] = unitsIn;
+    let TOKEN_OFFERED_INDEX;
+    let TOKEN_WANTED_INDEX;
 
     // offer tokenA, want tokenB
-    if (userUnitsA.extent > 0 && userUnitsB.extent === 0) {
-      const { tokenOutE } = calculateSwap(
-        poolUnitsA.extent,
-        poolUnitsB.extent,
-        userUnitsA.extent,
-      );
-      return unitOpsArray[1].make(tokenOutE);
+    if (userUnits[0].extent > 0 && userUnits[1].extent === 0) {
+      TOKEN_OFFERED_INDEX = 0;
+      TOKEN_WANTED_INDEX = 1;
     }
 
     // want tokenA, offer tokenB
-    if (userUnitsA.extent === 0 && userUnitsB.extent > 0) {
-      const { tokenOutE } = calculateSwap(
-        poolUnitsB.extent,
-        poolUnitsB.extent,
-        userUnitsA.extent,
-      );
-      return unitOpsArray[0].make(tokenOutE);
+    else if (userUnits[0].extent === 0 && userUnits[1].extent > 0) {
+      TOKEN_OFFERED_INDEX = 1;
+      TOKEN_WANTED_INDEX = 0;
+    } else {
+      throw new Error(`The asset descriptions were invalid`);
     }
 
-    throw new Error(`The asset descriptions were invalid`);
+    const { newUserUnits } = calculateSwap(
+      poolUnits,
+      userUnits,
+      TOKEN_OFFERED_INDEX,
+    );
+
+    return newUserUnits[TOKEN_WANTED_INDEX];
   };
 
   return harden({
