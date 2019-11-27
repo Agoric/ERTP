@@ -59,6 +59,14 @@ const makeZoe = (additionalEndowments = {}) => {
     });
   };
 
+  const makeEmptyPayoutRules = unitOpsArray =>
+    unitOpsArray.map(unitOps =>
+      harden({
+        kind: 'want',
+        units: unitOps.empty(),
+      }),
+    );
+
   const makeInvite = (
     instanceHandle,
     seat,
@@ -143,53 +151,58 @@ const makeZoe = (additionalEndowments = {}) => {
        */
       complete: completeOffers,
 
-      /**
-       *  The contract can create an empty offer and get the
-       *  associated offerHandle. This allows the contract to use this
-       *  offer slot for record-keeping. For instance, to represent a
-       *  pool, the contract can create an empty offer and then
-       *  reallocate units to the offer to put them in the pool.
-       */
-      escrowEmptyOffer: assays => {
-        // Make offer rules as a user would, but with nothing offered
-        const unitOpsArray = assayTable.getUnitOpsForAssays(assays);
-        const payoutRules = unitOpsArray.map(unitOps =>
-          harden({
-            kind: 'want',
-            units: unitOps.empty(),
-          }),
-        );
-        const offerRules = harden({
-          payoutRules,
-          exitRule: {
-            kind: 'onDemand',
-          },
-        });
-
-        // Create the offer record and save it
+      makeEmptyOffer: assays => {
         const offerHandle = harden({});
-        // units are empty
-        const units = unitOpsArray.map(unitOps => unitOps.empty());
+        const unitOpsArray = assayTable.getUnitOpsForAssays(assays);
         const offerImmutableRecord = {
           offerHandle,
           instanceHandle,
-          payoutRules: offerRules.payoutRules,
-          exitRule: offerRules.exitRule,
+          payoutRules: makeEmptyPayoutRules(unitOpsArray),
+          exitRule: { kind: 'onDemand' },
+          assays,
+          units: unitOpsArray.map(unitOps => unitOps.empty()),
+          payoutPromise: makePromise(),
+        };
+        offerTable.create(offerHandle, offerImmutableRecord);
+        return offerHandle;
+      },
+
+      makeWantNothingOffer: (assays, offerPayments) => {
+        const offerHandle = harden({});
+        const unitOpsArray = assayTable.getUnitOpsForAssays(assays);
+        const offerImmutableRecord = {
+          offerHandle,
+          instanceHandle,
+          payoutRules: makeEmptyPayoutRules(unitOpsArray),
+          exitRule: { kind: 'onDemand' },
           assays,
           payoutPromise: makePromise(),
-          units,
         };
-        return offerTable.create(offerHandle, offerImmutableRecord);
+
+        // units should only be gotten after the payments are deposited
+        offerTable.create(offerHandle, offerImmutableRecord);
+
+        // Promise flow = assay -> purse -> deposit payment -> record units
+        const paymentBalancesP = assays.map((assay, i) => {
+          const { purseP, unitOpsP } = assayTable.getOrCreateAssay(assay);
+          const offerPayment = offerPayments[i];
+
+          return Promise.all([purseP, unitOpsP]).then(([purse, unitOps]) => {
+            if (offerPayment !== undefined) {
+              // We cannot trust these units since they come directly
+              // from the remote assay and must coerce them.
+              return E(purse)
+                .depositAll(offerPayment)
+                .then(units => unitOps.coerce(units));
+            }
+            return Promise.resolve(unitOps.empty());
+          });
+        });
+        const allDepositedP = Promise.all(paymentBalancesP);
+        return allDepositedP
+          .then(unitsArray => offerTable.createUnits(offerHandle, unitsArray))
+          .then(_ => offerHandle);
       },
-      /**
-       *  The contract can also create a real offer and get the
-       *  associated offerHandle, bypassing the escrow receipt
-       *  creation. This allows the contract to make offers on the
-       *  users' behalf, as happens in the `addLiquidity` step of the
-       *  `autoswap` contract.
-       */
-      // eslint-disable-next-line no-use-before-define
-      escrowOffer: zoeService.escrow,
 
       /**
        * Make a credible Zoe invite for a particular smart contract
@@ -297,9 +310,6 @@ const makeZoe = (additionalEndowments = {}) => {
      * of specifying a `want`.
      */
     redeem: async (invite, offerRules, offerPayments) => {
-      // Columns: offerHandle | instanceHandle | assays | payoutRules
-      // | exitRule | units | payoutPromise
-
       // the invite handle is also the offer handle
       const { seat, handle: offerHandle, instanceHandle } = await redeemInvite(
         invite,
@@ -327,6 +337,8 @@ const makeZoe = (additionalEndowments = {}) => {
 
         return Promise.all([purseP, unitOpsP]).then(([purse, unitOps]) => {
           if (payoutRule.kind === 'offer') {
+            // We cannot trust these units since they come directly
+            // from the remote assay and must coerce them.
             return E(purse)
               .depositExactly(payoutRule.units, offerPayment)
               .then(units => unitOps.coerce(units));
@@ -338,9 +350,9 @@ const makeZoe = (additionalEndowments = {}) => {
         });
       });
 
-      const giveSeat = units => {
+      const giveSeat = unitsArray => {
         // Record units for offer.
-        offerTable.createUnits(offerHandle, units);
+        offerTable.createUnits(offerHandle, unitsArray);
 
         // Create escrow result to be returned. Depends on exitRules.
         const escrowResult = {

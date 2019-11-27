@@ -10,6 +10,7 @@ const hasAssays = (assays, newPayoutRules) =>
   assays.every((assay, i) => assay === newPayoutRules[i].units.label.assay);
 
 export const makeHelpers = (zoe, assays) => {
+  const unitOpsArray = zoe.getUnitOpsForAssays(assays);
   const helpers = harden({
     completeOffers: handles => zoe.complete(harden([...handles]), assays),
     rejectOffer: (inviteHandle, msg = defaultRejectMsg) => {
@@ -66,6 +67,18 @@ export const makeHelpers = (zoe, assays) => {
       zoe.complete(handles, assays);
       return defaultAcceptanceMsg;
     },
+    // Vector addition of two units arrays
+    vectorWith: (leftUnitsArray, rightUnitsArray) =>
+      leftUnitsArray.map((leftUnits, i) =>
+        unitOpsArray[i].with(leftUnits, rightUnitsArray[i]),
+      ),
+
+    // Vector subtraction of two extent arrays
+    vectorWithout: (leftUnitsArray, rightUnitsArray) =>
+      leftUnitsArray.map((leftUnits, i) =>
+        unitOpsArray[i].without(leftUnits, rightUnitsArray[i]),
+      ),
+    makeEmptyUnits: unitOpsArray.map(unitOps => unitOps.empty()),
   });
   return helpers;
 };
